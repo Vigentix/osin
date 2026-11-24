@@ -60,4 +60,7 @@ jobs:
       - name: Build universal release (unsigned)
         run: make build-release
       - name: Verify universal binary
-        run: lipo -archs build/Build/Products/Release/Osin.app/Contents/MacOS/Osin
+        run: |
+          bin=build/Build/Products/Release/Osin.app/Contents/MacOS/Osin
+          lipo "$bin" -verify_arch x86_64
+          lipo "$bin" -verify_arch arm64
