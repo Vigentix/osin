@@ -1,4 +1,4 @@
-.PHONY: bootstrap generate open build build-release test lint format clean
+.PHONY: bootstrap generate open build build-release test lint format l10n-check snapshots clean
 
 PROJECT := Osin.xcodeproj
 SCHEME  := Osin
@@ -33,6 +33,12 @@ lint: ## Lint (CI runs the same)
 format: ## Auto-format
 	swiftformat .
 	swiftlint --fix
+
+l10n-check: build ## Fail if any UI string is missing from the String Catalog
+	python3 scripts/l10n.py missing
+
+snapshots: build ## Render screens with live data to build/snapshots (Debug only)
+	build/Build/Products/Debug/Osin.app/Contents/MacOS/Osin --render-snapshots build/snapshots
 
 clean:
 	rm -rf build Packages/OsinCore/.build $(PROJECT)

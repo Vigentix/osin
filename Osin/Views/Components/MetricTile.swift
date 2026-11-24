@@ -55,9 +55,7 @@ struct MetricTile<Value: View>: View {
         case let .bar(fraction, color):
             VStack {
                 Spacer(minLength: 0)
-                ProgressView(value: min(1, max(0, fraction)))
-                    .progressViewStyle(.linear)
-                    .tint(color)
+                UsageBar(fraction: fraction, color: color)
             }
         case .none:
             Color.clear

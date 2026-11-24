@@ -23,6 +23,14 @@ import Testing
         #expect((0 ... 100).contains(snapshot.health.score))
     }
 
+    @Test func snapshotListsAllProcessGroupsSortedByMemory() async {
+        let snapshot = await SystemSampler().sample()
+        #expect(snapshot.processes.count >= snapshot.topByMemory.count)
+        let memory = snapshot.processes.map(\.footprintBytes)
+        #expect(memory == memory.sorted(by: >))
+        #expect(snapshot.topByMemory.map(\.id) == Array(snapshot.processes.prefix(snapshot.topByMemory.count)).map(\.id))
+    }
+
     @Test func firstSampleReportsNoRatesYet() async {
         let snapshot = await SystemSampler().sample()
         #expect(snapshot.network.receiveBytesPerSecond == 0)

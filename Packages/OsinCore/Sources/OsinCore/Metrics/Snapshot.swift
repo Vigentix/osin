@@ -46,6 +46,8 @@ public struct SystemSnapshot: Sendable, Equatable {
     public let battery: BatterySnapshot?
     public let network: NetworkSnapshot
     public let thermal: ThermalLevel
+    /// Every readable process group, largest memory footprint first.
+    public let processes: [ProcessGroup]
     public let topByMemory: [ProcessGroup]
     public let topByCPU: [ProcessGroup]
     public let health: HealthReport

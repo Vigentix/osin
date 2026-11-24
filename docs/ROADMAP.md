@@ -21,10 +21,10 @@ Each milestone ends with a working, demoable build.
 - [x] Perf check (Debug build, M1): 24 MB footprint, 0.13% CPU in background
 
 ## M2 — Dashboard
-- [ ] Main window with sidebar navigation
-- [ ] Overview (score breakdown, 1 h / 24 h charts with Swift Charts)
-- [ ] Memory, Processes (quit / force-quit with confirm), Battery screens
-- [ ] Metrics history store with downsampling (7 days)
+- [x] Main window with sidebar navigation
+- [x] Overview (score breakdown, 1 h / 24 h / 7 d charts with Swift Charts, health checks)
+- [x] Memory, Processes (quit / force-quit with confirm), Battery screens
+- [x] Metrics history store with downsampling (7 days, SQLite)
 
 ## M3 — Scanner (dry-run)
 - [ ] Rule schema + loader + validator (paths only, no commands; `delete` only if safe + regenerable)

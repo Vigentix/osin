@@ -53,6 +53,7 @@ public actor SystemSampler {
         let battery = BatteryReader.read()
         let thermal = ThermalLevel(ProcessInfo.processInfo.thermalState)
         let groups = ProcessGrouping.group(sampleProcesses(seconds: seconds))
+        let byMemory = ProcessGrouping.top(groups, by: .memory, limit: groups.count)
 
         let health = HealthScore.evaluate(
             HealthInputs(
@@ -76,7 +77,8 @@ public actor SystemSampler {
             battery: battery,
             network: network,
             thermal: thermal,
-            topByMemory: ProcessGrouping.top(groups, by: .memory, limit: topCount),
+            processes: byMemory,
+            topByMemory: Array(byMemory.prefix(topCount)),
             topByCPU: ProcessGrouping.top(groups, by: .cpu, limit: topCount),
             health: health
         )

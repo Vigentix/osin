@@ -27,4 +27,4 @@ line_length:
   error: 200
 
 identifier_name:
-  excluded: [id, x, y, ok]
+  excluded: [id, x, y, ok, db]

@@ -22,6 +22,8 @@ final class SystemMonitor {
     private(set) var memoryHistory = RollingWindow<Double>(capacity: historyLength)
 
     @ObservationIgnored private let sampler = SystemSampler()
+    @ObservationIgnored private let history: HistoryStore? = try? HistoryStore(url: HistoryStore.defaultURL())
+    @ObservationIgnored private var lastCompaction = Date.distantPast
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var visibleSurfaces: Set<Surface> = []
 
@@ -66,5 +68,58 @@ final class SystemMonitor {
         cpuHistory.append(next.cpu.total)
         let memory = next.memory
         memoryHistory.append(memory.physicalBytes == 0 ? 0 : Double(memory.usedBytes) / Double(memory.physicalBytes))
+        await persist(next)
+    }
+
+    // MARK: History
+
+    enum HistoryRange: String, CaseIterable, Identifiable {
+        case hour
+        case day
+        case week
+
+        var id: Self {
+            self
+        }
+
+        var duration: TimeInterval {
+            switch self {
+            case .hour: 3600
+            case .day: 86400
+            case .week: 7 * 86400
+            }
+        }
+
+        /// Bucket size giving roughly 120–170 points per chart.
+        var bucketSeconds: Int {
+            switch self {
+            case .hour: 30
+            case .day: 600
+            case .week: 3600
+            }
+        }
+
+        var title: LocalizedStringResource {
+            switch self {
+            case .hour: "1 hour"
+            case .day: "24 hours"
+            case .week: "7 days"
+            }
+        }
+    }
+
+    func historyPoints(_ range: HistoryRange) async -> [HistoryPoint] {
+        guard let history else { return [] }
+        let since = Date().addingTimeInterval(-range.duration)
+        return await (try? history.points(since: since, bucket: range.bucketSeconds)) ?? []
+    }
+
+    private func persist(_ snapshot: SystemSnapshot) async {
+        guard let history else { return }
+        try? await history.record(HistoryPoint(snapshot: snapshot))
+        if Date().timeIntervalSince(lastCompaction) > 600 {
+            lastCompaction = Date()
+            try? await history.compact()
+        }
     }
 }

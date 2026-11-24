@@ -26,6 +26,11 @@ enum Format {
         return String(localized: "\(bytes)/s")
     }
 
+    /// CPU share where 1.0 is one full core, so values above 100% are expected for multi-threaded apps.
+    static func cpuShare(_ fraction: Double) -> String {
+        (fraction * 100).formatted(.number.precision(.fractionLength(1))) + "%"
+    }
+
     static func percent(_ fraction: Double) -> String {
         fraction.formatted(.percent.precision(.fractionLength(0)))
     }

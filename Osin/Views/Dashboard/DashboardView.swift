@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Main window. Sections are placeholders until M2.
+/// Main window: sidebar of sections, detail on the right.
 struct DashboardView: View {
     @State private var selection: DashboardSection? = .overview
 
@@ -15,15 +15,26 @@ struct DashboardView: View {
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 220)
         } detail: {
-            ContentUnavailableView {
-                Label {
-                    Text(selection?.title ?? "Overview")
-                } icon: {
-                    Image(systemName: selection?.systemImage ?? "gauge.with.dots.needle.67percent")
-                }
-            } description: {
-                Text("This section is under construction.")
-            }
+            detail(for: selection ?? .overview)
+        }
+    }
+
+    @ViewBuilder private func detail(for section: DashboardSection) -> some View {
+        switch section {
+        case .overview:
+            OverviewView()
+        case .memory:
+            MemoryView()
+        case .processes:
+            ProcessesView()
+        case .battery:
+            BatteryView()
+        case .smartScan:
+            SmartScanView()
+        case .storage:
+            StorageView()
+        case .history:
+            CleanupHistoryView()
         }
     }
 }
@@ -66,6 +77,21 @@ enum DashboardSection: String, CaseIterable, Identifiable {
     }
 }
 
-#Preview {
-    DashboardView()
+/// Shared rounded container for dashboard content.
+struct Card<Content: View>: View {
+    var title: LocalizedStringKey?
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let title {
+                Text(title)
+                    .font(.headline)
+            }
+            content
+        }
+        .padding(18)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.fill.quinary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
 }

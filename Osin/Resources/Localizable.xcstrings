@@ -1,6 +1,9 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "": {
+      "shouldTranslate": false
+    },
     "%@ / %@ · swap %@": {
       "localizations": {
         "vi": {
@@ -51,6 +54,16 @@
         }
       }
     },
+    "%lld items": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mục"
+          }
+        }
+      }
+    },
     "%lld out of 100": {
       "localizations": {
         "vi": {
@@ -64,12 +77,45 @@
     "/ 100": {
       "shouldTranslate": false
     },
+    "0": {
+      "shouldTranslate": false
+    },
+    "1 hour": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 giờ"
+          }
+        }
+      }
+    },
     "1-minute load average": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tải trung bình 1 phút"
+          }
+        }
+      }
+    },
+    "24 hours": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "24 giờ"
+          }
+        }
+      }
+    },
+    "7 days": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "7 ngày"
           }
         }
       }
@@ -84,6 +130,16 @@
         }
       }
     },
+    "App memory": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ ứng dụng"
+          }
+        }
+      }
+    },
     "Battery": {
       "localizations": {
         "vi": {
@@ -94,12 +150,52 @@
         }
       }
     },
+    "Battery health": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ pin"
+          }
+        }
+      }
+    },
+    "Battery holds %@ of its original charge.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin còn giữ được %@ dung lượng ban đầu."
+          }
+        }
+      }
+    },
+    "Battery holds %@ of its original charge. Consider a service check.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin còn giữ được %@ dung lượng ban đầu. Nên mang đi kiểm tra."
+          }
+        }
+      }
+    },
     "Battery is wearing out": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Pin đang chai"
+          }
+        }
+      }
+    },
+    "Breakdown": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chi tiết"
           }
         }
       }
@@ -124,12 +220,112 @@
         }
       }
     },
+    "CPU has been busy for several minutes.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU đã bận liên tục vài phút."
+          }
+        }
+      }
+    },
+    "CPU load": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải CPU"
+          }
+        }
+      }
+    },
+    "Cached files": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp đệm"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huỷ"
+          }
+        }
+      }
+    },
+    "Charge": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mức pin"
+          }
+        }
+      }
+    },
+    "Charge, last 24 hours": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mức pin, 24 giờ qua"
+          }
+        }
+      }
+    },
+    "Charging": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang sạc"
+          }
+        }
+      }
+    },
+    "Collecting data…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang thu thập dữ liệu…"
+          }
+        }
+      }
+    },
+    "Compressed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã nén"
+          }
+        }
+      }
+    },
     "Critical": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Nguy cấp"
+          }
+        }
+      }
+    },
+    "Cycle count": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Số chu kỳ sạc"
           }
         }
       }
@@ -164,12 +360,102 @@
         }
       }
     },
+    "Disk free space": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dung lượng trống"
+          }
+        }
+      }
+    },
+    "Disk has %@ free.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ đĩa còn trống %@."
+          }
+        }
+      }
+    },
+    "Disk is %@ full. Consider freeing space soon.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ đĩa đã đầy %@. Nên giải phóng dung lượng sớm."
+          }
+        }
+      }
+    },
+    "Disk is %@ full. macOS slows down and updates can fail with this little space.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ đĩa đã đầy %@. Với dung lượng ít như vậy, macOS chạy chậm và cập nhật có thể thất bại."
+          }
+        }
+      }
+    },
+    "Disk read %@ · write %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đọc %1$@ · ghi %2$@"
+          }
+        }
+      }
+    },
     "Fair": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Khá"
+          }
+        }
+      }
+    },
+    "Force Quit": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buộc thoát"
+          }
+        }
+      }
+    },
+    "Force Quit…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buộc thoát…"
+          }
+        }
+      }
+    },
+    "Force quit %@?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buộc thoát %@?"
+          }
+        }
+      }
+    },
+    "Full-charge capacity compared with when new. Below 80%, consider a service check. Estimated; System Settings may differ by a few points.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dung lượng khi sạc đầy so với lúc mới. Dưới 80% nên mang đi kiểm tra. Đây là ước tính, có thể lệch vài điểm so với System Settings."
           }
         }
       }
@@ -194,6 +480,16 @@
         }
       }
     },
+    "Health": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ"
+          }
+        }
+      }
+    },
     "Health %@": {
       "localizations": {
         "vi": {
@@ -210,6 +506,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sức khoẻ %1$@ · %2$lld chu kỳ"
+          }
+        }
+      }
+    },
+    "Health checks": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra sức khoẻ"
           }
         }
       }
@@ -240,6 +546,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lịch sử"
+          }
+        }
+      }
+    },
+    "History chart": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biểu đồ lịch sử"
           }
         }
       }
@@ -304,6 +620,66 @@
         }
       }
     },
+    "Memory & swap": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ & swap"
+          }
+        }
+      }
+    },
+    "Memory apps are actively using.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ các ứng dụng đang dùng."
+          }
+        }
+      }
+    },
+    "Memory pressure": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp lực bộ nhớ"
+          }
+        }
+      }
+    },
+    "Memory pressure is critical. Quit apps you are not using. Swap in use: %@.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp lực bộ nhớ ở mức nguy cấp. Hãy thoát các ứng dụng không dùng. Swap đang dùng: %@."
+          }
+        }
+      }
+    },
+    "Memory pressure is elevated. Quitting heavy apps will help. Swap in use: %@.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp lực bộ nhớ đang tăng. Thoát các ứng dụng nặng sẽ giúp ích. Swap đang dùng: %@."
+          }
+        }
+      }
+    },
+    "Memory pressure is normal. Swap in use: %@.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp lực bộ nhớ bình thường. Swap đang dùng: %@."
+          }
+        }
+      }
+    },
     "Memory under pressure": {
       "localizations": {
         "vi": {
@@ -314,12 +690,52 @@
         }
       }
     },
+    "Memory used": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ đã dùng"
+          }
+        }
+      }
+    },
+    "Moved to disk. A lot of swap slows things down.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chuyển xuống ổ đĩa. Swap nhiều sẽ làm máy chậm."
+          }
+        }
+      }
+    },
+    "Name": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên"
+          }
+        }
+      }
+    },
     "Network": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Mạng"
+          }
+        }
+      }
+    },
+    "No battery": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có pin"
           }
         }
       }
@@ -350,6 +766,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang cắm sạc"
+          }
+        }
+      }
+    },
+    "One cycle is using 100% of the battery's capacity, not necessarily in one go.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một chu kỳ là dùng hết 100% dung lượng pin, không nhất thiết trong một lần."
+          }
+        }
+      }
+    },
+    "Only processes running as you are listed. CPU 100% equals one full core.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ liệt kê tiến trình chạy dưới tài khoản của bạn. CPU 100% bằng một nhân đầy tải."
           }
         }
       }
@@ -393,6 +829,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "P %1$@ · E %2$@"
+          }
+        }
+      }
+    },
+    "Physical memory": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ vật lý"
           }
         }
       }
@@ -447,12 +893,52 @@
         }
       }
     },
+    "Range": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoảng thời gian"
+          }
+        }
+      }
+    },
+    "Recently used files; freed automatically when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp dùng gần đây; tự giải phóng khi cần."
+          }
+        }
+      }
+    },
     "Reclaim disk space": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Giải phóng ổ đĩa"
+          }
+        }
+      }
+    },
+    "Reserved by macOS; cannot be compressed or swapped.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS giữ riêng; không nén hay swap được."
+          }
+        }
+      }
+    },
+    "Search apps": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm ứng dụng"
           }
         }
       }
@@ -497,12 +983,52 @@
         }
       }
     },
+    "Squeezed in RAM to avoid swapping.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Được nén trong RAM để tránh swap."
+          }
+        }
+      }
+    },
     "Storage": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Lưu trữ"
+          }
+        }
+      }
+    },
+    "Swap used": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swap đã dùng"
+          }
+        }
+      }
+    },
+    "Thermal": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhiệt độ"
+          }
+        }
+      }
+    },
+    "This Mac runs on mains power.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy này chạy bằng điện lưới."
           }
         }
       }
@@ -517,6 +1043,39 @@
         }
       }
     },
+    "Time": {
+      "shouldTranslate": false
+    },
+    "Unknown": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không rõ"
+          }
+        }
+      }
+    },
+    "Unsaved changes in this app will be lost.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các thay đổi chưa lưu trong ứng dụng này sẽ mất."
+          }
+        }
+      }
+    },
+    "Used %@ · Swap %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã dùng %1$@ · Swap %2$@"
+          }
+        }
+      }
+    },
     "Using most memory": {
       "localizations": {
         "vi": {
@@ -526,6 +1085,9 @@
           }
         }
       }
+    },
+    "Value": {
+      "shouldTranslate": false
     },
     "Version %@": {
       "localizations": {
@@ -547,7 +1109,70 @@
         }
       }
     },
+    "What lowers the score": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điều gì làm giảm điểm"
+          }
+        }
+      }
+    },
+    "Wired": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wired"
+          }
+        }
+      }
+    },
+    "Your Mac is running hot and may be slowing itself down.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy đang nóng và có thể tự giảm hiệu năng."
+          }
+        }
+      }
+    },
+    "Your Mac is short on memory and may feel slow. Quit heavy apps to recover.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy đang thiếu bộ nhớ và có thể chậm. Thoát các ứng dụng nặng để cải thiện."
+          }
+        }
+      }
+    },
+    "macOS is compressing memory and using swap. Quitting apps you are not using will help.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS đang nén bộ nhớ và dùng swap. Thoát các ứng dụng không dùng sẽ giúp ích."
+          }
+        }
+      }
+    },
+    "macOS is using memory efficiently. Free RAM is not the goal: unused RAM is wasted RAM.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS đang dùng bộ nhớ hiệu quả. RAM trống không phải mục tiêu: RAM không dùng là RAM lãng phí."
+          }
+        }
+      }
+    },
     "–": {
+      "shouldTranslate": false
+    },
+    "−%lld": {
       "shouldTranslate": false
     }
   },

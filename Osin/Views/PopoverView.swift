@@ -94,7 +94,7 @@ struct PopoverView: View {
 
     @ViewBuilder private var diskTile: some View {
         let disk = monitor.snapshot?.disk
-        let color = diskColor(disk)
+        let color = disk.map { DiskLevel($0).color } ?? .secondary
         MetricTile(
             title: "Disk",
             systemImage: "internaldrive",
@@ -236,17 +236,5 @@ struct PopoverView: View {
         default:
             String(localized: battery.isOnACPower ? "On power adapter" : "On battery")
         }
-    }
-
-    private func diskColor(_ disk: DiskSnapshot?) -> Color {
-        guard let disk else { return .secondary }
-        let free = 1 - disk.usedFraction
-        if free < 0.05 {
-            return .red
-        }
-        if free < 0.20 {
-            return .orange
-        }
-        return .green
     }
 }
