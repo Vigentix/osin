@@ -34,6 +34,49 @@
         }
       }
     },
+    "%@ freed immediately · %@ moved to Trash (restorable)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giải phóng ngay %1$@ · %2$@ chuyển vào Thùng rác (khôi phục được)"
+          }
+        }
+      }
+    },
+    "%@ moved to Trash · restorable until you empty it": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đã vào Thùng rác · khôi phục được cho đến khi bạn dọn Thùng rác"
+          }
+        }
+      }
+    },
+    "%@ restored from Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khôi phục %@ từ Thùng rác"
+          }
+        }
+      }
+    },
+    "%@ safe to clean": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ dọn an toàn"
+          }
+        }
+      }
+    },
+    "%@ · %@": {
+      "shouldTranslate": false
+    },
     "%@ — %@": {
       "localizations": {
         "vi": {
@@ -54,6 +97,16 @@
         }
       }
     },
+    "%@: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@: %2$@"
+          }
+        }
+      }
+    },
     "%lld items": {
       "localizations": {
         "vi": {
@@ -64,12 +117,42 @@
         }
       }
     },
+    "%lld items could not be restored.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mục không khôi phục được."
+          }
+        }
+      }
+    },
+    "%lld items were skipped": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã bỏ qua %lld mục"
+          }
+        }
+      }
+    },
     "%lld out of 100": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "%lld trên 100"
+          }
+        }
+      }
+    },
+    "%lld simulators whose runtime is no longer installed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld simulator có runtime không còn được cài."
           }
         }
       }
@@ -120,6 +203,26 @@
         }
       }
     },
+    "Advanced": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nâng cao"
+          }
+        }
+      }
+    },
+    "Alerts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo"
+          }
+        }
+      }
+    },
     "All good": {
       "localizations": {
         "vi": {
@@ -130,12 +233,62 @@
         }
       }
     },
+    "Allow access…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép truy cập…"
+          }
+        }
+      }
+    },
+    "App archives older than 180 days. They contain debug symbols needed to read old crash reports.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archive ứng dụng cũ hơn 180 ngày. Chúng chứa debug symbol cần để đọc báo cáo crash cũ."
+          }
+        }
+      }
+    },
+    "App caches": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache ứng dụng"
+          }
+        }
+      }
+    },
     "App memory": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Bộ nhớ ứng dụng"
+          }
+        }
+      }
+    },
+    "Available space includes purgeable data macOS can free on its own.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dung lượng trống gồm cả dữ liệu macOS có thể tự giải phóng."
+          }
+        }
+      }
+    },
+    "Back": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quay lại"
           }
         }
       }
@@ -156,6 +309,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sức khoẻ pin"
+          }
+        }
+      }
+    },
+    "Battery health below 80%": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ pin dưới 80%"
+          }
+        }
+      }
+    },
+    "Battery health is %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ pin còn %@"
           }
         }
       }
@@ -196,6 +369,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chi tiết"
+          }
+        }
+      }
+    },
+    "Build intermediates and indexes. Xcode rebuilds them on the next build.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu build trung gian và chỉ mục. Xcode tạo lại ở lần build sau."
+          }
+        }
+      }
+    },
+    "Built-in cleanup": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn dẹp tích hợp"
           }
         }
       }
@@ -250,12 +443,32 @@
         }
       }
     },
+    "Can't undo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không hoàn tác"
+          }
+        }
+      }
+    },
     "Cancel": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Huỷ"
+          }
+        }
+      }
+    },
+    "Cancelled or failed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã huỷ hoặc thất bại."
           }
         }
       }
@@ -290,6 +503,76 @@
         }
       }
     },
+    "Check again": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra lại"
+          }
+        }
+      }
+    },
+    "Check for updates automatically": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tự động kiểm tra cập nhật"
+          }
+        }
+      }
+    },
+    "Checks caches, developer leftovers, downloads and the Trash. Nothing is removed until you review the report.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra cache, rác của công cụ lập trình, Downloads và Thùng rác. Không xoá gì cho đến khi bạn xem báo cáo."
+          }
+        }
+      }
+    },
+    "Clean": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn"
+          }
+        }
+      }
+    },
+    "Clean %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn %@"
+          }
+        }
+      }
+    },
+    "Cleaning…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang dọn…"
+          }
+        }
+      }
+    },
+    "Cleanup history and metrics stay on this Mac.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lịch sử dọn dẹp và số liệu chỉ lưu trên máy này."
+          }
+        }
+      }
+    },
     "Collecting data…": {
       "localizations": {
         "vi": {
@@ -306,6 +589,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã nén"
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp tục"
           }
         }
       }
@@ -340,6 +633,66 @@
         }
       }
     },
+    "Debug symbols copied from connected devices. Xcode copies them again when a device is connected.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Debug symbol sao chép từ thiết bị đã kết nối. Xcode sẽ chép lại khi cắm thiết bị."
+          }
+        }
+      }
+    },
+    "Deleted": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xoá"
+          }
+        }
+      }
+    },
+    "Deletes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá"
+          }
+        }
+      }
+    },
+    "Dependencies of projects untouched for 90 days. Run your package manager's install to restore them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư viện của dự án không đụng tới 90 ngày. Chạy lệnh install của trình quản lý gói để cài lại."
+          }
+        }
+      }
+    },
+    "Device backups not updated for 180 days. Make sure you no longer need them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản sao lưu không cập nhật trong 180 ngày. Hãy chắc chắn bạn không còn cần."
+          }
+        }
+      }
+    },
+    "Diagnostic logs older than 7 days.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhật ký chẩn đoán cũ hơn 7 ngày."
+          }
+        }
+      }
+    },
     "Disk": {
       "localizations": {
         "vi": {
@@ -360,6 +713,16 @@
         }
       }
     },
+    "Disk free below %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ đĩa trống dưới %@"
+          }
+        }
+      }
+    },
     "Disk free space": {
       "localizations": {
         "vi": {
@@ -370,12 +733,32 @@
         }
       }
     },
+    "Disk free threshold": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngưỡng dung lượng trống"
+          }
+        }
+      }
+    },
     "Disk has %@ free.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Ổ đĩa còn trống %@."
+          }
+        }
+      }
+    },
+    "Disk images and installer packages in Downloads.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp ảnh đĩa và gói cài đặt trong Downloads."
           }
         }
       }
@@ -410,12 +793,112 @@
         }
       }
     },
+    "Done": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong"
+          }
+        }
+      }
+    },
+    "Done.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong."
+          }
+        }
+      }
+    },
+    "Downloaded packages for npm, pnpm, Gradle and Cargo. Re-downloaded on the next install.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gói đã tải của npm, pnpm, Gradle và Cargo. Sẽ tải lại ở lần cài sau."
+          }
+        }
+      }
+    },
+    "Downloads folder": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư mục Downloads"
+          }
+        }
+      }
+    },
+    "Empty Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn Thùng rác"
+          }
+        }
+      }
+    },
+    "Empty Trash and simulator removal cannot be undone.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn Thùng rác và xoá simulator không thể hoàn tác."
+          }
+        }
+      }
+    },
+    "Every action is logged in History.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi thao tác đều được ghi vào Lịch sử."
+          }
+        }
+      }
+    },
+    "Everything Osin removes is listed here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi thứ Osin đã dọn đều được liệt kê ở đây."
+          }
+        }
+      }
+    },
     "Fair": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Khá"
+          }
+        }
+      }
+    },
+    "Files in Downloads not modified for 30 days.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp trong Downloads không sửa đổi trong 30 ngày."
+          }
+        }
+      }
+    },
+    "Find caches and leftovers you can remove safely.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm cache và dữ liệu thừa có thể dọn an toàn."
           }
         }
       }
@@ -446,6 +929,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "Buộc thoát %@?"
+          }
+        }
+      }
+    },
+    "Freed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã giải phóng"
+          }
+        }
+      }
+    },
+    "Freed %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã giải phóng %@"
+          }
+        }
+      }
+    },
+    "Freed %@ in total": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng cộng đã giải phóng %@"
+          }
+        }
+      }
+    },
+    "Frees inactive memory using macOS's purge tool. The effect is temporary: macOS refills the cache because unused RAM is wasted RAM. Requires an administrator password.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giải phóng bộ nhớ không hoạt động bằng công cụ purge của macOS. Hiệu quả chỉ tạm thời: macOS sẽ lấp đầy lại cache vì RAM không dùng là RAM lãng phí. Cần mật khẩu quản trị."
+          }
+        }
+      }
+    },
+    "Full Disk Access": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toàn quyền truy cập ổ đĩa"
+          }
+        }
+      }
+    },
+    "Full Disk Access granted": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã có toàn quyền truy cập ổ đĩa"
           }
         }
       }
@@ -540,6 +1083,16 @@
         }
       }
     },
+    "Hide items": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ẩn danh sách"
+          }
+        }
+      }
+    },
     "History": {
       "localizations": {
         "vi": {
@@ -556,6 +1109,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Biểu đồ lịch sử"
+          }
+        }
+      }
+    },
+    "Honest about memory": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trung thực về bộ nhớ"
+          }
+        }
+      }
+    },
+    "Installers": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ cài"
+          }
+        }
+      }
+    },
+    "Large files": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp lớn"
+          }
+        }
+      }
+    },
+    "Let Osin see more of your disk": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho Osin xem được nhiều hơn"
           }
         }
       }
@@ -580,12 +1173,42 @@
         }
       }
     },
+    "Logs": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhật ký"
+          }
+        }
+      }
+    },
     "Mac is running hot": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Máy đang nóng"
+          }
+        }
+      }
+    },
+    "Macintosh HD": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Macintosh HD"
+          }
+        }
+      }
+    },
+    "Mail, Safari and other apps' caches, device backups.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache của Mail, Safari và ứng dụng khác, bản sao lưu thiết bị."
           }
         }
       }
@@ -650,6 +1273,26 @@
         }
       }
     },
+    "Memory pressure critical for over a minute": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp lực bộ nhớ nguy cấp hơn một phút"
+          }
+        }
+      }
+    },
+    "Memory pressure is critical": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp lực bộ nhớ nguy cấp"
+          }
+        }
+      }
+    },
     "Memory pressure is critical. Quit apps you are not using. Swap in use: %@.": {
       "localizations": {
         "vi": {
@@ -700,6 +1343,26 @@
         }
       }
     },
+    "Menu bar": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thanh menu"
+          }
+        }
+      }
+    },
+    "Moved to Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chuyển vào Thùng rác"
+          }
+        }
+      }
+    },
     "Moved to disk. A lot of swap slows things down.": {
       "localizations": {
         "vi": {
@@ -716,6 +1379,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tên"
+          }
+        }
+      }
+    },
+    "Needs your review": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần bạn xem lại"
           }
         }
       }
@@ -740,12 +1413,142 @@
         }
       }
     },
+    "No cleanups yet": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa dọn lần nào"
+          }
+        }
+      }
+    },
+    "No files over 1 GB found by Spotlight.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spotlight không tìm thấy tệp nào trên 1 GB."
+          }
+        }
+      }
+    },
+    "No placebo “Free RAM” button. Osin shows memory pressure and which app to quit.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có nút “Giải phóng RAM” giả tạo. Osin cho thấy áp lực bộ nhớ và ứng dụng nên thoát."
+          }
+        }
+      }
+    },
+    "No surprise deletions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không xoá bất ngờ"
+          }
+        }
+      }
+    },
+    "No telemetry. Nothing leaves your Mac.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thu thập dữ liệu. Không gì rời khỏi máy bạn."
+          }
+        }
+      }
+    },
     "Normal": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Bình thường"
+          }
+        }
+      }
+    },
+    "Not selected by default.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không chọn sẵn."
+          }
+        }
+      }
+    },
+    "Notify me when the disk is almost full or memory runs out": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo khi ổ đĩa sắp đầy hoặc thiếu bộ nhớ"
+          }
+        }
+      }
+    },
+    "OPTIONAL": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TUỲ CHỌN"
+          }
+        }
+      }
+    },
+    "Old Xcode archives": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode archive cũ"
+          }
+        }
+      }
+    },
+    "Old downloads": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp tải về cũ"
+          }
+        }
+      }
+    },
+    "Old iPhone and iPad backups": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản sao lưu iPhone, iPad cũ"
+          }
+        }
+      }
+    },
+    "Old installers and downloads. macOS asks once; you can say no.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ cài và tệp tải về cũ. macOS hỏi một lần; bạn có thể từ chối."
+          }
+        }
+      }
+    },
+    "Old node_modules": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "node_modules cũ"
           }
         }
       }
@@ -780,12 +1583,32 @@
         }
       }
     },
+    "Only %@ free. Run Smart Scan to reclaim space.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ còn trống %@. Chạy Smart Scan để giải phóng dung lượng."
+          }
+        }
+      }
+    },
     "Only processes running as you are listed. CPU 100% equals one full core.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Chỉ liệt kê tiến trình chạy dưới tài khoản của bạn. CPU 100% bằng một nhân đầy tải."
+          }
+        }
+      }
+    },
+    "Only regenerable caches are deleted. Everything else goes to the Trash and can be restored.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ xoá cache có thể tạo lại. Mọi thứ khác vào Thùng rác và khôi phục được."
           }
         }
       }
@@ -800,8 +1623,88 @@
         }
       }
     },
+    "Open Osin at login": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Osin khi đăng nhập"
+          }
+        }
+      }
+    },
+    "Open Settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Cài đặt"
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở System Settings"
+          }
+        }
+      }
+    },
+    "Open data folder in Finder": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở thư mục dữ liệu trong Finder"
+          }
+        }
+      }
+    },
     "Osin": {
       "shouldTranslate": false
+    },
+    "Osin never cleans automatically. It only tells you when something needs attention.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin không bao giờ tự dọn. Osin chỉ báo khi có điều cần chú ý."
+          }
+        }
+      }
+    },
+    "Osin never removes these for you. Review them in Finder.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin không tự xoá những tệp này. Hãy xem lại trong Finder."
+          }
+        }
+      }
+    },
+    "Osin uses very little energy in the background: it checks every 30 seconds and never cleans by itself.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin tốn rất ít năng lượng khi chạy nền: kiểm tra 30 giây một lần và không bao giờ tự dọn."
+          }
+        }
+      }
+    },
+    "Osin watches your Mac's health from the menu bar and helps you reclaim disk space safely.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin theo dõi sức khoẻ máy từ thanh menu và giúp bạn giải phóng ổ đĩa an toàn."
+          }
+        }
+      }
     },
     "Osin, health %@": {
       "localizations": {
@@ -809,6 +1712,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Osin, sức khoẻ %@"
+          }
+        }
+      }
+    },
+    "Over 1 GB in your home folder": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trên 1 GB trong thư mục người dùng"
           }
         }
       }
@@ -833,6 +1746,26 @@
         }
       }
     },
+    "Package manager caches": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache trình quản lý gói"
+          }
+        }
+      }
+    },
+    "Permanently removes what is already in your Trash.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá vĩnh viễn những gì đang có trong Thùng rác."
+          }
+        }
+      }
+    },
     "Physical memory": {
       "localizations": {
         "vi": {
@@ -853,12 +1786,52 @@
         }
       }
     },
+    "Pressure is normal. Quitting is optional.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Áp lực bình thường. Thoát ứng dụng là tuỳ bạn."
+          }
+        }
+      }
+    },
+    "Private": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riêng tư"
+          }
+        }
+      }
+    },
     "Processes": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tiến trình"
+          }
+        }
+      }
+    },
+    "Purge disk cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purge cache đĩa"
+          }
+        }
+      }
+    },
+    "Purge…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Purge…"
           }
         }
       }
@@ -893,6 +1866,16 @@
         }
       }
     },
+    "Quitting heavy apps will relieve memory pressure.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát ứng dụng nặng sẽ giảm áp lực bộ nhớ."
+          }
+        }
+      }
+    },
     "Range": {
       "localizations": {
         "vi": {
@@ -923,6 +1906,46 @@
         }
       }
     },
+    "Refresh": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Làm mới"
+          }
+        }
+      }
+    },
+    "Regenerable. Apps and tools rebuild these when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có thể tạo lại. Ứng dụng và công cụ sẽ tự tạo lại khi cần."
+          }
+        }
+      }
+    },
+    "Remove permanently?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá vĩnh viễn?"
+          }
+        }
+      }
+    },
+    "Rescan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quét lại"
+          }
+        }
+      }
+    },
     "Reserved by macOS; cannot be compressed or swapped.": {
       "localizations": {
         "vi": {
@@ -933,12 +1956,82 @@
         }
       }
     },
+    "Restore": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khôi phục"
+          }
+        }
+      }
+    },
+    "Restored": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khôi phục"
+          }
+        }
+      }
+    },
+    "Safe to clean": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn an toàn"
+          }
+        }
+      }
+    },
+    "Scanned %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã quét %@"
+          }
+        }
+      }
+    },
+    "Scanning…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang quét…"
+          }
+        }
+      }
+    },
     "Search apps": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tìm ứng dụng"
+          }
+        }
+      }
+    },
+    "Selected to clean": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chọn để dọn"
+          }
+        }
+      }
+    },
+    "Send notifications": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gửi thông báo"
           }
         }
       }
@@ -963,6 +2056,96 @@
         }
       }
     },
+    "Show CPU usage": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện mức dùng CPU"
+          }
+        }
+      }
+    },
+    "Show icon in the Dock": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện biểu tượng trên Dock"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện trong Finder"
+          }
+        }
+      }
+    },
+    "Show in Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Thùng rác"
+          }
+        }
+      }
+    },
+    "Show items": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện danh sách"
+          }
+        }
+      }
+    },
+    "Show memory pressure": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện áp lực bộ nhớ"
+          }
+        }
+      }
+    },
+    "Show network speed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiện tốc độ mạng"
+          }
+        }
+      }
+    },
+    "Show welcome screens again": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem lại màn hình chào mừng"
+          }
+        }
+      }
+    },
+    "Simulators": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulator"
+          }
+        }
+      }
+    },
     "Smart Scan": {
       "localizations": {
         "vi": {
@@ -983,12 +2166,72 @@
         }
       }
     },
+    "Some locations could not be read.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một số vị trí không đọc được."
+          }
+        }
+      }
+    },
+    "Some locations need Full Disk Access to be measured.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một số vị trí cần toàn quyền truy cập ổ đĩa để đo."
+          }
+        }
+      }
+    },
+    "Some selected items are removed permanently and can't be undone.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một số mục đã chọn sẽ bị xoá vĩnh viễn, không hoàn tác được."
+          }
+        }
+      }
+    },
     "Squeezed in RAM to avoid swapping.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Được nén trong RAM để tránh swap."
+          }
+        }
+      }
+    },
+    "Start scan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu quét"
+          }
+        }
+      }
+    },
+    "Stay in the loop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luôn nắm tình hình"
+          }
+        }
+      }
+    },
+    "Step %lld of 3": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bước %lld / 3"
           }
         }
       }
@@ -1009,6 +2252,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Swap đã dùng"
+          }
+        }
+      }
+    },
+    "Temporary data apps keep to speed things up. Apps recreate it when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu tạm ứng dụng giữ để chạy nhanh hơn. Ứng dụng sẽ tạo lại khi cần."
+          }
+        }
+      }
+    },
+    "The coloured dot always shows overall health.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chấm màu luôn thể hiện sức khoẻ tổng thể."
+          }
+        }
+      }
+    },
+    "The update check is the only network request Osin makes.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra cập nhật là kết nối mạng duy nhất Osin thực hiện."
           }
         }
       }
@@ -1045,6 +2318,46 @@
     },
     "Time": {
       "shouldTranslate": false
+    },
+    "To Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vào Thùng rác"
+          }
+        }
+      }
+    },
+    "Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thùng rác"
+          }
+        }
+      }
+    },
+    "Unavailable simulators": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulator không dùng được"
+          }
+        }
+      }
+    },
+    "Undo": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoàn tác"
+          }
+        }
+      }
     },
     "Unknown": {
       "localizations": {
@@ -1109,6 +2422,16 @@
         }
       }
     },
+    "Welcome to Osin": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chào mừng đến với Osin"
+          }
+        }
+      }
+    },
     "What lowers the score": {
       "localizations": {
         "vi": {
@@ -1125,6 +2448,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wired"
+          }
+        }
+      }
+    },
+    "Without Full Disk Access some folders are skipped.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có toàn quyền truy cập ổ đĩa, một số thư mục sẽ bị bỏ qua."
+          }
+        }
+      }
+    },
+    "Without access, those places are skipped and marked in the report.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có quyền, các vị trí đó sẽ bị bỏ qua và được đánh dấu trong báo cáo."
+          }
+        }
+      }
+    },
+    "Xcode DerivedData": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode DerivedData"
+          }
+        }
+      }
+    },
+    "You can change these any time in Settings.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể đổi bất cứ lúc nào trong Cài đặt."
           }
         }
       }
@@ -1149,6 +2512,36 @@
         }
       }
     },
+    "Your Mac is short on memory. Quit apps you are not using.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy đang thiếu bộ nhớ. Hãy thoát các ứng dụng không dùng."
+          }
+        }
+      }
+    },
+    "Your battery holds less charge than when new. Consider a service check.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin giữ được ít điện hơn lúc mới. Nên mang đi kiểm tra."
+          }
+        }
+      }
+    },
+    "iOS device support files": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tệp hỗ trợ thiết bị iOS"
+          }
+        }
+      }
+    },
     "macOS is compressing memory and using swap. Quitting apps you are not using will help.": {
       "localizations": {
         "vi": {
@@ -1165,6 +2558,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "macOS đang dùng bộ nhớ hiệu quả. RAM trống không phải mục tiêu: RAM không dùng là RAM lãng phí."
+          }
+        }
+      }
+    },
+    "macOS protects some folders. Granting access lets Smart Scan measure caches there. Osin only reads paths listed in its open-source rules.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "macOS bảo vệ một số thư mục. Cấp quyền giúp Smart Scan đo được cache ở đó. Osin chỉ đọc các đường dẫn trong bộ quy tắc mã nguồn mở."
           }
         }
       }

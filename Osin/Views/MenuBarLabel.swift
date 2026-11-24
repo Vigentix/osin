@@ -2,13 +2,41 @@ import AppKit
 import OsinCore
 import SwiftUI
 
-/// Menu bar glyph with a health-coloured dot.
+/// Menu bar glyph with a health-coloured dot, plus optional live metrics chosen in Settings.
 struct MenuBarLabel: View {
-    let level: HealthLevel?
+    let snapshot: SystemSnapshot?
+    @AppStorage(Preferences.Key.menuBarCPU) private var showCPU = false
+    @AppStorage(Preferences.Key.menuBarMemory) private var showMemory = false
+    @AppStorage(Preferences.Key.menuBarNetwork) private var showNetwork = false
+
+    private var level: HealthLevel? {
+        snapshot?.health.level
+    }
 
     var body: some View {
-        Image(nsImage: MenuBarIcon.image(dot: level.map { NSColor($0.color) }))
-            .accessibilityLabel(accessibilityText)
+        HStack(spacing: 4) {
+            Image(nsImage: MenuBarIcon.image(dot: level.map { NSColor($0.color) }))
+            if let text = metricsText {
+                Text(text).monospacedDigit()
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var metricsText: String? {
+        guard let snapshot else { return nil }
+        var parts: [String] = []
+        if showCPU {
+            parts.append("CPU \(Format.percent(snapshot.cpu.total))")
+        }
+        if showMemory {
+            parts.append(String(localized: snapshot.memory.pressure.title))
+        }
+        if showNetwork {
+            parts.append("↓\(Format.rate(snapshot.network.receiveBytesPerSecond))")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private var accessibilityText: Text {

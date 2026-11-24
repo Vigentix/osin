@@ -40,7 +40,9 @@
             let reportScreens = [
                 Screen(name: "smartscan", view: AnyView(SmartScanView()), size: CGSize(width: 1000, height: 1100)),
                 Screen(name: "storage", view: AnyView(StorageView()), size: CGSize(width: 1000, height: 800)),
-                Screen(name: "history", view: AnyView(CleanupHistoryView()), size: CGSize(width: 900, height: 500))
+                Screen(name: "history", view: AnyView(CleanupHistoryView()), size: CGSize(width: 900, height: 500)),
+                Screen(name: "onboarding", view: AnyView(OnboardingView {}), size: CGSize(width: 640, height: 460)),
+                Screen(name: "settings", view: AnyView(SettingsView()), size: CGSize(width: 520, height: 420))
             ]
             for scheme in [ColorScheme.dark, .light] {
                 for screen in screens + reportScreens {

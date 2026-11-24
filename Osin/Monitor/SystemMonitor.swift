@@ -26,6 +26,8 @@ final class SystemMonitor {
     @ObservationIgnored private var lastCompaction = Date.distantPast
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var visibleSurfaces: Set<Surface> = []
+    /// Called after every sample (used for notifications).
+    @ObservationIgnored var onSnapshot: ((SystemSnapshot) -> Void)?
 
     var isForeground: Bool {
         !visibleSurfaces.isEmpty
@@ -65,6 +67,7 @@ final class SystemMonitor {
         let next = await sampler.sample()
         guard !Task.isCancelled else { return }
         snapshot = next
+        onSnapshot?(next)
         cpuHistory.append(next.cpu.total)
         let memory = next.memory
         memoryHistory.append(memory.physicalBytes == 0 ? 0 : Double(memory.usedBytes) / Double(memory.physicalBytes))

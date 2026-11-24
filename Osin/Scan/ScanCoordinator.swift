@@ -237,9 +237,12 @@ final class ScanCoordinator {
         do {
             let rules = try CleanupRule.bundled().filter { (try? $0.validate()) != nil && ruleFilter($0) }
             let steps = Double(rules.count + 2)
-            stepNames = rules.map(\.name) + [String(localized: "Simulators"), String(localized: "Trash")]
+            stepNames = rules.map { String(localized: String.LocalizationValue($0.name)) } + [
+                String(localized: "Simulators"),
+                String(localized: "Trash")
+            ]
             currentStepIndex = 0
-            let names = Dictionary(uniqueKeysWithValues: rules.map { ($0.id, $0.name) })
+            let names = Dictionary(uniqueKeysWithValues: rules.map { ($0.id, String(localized: String.LocalizationValue($0.name))) })
             let results = try await Scanner().scan(rules) { event in
                 Task { @MainActor in
                     self.progress = Double(event.index) / steps
@@ -249,7 +252,10 @@ final class ScanCoordinator {
             }
             var found = results.map { result in
                 Group(
-                    id: result.rule.id, name: result.rule.name, detail: result.rule.detail, tier: result.rule.tier,
+                    id: result.rule.id,
+                    name: String(localized: String.LocalizationValue(result.rule.name)),
+                    detail: String(localized: String.LocalizationValue(result.rule.detail)),
+                    tier: result.rule.tier,
                     bytes: result.totalBytes, kind: .rule(result), needsAccess: result.needsAccess
                 )
             }

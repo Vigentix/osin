@@ -16,7 +16,7 @@ Each milestone ends with a working, demoable build.
 - [x] Adaptive sampling (2 s visible / 30 s background)
 - [x] Health Score engine + config + unit tests
 - [x] `MenuBarExtra` with health dot
-- [ ] Optional live text metrics in the menu bar (moved to M5 Settings)
+- [x] Optional live text metrics in the menu bar (moved to M5 Settings)
 - [x] Popover: score ring, 2×2 tiles with sparklines, network, top 3 processes, footer
 - [x] Perf check (Debug build, M1): 24 MB footprint, 0.13% CPU in background
 
@@ -43,17 +43,19 @@ Each milestone ends with a working, demoable build.
 - [x] Built-in actions (unavailable simulators, Empty Trash) in Review tier with warnings
 - [ ] Docker prune built-in (deferred: needs reliable size parsing)
 - [x] Memory suggestions ("Quit X to free ≈ Y GB")
-- [ ] Advanced: `purge` via admin auth (opt-in) — moved to M5 Settings
+- [x] Advanced: `purge` via admin auth (opt-in) — moved to M5 Settings
 - [x] Result screen: "Freed X GB" vs "Y GB in Trash" + Empty Trash (irreversible warning)
 
 ## M5 — Polish
-- [ ] Onboarding (3 steps)
-- [ ] Notifications (disk, memory pressure, battery, weekly nudge)
-- [ ] Launch at login (`SMAppService`)
-- [ ] Settings window (thresholds, menu bar metrics, Dock icon, updates)
-- [ ] Motion: score ring, scan reveal, freed-GB counter; Reduce Motion
-- [ ] Liquid Glass on macOS 26; accessibility pass (VoiceOver)
-- [ ] Complete VI translation
+- [x] Onboarding (3 steps)
+- [x] Notifications (disk, memory pressure, battery) with cooldowns
+- [ ] Weekly "reclaimable" nudge (deferred: needs background scans)
+- [x] Launch at login (`SMAppService`)
+- [x] Settings window (thresholds, menu bar metrics, Dock icon, updates)
+- [x] Motion: score ring, scan reveal, freed-GB counter; Reduce Motion
+- [x] Liquid Glass on macOS 26 via native chrome (sidebar, toolbar, popover); content cards stay solid per HIG
+- [x] Accessibility: labels on icon-only controls, combined tile elements, Reduce Motion
+- [x] Complete VI translation
 
 ## M6 — Release v0.1
 - [ ] Apple Developer ID + notarization

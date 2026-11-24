@@ -12,7 +12,7 @@ struct OsinApp: App {
                 .environment(appDelegate.scan)
                 .environment(appDelegate.navigator)
         } label: {
-            MenuBarLabel(level: appDelegate.monitor.snapshot?.health.level)
+            MenuBarLabel(snapshot: appDelegate.monitor.snapshot)
         }
         .menuBarExtraStyle(.window)
 
@@ -39,14 +39,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let monitor = SystemMonitor()
     let scan = ScanCoordinator()
     let navigator = Navigator()
+    private let notifier = Notifier()
+    private let onboarding = OnboardingWindowController()
 
     func applicationDidFinishLaunching(_: Notification) {
+        Preferences.registerDefaults()
+        Preferences.applyDockIcon()
+        monitor.onSnapshot = { [notifier] snapshot in notifier.handle(snapshot) }
         monitor.start()
+        NotificationCenter.default.addObserver(forName: .osinShowOnboarding, object: nil, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.showOnboarding() }
+        }
         #if DEBUG
             if let directory = SnapshotRenderer.outputDirectory {
                 Task { await SnapshotRenderer.run(monitor: monitor, scan: scan, into: directory) }
+                return
             }
         #endif
+        if !UserDefaults.standard.bool(forKey: Preferences.Key.onboardingCompleted) {
+            showOnboarding()
+        }
+    }
+
+    private func showOnboarding() {
+        onboarding.show {
+            UserDefaults.standard.set(true, forKey: Preferences.Key.onboardingCompleted)
+        }
     }
 }
 
@@ -55,6 +73,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @Observable
 final class Navigator {
     var section: DashboardSection = .overview
+}
+
+extension Notification.Name {
+    static let osinShowOnboarding = Notification.Name("OsinShowOnboarding")
 }
 
 enum WindowID {
