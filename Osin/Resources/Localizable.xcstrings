@@ -1,0 +1,89 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Battery" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Pin" } }
+      }
+    },
+    "Dashboard" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Dashboard" } }
+      }
+    },
+    "General" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chung" } }
+      }
+    },
+    "Health monitoring arrives in M1." : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Theo dõi sức khoẻ máy sẽ có ở M1." } }
+      }
+    },
+    "History" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Lịch sử" } }
+      }
+    },
+    "Memory" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bộ nhớ" } }
+      }
+    },
+    "Open Dashboard" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Mở Dashboard" } }
+      }
+    },
+    "Osin" : {
+      "shouldTranslate" : false
+    },
+    "Overview" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tổng quan" } }
+      }
+    },
+    "Processes" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tiến trình" } }
+      }
+    },
+    "Quit Osin" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thoát Osin" } }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Cài đặt" } }
+      }
+    },
+    "Settings arrive in M5." : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phần cài đặt sẽ có ở M5." } }
+      }
+    },
+    "Smart Scan" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Smart Scan" } }
+      }
+    },
+    "Storage" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Lưu trữ" } }
+      }
+    },
+    "This section is under construction." : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Mục này đang được xây dựng." } }
+      }
+    },
+    "Version %@" : {
+      "localizations" : {
+        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phiên bản %@" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}
