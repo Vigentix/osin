@@ -10,14 +10,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Lint runs on Linux: cheaper than macOS minutes and no macOS runner queue.
+  # Keep these versions in sync with the Homebrew versions used locally.
   lint:
-    runs-on: macos-15
+    runs-on: ubuntu-latest
+    env:
+      SWIFTFORMAT_VERSION: 0.64.7
+      SWIFTLINT_VERSION: 0.65.1
     steps:
       - uses: actions/checkout@v4
-      - name: Install tools
-        run: brew install swiftlint swiftformat
-      - name: Lint
-        run: make lint
+      - name: SwiftFormat
+        run: |
+          curl -sSfL -o /tmp/swiftformat.zip \
+            "https://github.com/nicklockwood/SwiftFormat/releases/download/${SWIFTFORMAT_VERSION}/swiftformat_linux.zip"
+          unzip -q /tmp/swiftformat.zip -d /tmp/swiftformat
+          bin=$(find /tmp/swiftformat -type f -name 'swiftformat*' | head -1)
+          chmod +x "$bin"
+          "$bin" --lint . --reporter github-actions-log
+      - name: SwiftLint
+        run: |
+          docker run --rm -v "$PWD:/work" -w /work --entrypoint swiftlint \
+            "ghcr.io/realm/swiftlint:${SWIFTLINT_VERSION}" --strict --reporter github-actions-logging
 
   core-tests:
     runs-on: macos-15
