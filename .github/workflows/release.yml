@@ -1,0 +1,75 @@
+name: Release
+
+# Push a tag like v0.1.0 to build a draft GitHub release with the DMG, the Sparkle ZIP and,
+# when keys are configured, a signed and notarized build plus appcast.xml. See docs/RELEASING.md.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version without the v prefix, e.g. 0.1.0"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    env:
+      VERSION: ${{ inputs.version || github.ref_name }}
+      CERT_P12: ${{ secrets.DEVELOPER_ID_CERT_P12 }}
+      CERT_PASSWORD: ${{ secrets.DEVELOPER_ID_CERT_PASSWORD }}
+      DEVELOPER_ID_NAME: ${{ secrets.DEVELOPER_ID }}
+      NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+      NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
+      NOTARY_PASSWORD: ${{ secrets.NOTARY_APP_PASSWORD }}
+      SPARKLE_PUBLIC_KEY: ${{ secrets.SPARKLE_PUBLIC_KEY }}
+      SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Import Developer ID certificate
+        if: env.CERT_P12 != ''
+        run: |
+          keychain="$RUNNER_TEMP/release.keychain-db"
+          security create-keychain -p "" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "" "$keychain"
+          echo "$CERT_P12" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "" "$keychain"
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          echo "DEVELOPER_ID=$DEVELOPER_ID_NAME" >> "$GITHUB_ENV"
+
+      - name: Store notarization credentials
+        if: env.CERT_P12 != '' && env.NOTARY_APPLE_ID != ''
+        run: |
+          xcrun notarytool store-credentials osin-notary \
+            --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD"
+          echo "NOTARY_PROFILE=osin-notary" >> "$GITHUB_ENV"
+
+      - name: Write Sparkle private key
+        if: env.SPARKLE_PRIVATE_KEY != ''
+        run: |
+          echo "$SPARKLE_PRIVATE_KEY" > "$RUNNER_TEMP/sparkle_key"
+          echo "SPARKLE_PRIVATE_KEY_FILE=$RUNNER_TEMP/sparkle_key" >> "$GITHUB_ENV"
+
+      - name: Build and package
+        run: scripts/release.sh "${VERSION#v}"
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v${VERSION#v}"
+          files=(build/release/*.dmg build/release/*.zip)
+          [[ -f build/release/appcast.xml ]] && files+=(build/release/appcast.xml)
+          gh release create "$tag" "${files[@]}" --draft --generate-notes --title "Osin ${VERSION#v}" --target "$GITHUB_SHA"

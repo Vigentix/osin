@@ -58,12 +58,15 @@ Each milestone ends with a working, demoable build.
 - [x] Complete VI translation
 
 ## M6 — Release v0.1
-- [ ] Apple Developer ID + notarization
-- [ ] DMG build script + GitHub Release workflow
-- [ ] Sparkle appcast
-- [ ] Homebrew cask
-- [ ] README with screenshots, safety guarantees, rule contribution guide
+- [x] DMG build script (`scripts/release.sh`) + GitHub Release workflow (draft release on `v*` tags)
+- [x] Sparkle integrated; appcast generated when keys are configured (`docs/RELEASING.md`)
+- [x] Homebrew cask template (`packaging/homebrew/osin.rb`)
+- [x] README with safety guarantees and rule contribution guide
+- [ ] Apple Developer ID + notarization (needs the account; workflow is ready)
+- [ ] Sparkle EdDSA keys + GitHub secrets
+- [ ] README screenshots (`make snapshots` renders them)
 - [ ] Final product name
+- [ ] Tag and publish v0.1.0
 
 ## v2 backlog
-CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · App uninstaller + leftovers · Duplicate finder · Disk treemap · Privileged helper daemon · Remote rule updates
+Docker prune · Time Machine snapshots · weekly nudge · CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · App uninstaller + leftovers · Duplicate finder · Disk treemap · Privileged helper daemon · Remote rule updates

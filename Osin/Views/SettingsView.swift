@@ -93,6 +93,7 @@ private struct AlertSettingsView: View {
 }
 
 private struct AdvancedSettings: View {
+    @Environment(Updater.self) private var updater
     @AppStorage(Preferences.Key.automaticUpdateChecks) private var automaticUpdateChecks = true
     @State private var purgeResult: String?
 
@@ -100,6 +101,10 @@ private struct AdvancedSettings: View {
         Form {
             Section {
                 Toggle("Check for updates automatically", isOn: $automaticUpdateChecks)
+                    .onChange(of: automaticUpdateChecks) { _, enabled in updater.setAutomaticChecks(enabled) }
+                    .disabled(!updater.isAvailable)
+                Button("Check for Updates…") { updater.checkForUpdates() }
+                    .disabled(!updater.isAvailable)
             } footer: {
                 Text("The update check is the only network request Osin makes.")
             }

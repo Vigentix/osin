@@ -85,7 +85,7 @@ A single scan covering three areas:
 | Tier | Default | Rules (MVP) |
 |---|---|---|
 | **Safe** | Pre-checked | `~/Library/Caches/*`, `~/Library/Logs/*`, browser caches, Xcode `DerivedData`, old Xcode `Archives`, unavailable simulators (`xcrun simctl delete unavailable`), Homebrew / npm / pnpm / yarn / pip / CocoaPods / Gradle caches, Trash |
-| **Review** | Shown, unchecked | `node_modules` in projects untouched > 90 days, Docker images/volumes, Downloads older than 30 days, `.dmg`/`.pkg` installers, old iOS device backups, Time Machine local snapshots |
+| **Review** | Shown, unchecked | `node_modules` in projects untouched > 90 days, Downloads older than 30 days, `.dmg`/`.pkg` installers, old Xcode archives, old iOS device backups, unavailable simulators, Empty Trash |
 | **Never** | Always excluded | `~/Documents`, `~/Desktop`, Photos library, Mail data, iCloud Drive, anything outside declared rule paths |
 
 **Large files:** files > 1 GB are listed for manual review only, never auto-selected.
@@ -98,7 +98,7 @@ Each rule declares an `action`:
 |---|---|---|---|
 | `delete` | Safe-tier **regenerable** caches (`~/Library/Caches`, DerivedData, npm/brew/pip/… caches, logs) | No (tools regenerate them) | Yes |
 | `trash` | Review tier, large files, Downloads, installers, backups | Yes (Undo / Show in Trash) | No, until Trash is emptied |
-| `builtin` | Swift-implemented commands (`simctl delete unavailable`, Docker prune, TM snapshots) | No, warned explicitly | Yes |
+| `builtin` | Swift-implemented actions (`simctl delete unavailable`, Empty Trash) | No, warned explicitly | Yes |
 
 - `delete` is allowed **only** on rules with `tier: safe` and `regenerable: true`. The validator rejects any other combination.
 - **Empty Trash** is a separate, unchecked item labelled "cannot be undone".
@@ -114,21 +114,21 @@ Each rule declares an `action`:
 
 ### 6.7 Declarative cleanup rules
 
-Rules ship inside the app bundle as JSON/YAML. They contain **paths and patterns only, never commands**.
+Rules ship inside `OsinCore` as one ordered JSON array (`Packages/OsinCore/Sources/OsinCore/Rules/rules.json`).
+They contain **paths and patterns only, never commands**. Earlier rules claim items first.
 
-```yaml
-id: xcode.derived-data
-name: Xcode DerivedData
-description: Build intermediates; Xcode regenerates them on next build.
-tier: safe
-paths:
-  - ~/Library/Developer/Xcode/DerivedData/*
-conditions:
-  min_age_days: 0
-regenerable: true
-action: delete          # delete | trash (builtin actions are Swift-only)
-requires_full_disk_access: false
+```json
+{
+  "id": "xcode.derived-data",
+  "name": "Xcode DerivedData",
+  "detail": "Build intermediates and indexes. Xcode rebuilds them on the next build.",
+  "tier": "safe", "action": "delete", "regenerable": true,
+  "paths": ["~/Library/Developer/Xcode/DerivedData/*"],
+  "minAgeDays": 0
+}
 ```
+
+A rule can instead `find` directories by name below some roots (used for `node_modules`), with a maximum depth.
 
 The rule engine must:
 
@@ -205,12 +205,10 @@ osin/
 ├── Packages/OsinCore/        # Swift Package, no UI dependency, fully unit-tested
 │   ├── Metrics/              # samplers (CPU, Memory, Disk, Battery, Network, Process, Thermal)
 │   ├── Health/               # score engine + config
-│   ├── Rules/                # rule schema, loader, validator
-│   ├── Scanner/              # async scanning, size calculation, cancellation
-│   ├── Cleaner/              # trash/restore, built-in actions, history log
+│   ├── Cleanup/              # rules, protected paths, scanner, cleaner, built-ins, log
+│   ├── Rules/rules.json      # bundled rules
 │   └── Storage/              # metrics history (SQLite/SwiftData)
 ├── Osin/                     # SwiftUI app: MenuBarExtra, popover, dashboard, settings, onboarding
-├── Rules/                    # bundled rule files (*.yaml)
 └── docs/
 ```
 
@@ -235,4 +233,4 @@ osin/
 
 ## 11. Out of scope (v2+)
 
-CLI · widgets · temperature / fan / GPU (SMC) · app uninstaller with leftovers · duplicate finder · disk treemap · privileged helper daemon · remote rule updates.
+Docker prune · Time Machine local snapshots · weekly reclaimable nudge · CLI · widgets · temperature / fan / GPU (SMC) · app uninstaller with leftovers · duplicate finder · disk treemap · privileged helper daemon · remote rule updates.

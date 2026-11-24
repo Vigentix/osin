@@ -26,6 +26,9 @@ settings:
 packages:
   OsinCore:
     path: Packages/OsinCore
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
 
 targets:
   Osin:
@@ -35,11 +38,15 @@ targets:
       - path: Osin
     dependencies:
       - package: OsinCore
+      - package: Sparkle
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vigentix.osin
         PRODUCT_NAME: Osin
         GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Osin/Info.plist
+        # Set by scripts/release.sh. Empty disables the updater (local and CI builds).
+        SPARKLE_PUBLIC_KEY: ""
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_CFBundleDisplayName: Osin
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities

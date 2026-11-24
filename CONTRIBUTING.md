@@ -28,6 +28,26 @@ CI runs lint, the `OsinCore` tests and a universal release build on every PR.
 5. **No telemetry, no new network calls.**
 6. **Big decisions get an ADR** in `docs/adr/`.
 
+## Adding a cleanup rule
+
+Rules live in [`Packages/OsinCore/Sources/OsinCore/Rules/rules.json`](Packages/OsinCore/Sources/OsinCore/Rules/rules.json), in evaluation order.
+
+```json
+{
+  "id": "tool.cache",
+  "name": "Tool cache",
+  "detail": "What it is and how it comes back.",
+  "tier": "safe", "action": "delete", "regenerable": true,
+  "paths": ["~/.tool/cache/*"],
+  "minAgeDays": 0
+}
+```
+
+- `paths` start with `~/`, have no `.` or `..`, and end in a glob so the folder itself is kept.
+- Use `"tier": "safe", "action": "delete"` only when the tool recreates the data by itself. Otherwise use `"tier": "review", "action": "trash"`.
+- Add the name and detail to `Osin/Resources/Localizable.xcstrings` (Vietnamese welcome, English is the key).
+- `make test` validates every bundled rule.
+
 ## Commit messages
 
 Use [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`.

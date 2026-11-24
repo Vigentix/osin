@@ -6,7 +6,7 @@
 New developer tools appear constantly. Community contributions must be easy and safe.
 
 ## Decision
-Define cleanup rules as bundled YAML/JSON data:
+Define cleanup rules as bundled JSON data (one ordered array, no third-party YAML parser):
 - A rule holds an id, name, tier, path globs and conditions.
 - Rules never contain shell commands.
 - Command-based actions (simctl, docker) are implemented in Swift as built-in actions.

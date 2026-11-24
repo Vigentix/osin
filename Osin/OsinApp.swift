@@ -28,6 +28,7 @@ struct OsinApp: App {
 
         Settings {
             SettingsView()
+                .environment(appDelegate.updater)
         }
     }
 }
@@ -39,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let monitor = SystemMonitor()
     let scan = ScanCoordinator()
     let navigator = Navigator()
+    let updater = Updater()
     private let notifier = Notifier()
     private let onboarding = OnboardingWindowController()
 

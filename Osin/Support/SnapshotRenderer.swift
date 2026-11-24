@@ -51,6 +51,7 @@
                         .environment(monitor)
                         .environment(scan)
                         .environment(Navigator())
+                        .environment(Updater())
                         .environment(\.colorScheme, scheme)
                         .frame(width: size.width, height: size.height)
                         .background(Color(nsColor: .windowBackgroundColor))
