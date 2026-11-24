@@ -5,6 +5,8 @@ import SwiftUI
 /// Menu bar popover: score, four metric tiles, network, top memory users.
 struct PopoverView: View {
     @Environment(SystemMonitor.self) private var monitor
+    @Environment(ScanCoordinator.self) private var scan
+    @Environment(Navigator.self) private var navigator
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -147,19 +149,33 @@ struct PopoverView: View {
     private var smartScanCard: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Reclaim disk space")
-                    .font(.system(.body, design: .rounded).weight(.semibold))
-                Text("Smart Scan arrives in an upcoming build.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let bytes = scan.safeReclaimableBytes, let date = scan.lastScanDate {
+                    Text("\(Format.storage(bytes)) safe to clean")
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                    Text("Scanned \(date.formatted(.relative(presentation: .named)))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Reclaim disk space")
+                        .font(.system(.body, design: .rounded).weight(.semibold))
+                    Text("Find caches and leftovers you can remove safely.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             Spacer()
-            Button("Smart Scan") {}
-                .buttonStyle(.borderedProminent)
-                .tint(Brand.accent)
-                .disabled(true)
+            Button("Smart Scan") {
+                navigator.section = .smartScan
+                openWindow(id: WindowID.dashboard)
+                NSApp.activate()
+                if scan.phase == .idle || scan.phase == .done {
+                    scan.start()
+                }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Brand.accent)
         }
         .padding(12)
         .background(Brand.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))

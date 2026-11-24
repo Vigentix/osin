@@ -8,7 +8,7 @@ let package = Package(
         .library(name: "OsinCore", targets: ["OsinCore"])
     ],
     targets: [
-        .target(name: "OsinCore"),
+        .target(name: "OsinCore", resources: [.copy("Rules")]),
         .testTarget(name: "OsinCoreTests", dependencies: ["OsinCore"])
     ]
 )

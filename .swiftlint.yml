@@ -28,3 +28,21 @@ line_length:
 
 identifier_name:
   excluded: [id, x, y, ok, db]
+
+nesting:
+  type_level: 2
+
+file_length:
+  warning: 600
+  error: 800
+
+function_body_length:
+  warning: 80
+  error: 120
+
+cyclomatic_complexity:
+  warning: 14
+  error: 20
+
+large_tuple:
+  warning: 3

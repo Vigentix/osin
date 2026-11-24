@@ -2,11 +2,18 @@ import SwiftUI
 
 /// Main window: sidebar of sections, detail on the right.
 struct DashboardView: View {
-    @State private var selection: DashboardSection? = .overview
+    @Environment(Navigator.self) private var navigator
 
     var body: some View {
         NavigationSplitView {
-            List(DashboardSection.allCases, selection: $selection) { section in
+            List(
+                DashboardSection.allCases,
+                selection: Binding(get: { navigator.section }, set: {
+                    if let value = $0 {
+                        navigator.section = value
+                    }
+                })
+            ) { section in
                 Label {
                     Text(section.title)
                 } icon: {
@@ -15,7 +22,7 @@ struct DashboardView: View {
             }
             .navigationSplitViewColumnWidth(min: 200, ideal: 220)
         } detail: {
-            detail(for: selection ?? .overview)
+            detail(for: navigator.section)
         }
     }
 

@@ -18,7 +18,7 @@
             return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
         }
 
-        static func run(monitor: SystemMonitor, into directory: URL) async {
+        static func run(monitor: SystemMonitor, scan: ScanCoordinator, into directory: URL) async {
             monitor.setVisible(.dashboard, true)
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             // Let a few samples arrive so rates and sparklines have data.
@@ -31,11 +31,24 @@
                 Screen(name: "processes", view: AnyView(ProcessesView()), size: CGSize(width: 900, height: 600)),
                 Screen(name: "battery", view: AnyView(BatteryView()), size: CGSize(width: 1000, height: 640))
             ]
+            // Smart Scan is read-only; render its report too.
+            scan.ruleFilter = { !$0.paths.contains { $0.hasPrefix("~/Downloads") } } // avoid the Downloads permission prompt
+            scan.start()
+            for _ in 0 ..< 240 where scan.phase == .scanning {
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            let reportScreens = [
+                Screen(name: "smartscan", view: AnyView(SmartScanView()), size: CGSize(width: 1000, height: 1100)),
+                Screen(name: "storage", view: AnyView(StorageView()), size: CGSize(width: 1000, height: 800)),
+                Screen(name: "history", view: AnyView(CleanupHistoryView()), size: CGSize(width: 900, height: 500))
+            ]
             for scheme in [ColorScheme.dark, .light] {
-                for screen in screens {
+                for screen in screens + reportScreens {
                     let (name, view, size) = (screen.name, screen.view, screen.size)
                     let content = view
                         .environment(monitor)
+                        .environment(scan)
+                        .environment(Navigator())
                         .environment(\.colorScheme, scheme)
                         .frame(width: size.width, height: size.height)
                         .background(Color(nsColor: .windowBackgroundColor))

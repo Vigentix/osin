@@ -27,23 +27,24 @@ Each milestone ends with a working, demoable build.
 - [x] Metrics history store with downsampling (7 days, SQLite)
 
 ## M3 — Scanner (dry-run)
-- [ ] Rule schema + loader + validator (paths only, no commands; `delete` only if safe + regenerable)
-- [ ] Bundled MVP rules (safe / review tiers)
-- [ ] Global Never deny-list
-- [ ] Symlink-escape protection
-- [ ] Async scanner with progress stream + cancellation
-- [ ] Report UI: groups, sizes, file drill-down, large files (> 1 GB)
-- [ ] Full Disk Access detection; "needs access" markers
-- [ ] Fixture-based safety test suite
+- [x] Rule schema + loader + validator (paths only, no commands; `delete` only if safe + regenerable)
+- [x] Bundled MVP rules (safe / review tiers)
+- [x] Global Never deny-list
+- [x] Symlink-escape protection
+- [x] Async scanner with progress stream + cancellation
+- [x] Report UI: groups, sizes, file drill-down, large files (> 1 GB)
+- [x] Full Disk Access detection; "needs access" markers
+- [x] Fixture-based safety test suite
 
 ## M4 — Clean
-- [ ] Actions: `delete` (regenerable safe caches) / `trash` (with recorded resulting URLs) / `builtin`
-- [ ] Undo (restore) for current session
-- [ ] Append-only history log + History screen
-- [ ] Built-in actions (simctl unavailable, Docker prune) in Review tier with warnings
-- [ ] Memory suggestions ("Quit X to free ≈ Y GB")
-- [ ] Advanced: `purge` via admin auth (opt-in)
-- [ ] Result screen: "Freed X GB" vs "Y GB in Trash" + Empty Trash (irreversible warning)
+- [x] Actions: `delete` (regenerable safe caches) / `trash` (with recorded resulting URLs) / `builtin`
+- [x] Undo (restore) for current session
+- [x] Append-only history log + History screen
+- [x] Built-in actions (unavailable simulators, Empty Trash) in Review tier with warnings
+- [ ] Docker prune built-in (deferred: needs reliable size parsing)
+- [x] Memory suggestions ("Quit X to free ≈ Y GB")
+- [ ] Advanced: `purge` via admin auth (opt-in) — moved to M5 Settings
+- [x] Result screen: "Freed X GB" vs "Y GB in Trash" + Empty Trash (irreversible warning)
 
 ## M5 — Polish
 - [ ] Onboarding (3 steps)

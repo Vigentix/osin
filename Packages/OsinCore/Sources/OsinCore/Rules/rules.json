@@ -1,0 +1,84 @@
+[
+  {
+    "id": "xcode.derived-data",
+    "name": "Xcode DerivedData",
+    "detail": "Build intermediates and indexes. Xcode rebuilds them on the next build.",
+    "tier": "safe", "action": "delete", "regenerable": true,
+    "paths": ["~/Library/Developer/Xcode/DerivedData/*"]
+  },
+  {
+    "id": "xcode.device-support",
+    "name": "iOS device support files",
+    "detail": "Debug symbols copied from connected devices. Xcode copies them again when a device is connected.",
+    "tier": "safe", "action": "delete", "regenerable": true,
+    "paths": ["~/Library/Developer/Xcode/iOS DeviceSupport/*", "~/Library/Developer/Xcode/watchOS DeviceSupport/*"],
+    "minAgeDays": 30
+  },
+  {
+    "id": "user.caches",
+    "name": "App caches",
+    "detail": "Temporary data apps keep to speed things up. Apps recreate it when needed.",
+    "tier": "safe", "action": "delete", "regenerable": true,
+    "paths": ["~/Library/Caches/*"]
+  },
+  {
+    "id": "user.logs",
+    "name": "Logs",
+    "detail": "Diagnostic logs older than 7 days.",
+    "tier": "safe", "action": "delete", "regenerable": true,
+    "paths": ["~/Library/Logs/*"],
+    "minAgeDays": 7
+  },
+  {
+    "id": "dev.package-caches",
+    "name": "Package manager caches",
+    "detail": "Downloaded packages for npm, pnpm, Gradle and Cargo. Re-downloaded on the next install.",
+    "tier": "safe", "action": "delete", "regenerable": true,
+    "paths": ["~/.npm/_cacache/*", "~/Library/pnpm/store/*", "~/.gradle/caches/*", "~/.cargo/registry/cache/*"]
+  },
+  {
+    "id": "dev.node-modules",
+    "name": "Old node_modules",
+    "detail": "Dependencies of projects untouched for 90 days. Run your package manager's install to restore them.",
+    "tier": "review", "action": "trash", "regenerable": true,
+    "paths": [],
+    "minAgeDays": 90,
+    "find": {
+      "roots": ["~/Projects", "~/Developer", "~/Code", "~/code", "~/src", "~/dev", "~/workspace", "~/repos", "~/git", "~/GitHub"],
+      "directoryName": "node_modules",
+      "maxDepth": 4
+    }
+  },
+  {
+    "id": "downloads.installers",
+    "name": "Installers",
+    "detail": "Disk images and installer packages in Downloads.",
+    "tier": "review", "action": "trash", "regenerable": false,
+    "paths": ["~/Downloads/*.dmg", "~/Downloads/*.pkg", "~/Downloads/*.mpkg", "~/Downloads/*.xip"]
+  },
+  {
+    "id": "downloads.old",
+    "name": "Old downloads",
+    "detail": "Files in Downloads not modified for 30 days.",
+    "tier": "review", "action": "trash", "regenerable": false,
+    "paths": ["~/Downloads/*"],
+    "minAgeDays": 30
+  },
+  {
+    "id": "xcode.archives",
+    "name": "Old Xcode archives",
+    "detail": "App archives older than 180 days. They contain debug symbols needed to read old crash reports.",
+    "tier": "review", "action": "trash", "regenerable": false,
+    "paths": ["~/Library/Developer/Xcode/Archives/*"],
+    "minAgeDays": 180
+  },
+  {
+    "id": "ios.backups",
+    "name": "Old iPhone and iPad backups",
+    "detail": "Device backups not updated for 180 days. Make sure you no longer need them.",
+    "tier": "review", "action": "trash", "regenerable": false,
+    "paths": ["~/Library/Application Support/MobileSync/Backup/*"],
+    "minAgeDays": 180,
+    "requiresFullDiskAccess": true
+  }
+]

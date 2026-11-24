@@ -13,17 +13,25 @@ enum MachineInfo {
 }
 
 enum Format {
-    static func memory(_ bytes: UInt64) -> String {
-        ByteCountFormatter.string(fromByteCount: Int64(clamping: bytes), countStyle: .memory)
+    /// "0 KB" rather than ByteCountFormatter's default "Zero KB".
+    private static func bytes(_ value: Int64, style: ByteCountFormatter.CountStyle) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.countStyle = style
+        formatter.allowsNonnumericFormatting = false
+        return formatter.string(fromByteCount: value)
     }
 
-    static func storage(_ bytes: UInt64) -> String {
-        ByteCountFormatter.string(fromByteCount: Int64(clamping: bytes), countStyle: .file)
+    static func memory(_ value: UInt64) -> String {
+        bytes(Int64(clamping: value), style: .memory)
+    }
+
+    static func storage(_ value: UInt64) -> String {
+        bytes(Int64(clamping: value), style: .file)
     }
 
     static func rate(_ bytesPerSecond: Double) -> String {
-        let bytes = ByteCountFormatter.string(fromByteCount: Int64(bytesPerSecond.rounded()), countStyle: .file)
-        return String(localized: "\(bytes)/s")
+        let amount = bytes(Int64(bytesPerSecond.rounded()), style: .file)
+        return String(localized: "\(amount)/s")
     }
 
     /// CPU share where 1.0 is one full core, so values above 100% are expected for multi-threaded apps.
