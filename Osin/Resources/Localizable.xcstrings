@@ -1,89 +1,555 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "Battery" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Pin" } }
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ / %@ · swap %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ / %2$@ · swap %3$@"
+          }
+        }
       }
     },
-    "Dashboard" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Dashboard" } }
+    "%@ free": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Còn trống %@"
+          }
+        }
       }
     },
-    "General" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Chung" } }
+    "%@ free of %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Còn trống %1$@ / %2$@"
+          }
+        }
       }
     },
-    "Health monitoring arrives in M1." : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Theo dõi sức khoẻ máy sẽ có ở M1." } }
+    "%@ — %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ — %2$@"
+          }
+        }
       }
     },
-    "History" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Lịch sử" } }
+    "%@/s": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@/s"
+          }
+        }
       }
     },
-    "Memory" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Bộ nhớ" } }
+    "%lld out of 100": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld trên 100"
+          }
+        }
       }
     },
-    "Open Dashboard" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Mở Dashboard" } }
+    "/ 100": {
+      "shouldTranslate": false
+    },
+    "1-minute load average": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải trung bình 1 phút"
+          }
+        }
       }
     },
-    "Osin" : {
-      "shouldTranslate" : false
-    },
-    "Overview" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tổng quan" } }
+    "All good": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mọi thứ ổn"
+          }
+        }
       }
     },
-    "Processes" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Tiến trình" } }
+    "Battery": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin"
+          }
+        }
       }
     },
-    "Quit Osin" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Thoát Osin" } }
+    "Battery is wearing out": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin đang chai"
+          }
+        }
       }
     },
-    "Settings" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Cài đặt" } }
+    "CPU": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU"
+          }
+        }
       }
     },
-    "Settings arrive in M5." : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phần cài đặt sẽ có ở M5." } }
+    "CPU busy for a while": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU bận liên tục"
+          }
+        }
       }
     },
-    "Smart Scan" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Smart Scan" } }
+    "Critical": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nguy cấp"
+          }
+        }
       }
     },
-    "Storage" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Lưu trữ" } }
+    "Dashboard": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dashboard"
+          }
+        }
       }
     },
-    "This section is under construction." : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Mục này đang được xây dựng." } }
+    "Disk": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ đĩa"
+          }
+        }
       }
     },
-    "Version %@" : {
-      "localizations" : {
-        "vi" : { "stringUnit" : { "state" : "translated", "value" : "Phiên bản %@" } }
+    "Disk almost full": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ đĩa sắp đầy"
+          }
+        }
       }
+    },
+    "Fair": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khá"
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chung"
+          }
+        }
+      }
+    },
+    "Good": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tốt"
+          }
+        }
+      }
+    },
+    "Health %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ %@"
+          }
+        }
+      }
+    },
+    "Health %@ · %lld cycles": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ %1$@ · %2$lld chu kỳ"
+          }
+        }
+      }
+    },
+    "Health monitoring arrives in M1.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theo dõi sức khoẻ máy sẽ có ở M1."
+          }
+        }
+      }
+    },
+    "Health score": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Điểm sức khoẻ"
+          }
+        }
+      }
+    },
+    "History": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lịch sử"
+          }
+        }
+      }
+    },
+    "Load": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải"
+          }
+        }
+      }
+    },
+    "Load %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải %@"
+          }
+        }
+      }
+    },
+    "Mac is running hot": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy đang nóng"
+          }
+        }
+      }
+    },
+    "Measuring": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đo"
+          }
+        }
+      }
+    },
+    "Measuring…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đo…"
+          }
+        }
+      }
+    },
+    "Memory": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ"
+          }
+        }
+      }
+    },
+    "Memory under pressure": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ đang chịu áp lực"
+          }
+        }
+      }
+    },
+    "Network": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mạng"
+          }
+        }
+      }
+    },
+    "Normal": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bình thường"
+          }
+        }
+      }
+    },
+    "On battery": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang dùng pin"
+          }
+        }
+      }
+    },
+    "On power adapter": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang cắm sạc"
+          }
+        }
+      }
+    },
+    "Open Dashboard": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Dashboard"
+          }
+        }
+      }
+    },
+    "Osin": {
+      "shouldTranslate": false
+    },
+    "Osin, health %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin, sức khoẻ %@"
+          }
+        }
+      }
+    },
+    "Overview": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tổng quan"
+          }
+        }
+      }
+    },
+    "P %@ · E %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "P %1$@ · E %2$@"
+          }
+        }
+      }
+    },
+    "Poor": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kém"
+          }
+        }
+      }
+    },
+    "Processes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiến trình"
+          }
+        }
+      }
+    },
+    "Quit": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát"
+          }
+        }
+      }
+    },
+    "Quit %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát %@"
+          }
+        }
+      }
+    },
+    "Quit Osin": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát Osin"
+          }
+        }
+      }
+    },
+    "Reclaim disk space": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giải phóng ổ đĩa"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt"
+          }
+        }
+      }
+    },
+    "Settings arrive in M5.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phần cài đặt sẽ có ở M5."
+          }
+        }
+      }
+    },
+    "Smart Scan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart Scan"
+          }
+        }
+      }
+    },
+    "Smart Scan arrives in an upcoming build.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart Scan sẽ có trong bản sắp tới."
+          }
+        }
+      }
+    },
+    "Storage": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu trữ"
+          }
+        }
+      }
+    },
+    "This section is under construction.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục này đang được xây dựng."
+          }
+        }
+      }
+    },
+    "Using most memory": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng nhiều bộ nhớ nhất"
+          }
+        }
+      }
+    },
+    "Version %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên bản %@"
+          }
+        }
+      }
+    },
+    "Warning": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cảnh báo"
+          }
+        }
+      }
+    },
+    "–": {
+      "shouldTranslate": false
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

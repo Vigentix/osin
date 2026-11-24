@@ -111,6 +111,17 @@ public struct HealthReport: Sendable, Equatable {
     public var deductions: [HealthComponent: Int] {
         exactDeductions.mapValues { Int($0.rounded()) }
     }
+
+    /// Deductions smaller than this are not worth headlining.
+    public static let concernThreshold = 5.0
+
+    /// The component costing the most points, when it costs at least `concernThreshold`.
+    public var primaryConcern: HealthComponent? {
+        guard let worst = exactDeductions.max(by: { $0.value < $1.value }), worst.value >= Self.concernThreshold else {
+            return nil
+        }
+        return worst.key
+    }
 }
 
 public enum HealthScore {

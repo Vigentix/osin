@@ -12,12 +12,13 @@ Each milestone ends with a working, demoable build.
 - [x] String Catalog (EN + VI) scaffold
 
 ## M1 — Metrics + menu bar
-- [ ] Samplers: CPU (incl. P/E cores), Memory (pressure, swap, compressed), Disk (space, I/O), Battery, Network, Processes, Thermal
-- [ ] Adaptive sampling (2 s visible / 30 s background)
-- [ ] Health Score engine + config + unit tests
-- [ ] `MenuBarExtra` with health dot; optional live text metrics
-- [ ] Popover: score ring, 2×2 tiles with sparklines, top 3 processes, footer
-- [ ] Perf check: < 50 MB, < 0.5% CPU idle
+- [x] Samplers: CPU (incl. P/E cores), Memory (pressure, swap, compressed), Disk (space, I/O), Battery, Network, Processes, Thermal
+- [x] Adaptive sampling (2 s visible / 30 s background)
+- [x] Health Score engine + config + unit tests
+- [x] `MenuBarExtra` with health dot
+- [ ] Optional live text metrics in the menu bar (moved to M5 Settings)
+- [x] Popover: score ring, 2×2 tiles with sparklines, network, top 3 processes, footer
+- [x] Perf check (Debug build, M1): 24 MB footprint, 0.13% CPU in background
 
 ## M2 — Dashboard
 - [ ] Main window with sidebar navigation

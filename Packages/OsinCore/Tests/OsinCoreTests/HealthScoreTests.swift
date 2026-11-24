@@ -80,3 +80,32 @@ struct HealthScoreTests {
         #expect(HealthLevel(score: score) == level)
     }
 }
+
+struct HealthConcernTests {
+    private func report(disk: Double = 0.5, pressure: MemoryPressure = .normal, battery: Double? = 0.95) -> HealthReport {
+        HealthScore.evaluate(HealthInputs(
+            diskFreeFraction: disk,
+            memoryPressure: pressure,
+            swapUsedBytes: 0,
+            physicalMemoryBytes: 1 << 34,
+            sustainedCPU: 0,
+            thermal: .nominal,
+            batteryHealth: battery
+        ))
+    }
+
+    @Test func healthyMacHasNoConcern() {
+        #expect(report().primaryConcern == nil)
+    }
+
+    @Test func largestDeductionIsTheConcern() {
+        // Disk: 30 points. Memory warning: 15 points.
+        #expect(report(disk: 0.04, pressure: .warning).primaryConcern == .disk)
+        #expect(report(disk: 0.18, pressure: .warning).primaryConcern == .memory)
+    }
+
+    @Test func smallDeductionsAreNotConcerns() {
+        // Battery at 88% health costs 1 point: not worth headlining.
+        #expect(report(battery: 0.88).primaryConcern == nil)
+    }
+}
