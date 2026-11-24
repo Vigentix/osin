@@ -34,8 +34,11 @@ jobs:
           docker run --rm -v "$PWD:/work" -w /work --entrypoint swiftlint \
             "ghcr.io/realm/swiftlint:${SWIFTLINT_VERSION}" --strict --reporter github-actions-logging
 
+  # Intel runner for the same capacity reason as app-build. Apple Silicon-only
+  # code paths (P/E cores) are verified locally on an M-series Mac before merge.
   core-tests:
-    runs-on: macos-15
+    runs-on: macos-15-intel
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Swift version
