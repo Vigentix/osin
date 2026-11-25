@@ -4,11 +4,11 @@ Each milestone ends with a working, demoable build.
 
 ## M0 — Setup
 - [x] GPL-3.0, README, CONTRIBUTING, CODE_OF_CONDUCT
-- [ ] Create GitHub repo `vigentix/osin` and push
+- [x] Create GitHub repo `Vigentix/osin` and push
 - [x] Xcode project `Osin` via XcodeGen `project.yml` (macOS 14+, universal, LSUIElement)
 - [x] Swift Package `OsinCore` with test target (Swift Testing)
 - [x] SwiftLint + SwiftFormat config, Makefile, Brewfile
-- [x] GitHub Actions: lint + core tests + universal build (not yet run on GitHub)
+- [x] GitHub Actions: lint (Ubuntu) + core tests + universal build (macOS), green on `main`
 - [x] String Catalog (EN + VI) scaffold
 
 ## M1 — Metrics + menu bar
@@ -49,11 +49,11 @@ Each milestone ends with a working, demoable build.
 ## M5 — Polish
 - [x] Onboarding (3 steps)
 - [x] Notifications (disk, memory pressure, battery) with cooldowns
-- [ ] Weekly "reclaimable" nudge (deferred: needs background scans)
+- [ ] Weekly "reclaimable" nudge (deferred to v2; a quiet background scan now runs after launch)
 - [x] Launch at login (`SMAppService`)
 - [x] Settings window (thresholds, menu bar metrics, Dock icon, updates)
 - [x] Motion: score ring, scan reveal, freed-GB counter; Reduce Motion
-- [x] Liquid Glass on macOS 26 via native chrome (sidebar, toolbar, popover); content cards stay solid per HIG
+- [x] macOS 26: native glass on the popover; custom solid sidebar (the native glass sidebar rendered white in the dark theme)
 - [x] Accessibility: labels on icon-only controls, combined tile elements, Reduce Motion
 - [x] Complete VI translation
 
@@ -62,7 +62,7 @@ Each milestone ends with a working, demoable build.
 - [x] Sparkle integrated; appcast generated when keys are configured (`docs/RELEASING.md`)
 - [x] Homebrew cask template (`packaging/homebrew/osin.rb`)
 - [x] README with safety guarantees and rule contribution guide
-- [ ] Apple Developer ID + notarization (needs the account; workflow is ready)
+- [ ] Apple Developer ID + notarization (needs the $99/year account; workflow is ready; first-launch steps documented meanwhile)
 - [ ] Sparkle EdDSA keys + GitHub secrets
 - [ ] README screenshots (`make snapshots` renders them)
 - [ ] Final product name
