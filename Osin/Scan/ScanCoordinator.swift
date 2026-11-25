@@ -376,3 +376,42 @@ final class ScanCoordinator {
         selectedGroups.subtract(cleaned)
     }
 }
+
+#if DEBUG
+    extension ScanCoordinator {
+        /// Shows a finished Smart Scan report built from `DemoData` (README screenshots).
+        func loadDemo() {
+            task?.cancel()
+            var found = DemoData.scanResults().map { result in
+                Group(
+                    id: result.rule.id,
+                    name: String(localized: String.LocalizationValue(result.rule.name)),
+                    detail: String(localized: String.LocalizationValue(result.rule.detail)),
+                    tier: result.rule.tier,
+                    bytes: result.totalBytes,
+                    kind: .rule(result),
+                    needsAccess: false
+                )
+            }
+            found.append(Group(
+                id: Self.simulatorsID,
+                name: String(localized: "Unavailable simulators"),
+                detail: String(localized: "\(DemoData.simulators.count) simulators whose runtime is no longer installed."),
+                tier: .review, bytes: DemoData.simulators.bytes, kind: .simulators(count: DemoData.simulators.count), needsAccess: false
+            ))
+            found.append(Group(
+                id: Self.emptyTrashID,
+                name: String(localized: "Empty Trash"),
+                detail: String(localized: "Permanently removes what is already in your Trash."),
+                tier: .review, bytes: DemoData.trashBytes, kind: .emptyTrash, needsAccess: false
+            ))
+            groups = found
+            selectedGroups = Set(found.filter { $0.tier == .safe }.map(\.id))
+            excludedItems = []
+            focusedGroupID = found.filter { $0.tier == .safe }.max { $0.bytes < $1.bytes }?.id
+            lastScanDate = Date().addingTimeInterval(-120)
+            lastScanWasPartial = false
+            phase = .report
+        }
+    }
+#endif

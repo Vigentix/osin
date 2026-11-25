@@ -2,8 +2,9 @@
     import AppKit
     import SwiftUI
 
-    /// Debug-only: `Osin --render-snapshots <dir>` renders the main screens with live data to PNG files and exits.
-    /// Uses an offscreen window, so it works with a locked screen and in CI. Used for README screenshots.
+    /// Debug-only: `Osin --render-snapshots <dir> [--demo]` renders the main screens to PNG files and exits.
+    /// Uses an offscreen window, so it works with a locked screen and in CI. Live data by default; `--demo`
+    /// uses `DemoData` instead, which is what the README screenshots use (no personal apps or paths).
     @MainActor
     enum SnapshotRenderer {
         private struct Screen {
@@ -20,23 +21,29 @@
         }
 
         static func run(monitor: SystemMonitor, scan: ScanCoordinator, into directory: URL) async {
-            monitor.setVisible(.dashboard, true)
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            // Smart Scan is read-only; skip Downloads to avoid a permission prompt.
-            scan.ruleFilter = { !$0.paths.contains { $0.hasPrefix("~/Downloads") } }
-            scan.start()
-            for _ in 0 ..< 240 where scan.phase == .scanning {
-                try? await Task.sleep(for: .milliseconds(500))
+            if DemoData.isActive {
+                monitor.loadDemo()
+                scan.loadDemo()
+                monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
+            } else {
+                monitor.setVisible(.dashboard, true)
+                // Smart Scan is read-only; skip Downloads to avoid a permission prompt.
+                scan.ruleFilter = { !$0.paths.contains { $0.hasPrefix("~/Downloads") } }
+                scan.start()
+                for _ in 0 ..< 240 where scan.phase == .scanning {
+                    try? await Task.sleep(for: .milliseconds(500))
+                }
+                monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
+                try? await Task.sleep(for: .seconds(6))
             }
-            monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
-            try? await Task.sleep(for: .seconds(6))
 
             let navigator = Navigator()
             let screens = [
-                Screen(name: "overview", section: .overview, size: CGSize(width: 1200, height: 1180), view: nil),
+                Screen(name: "overview", section: .overview, size: CGSize(width: 1200, height: 1120), view: nil),
                 Screen(name: "cleanup", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "activity", section: .activity, size: CGSize(width: 1200, height: 780), view: nil),
-                Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 1300), view: nil),
+                Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 940), view: nil),
                 Screen(name: "popover", section: nil, size: CGSize(width: 376, height: PopoverView.height), view: AnyView(PopoverView())),
                 Screen(name: "onboarding", section: nil, size: CGSize(width: 720, height: 520), view: AnyView(OnboardingView {})),
                 Screen(name: "settings", section: nil, size: CGSize(width: 520, height: 420), view: AnyView(SettingsView()))

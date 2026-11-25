@@ -31,6 +31,8 @@ final class SystemMonitor {
     @ObservationIgnored private var lastCompaction = Date.distantPast
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var visibleSurfaces: Set<Surface> = []
+    /// Debug-only: fixed demo data instead of sampling (README screenshots).
+    @ObservationIgnored private var isDemo = false
     /// Called after every sample (used for notifications).
     @ObservationIgnored var onSnapshot: ((SystemSnapshot) -> Void)?
 
@@ -62,6 +64,7 @@ final class SystemMonitor {
     }
 
     private func restartLoop() {
+        guard !isDemo else { return }
         loop?.cancel()
         loop = Task { [weak self] in
             while !Task.isCancelled {
@@ -103,6 +106,12 @@ final class SystemMonitor {
 
     /// Re-measures categories when the cached value is older than a day, or always when `force` is set.
     func refreshStorage(reclaimable: UInt64, force: Bool = false) {
+        #if DEBUG
+            if isDemo {
+                storage = DemoData.storage(reclaimable: reclaimable)
+                return
+            }
+        #endif
         guard let disk = snapshot?.disk else { return }
         if !force, let storage, Date().timeIntervalSince(storage.measuredAt) < 86400 {
             self.storage = StorageBreakdown(
@@ -160,8 +169,13 @@ final class SystemMonitor {
     }
 
     func historyPoints(_ range: HistoryRange) async -> [HistoryPoint] {
-        guard let history else { return [] }
         let since = Date().addingTimeInterval(-range.duration)
+        #if DEBUG
+            if isDemo {
+                return DemoData.historyPoints(since: since, bucket: range.bucketSeconds)
+            }
+        #endif
+        guard let history else { return [] }
         return await (try? history.points(since: since, bucket: range.bucketSeconds)) ?? []
     }
 
@@ -174,3 +188,32 @@ final class SystemMonitor {
         }
     }
 }
+
+#if DEBUG
+    extension SystemMonitor {
+        /// Stops sampling and shows `DemoData` instead (README screenshots).
+        func loadDemo() {
+            isDemo = true
+            loop?.cancel()
+            loop = nil
+            let demo = DemoData.snapshot()
+            snapshot = demo
+            let count = Self.historyLength
+            cpuHistory = Self.window(DemoData.series(count: count, base: demo.cpu.total, swing: 0.12))
+            memoryHistory = Self.window(DemoData.series(count: count, base: 0.64, swing: 0.03, phase: 2))
+            networkHistory = Self.window(DemoData.series(count: count, base: 1_100_000, swing: 700_000, phase: 4))
+            var groups: [String: RollingWindow<Double>] = [:]
+            for (index, group) in demo.processes.enumerated() {
+                let base = Double(group.footprintBytes)
+                groups[group.id] = Self.window(DemoData.series(count: count, base: base * 0.92, swing: base * 0.08, phase: Double(index)))
+            }
+            groupMemoryHistory = groups
+        }
+
+        private static func window(_ values: [Double]) -> RollingWindow<Double> {
+            var window = RollingWindow<Double>(capacity: historyLength)
+            values.forEach { window.append($0) }
+            return window
+        }
+    }
+#endif

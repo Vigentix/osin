@@ -10,6 +10,16 @@ public struct ScanItem: Sendable, Identifiable, Hashable {
     public let url: URL
     public let bytes: UInt64
     public let modified: Date?
+
+    public init(
+        url: URL,
+        bytes: UInt64,
+        modified: Date?
+    ) {
+        self.url = url
+        self.bytes = bytes
+        self.modified = modified
+    }
 }
 
 public struct RuleScanResult: Sendable, Identifiable {
@@ -24,6 +34,16 @@ public struct RuleScanResult: Sendable, Identifiable {
 
     public var totalBytes: UInt64 {
         items.reduce(0) { $0 + $1.bytes }
+    }
+
+    public init(
+        rule: CleanupRule,
+        items: [ScanItem],
+        needsAccess: Bool
+    ) {
+        self.rule = rule
+        self.items = items
+        self.needsAccess = needsAccess
     }
 }
 

@@ -150,7 +150,7 @@ struct ActivityView: View {
             .padding(.vertical, 8)
         }
         .contextMenu {
-            if AppControl.runningApp(for: group) != nil {
+            if AppControl.canQuit(group) {
                 Button("Quit") { AppControl.quit(group) }
                 Button("Force Quit…") { pendingForceQuit = group }
             }
@@ -173,7 +173,7 @@ private struct ActivityInspector: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(group.name).font(.system(size: 17, weight: .bold)).lineLimit(1)
                     Text(AppControl
-                        .runningApp(for: group) != nil ? String(localized: "\(group.pids.count) processes · app") :
+                        .canQuit(group) ? String(localized: "\(group.pids.count) processes · app") :
                         String(localized: "\(group.pids.count) processes · system"))
                         .font(.system(size: 12)).foregroundStyle(Theme.text2)
                 }
@@ -199,7 +199,7 @@ private struct ActivityInspector: View {
                     }
                 }
             }
-            if AppControl.runningApp(for: group) != nil {
+            if AppControl.canQuit(group) {
                 HStack(spacing: 8) {
                     Button("Quit") { AppControl.quit(group) }
                         .buttonStyle(SecondaryButtonStyle(large: true))

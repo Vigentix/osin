@@ -226,7 +226,7 @@ struct PopoverView: View {
                             Text(group.name).lineLimit(1)
                             Spacer()
                             Text(Format.memory(group.footprintBytes)).monospacedDigit().foregroundStyle(Theme.text2)
-                            if AppControl.runningApp(for: group) != nil {
+                            if AppControl.canQuit(group) {
                                 Button("Quit") { AppControl.quit(group) }
                                     .buttonStyle(SecondaryButtonStyle())
                                     .opacity(hovering ? 1 : 0)

@@ -1,4 +1,4 @@
-.PHONY: bootstrap generate open build build-release test lint format l10n-check snapshots clean
+.PHONY: bootstrap generate open build build-release test lint format l10n-check snapshots screenshots clean
 
 PROJECT := Osin.xcodeproj
 SCHEME  := Osin
@@ -39,6 +39,12 @@ l10n-check: build ## Fail if any UI string is missing from the String Catalog
 
 snapshots: build ## Render screens with live data to build/snapshots (Debug only)
 	build/Build/Products/Debug/Osin.app/Contents/MacOS/Osin --render-snapshots build/snapshots
+
+screenshots: build ## Render README screenshots with demo data, in English, to docs/images
+	rm -rf build/screenshots
+	build/Build/Products/Debug/Osin.app/Contents/MacOS/Osin --render-snapshots build/screenshots --demo \
+		-AppleLanguages '(en)' -AppleLocale en_US
+	scripts/readme-images.sh build/screenshots docs/images
 
 clean:
 	rm -rf build Packages/OsinCore/.build $(PROJECT)

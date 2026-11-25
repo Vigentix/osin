@@ -31,7 +31,7 @@ struct OverviewView: View {
 
     private var recommendations: [Recommendation] {
         guard let snapshot = monitor.snapshot else { return [] }
-        let heaviest = snapshot.processes.first { AppControl.runningApp(for: $0) != nil }
+        let heaviest = snapshot.processes.first { AppControl.canQuit($0) }
         return Recommendations.make(RecommendationContext(
             safeReclaimableBytes: scan.safeReclaimableBytes,
             reviewBytes: scan.reviewBytes,

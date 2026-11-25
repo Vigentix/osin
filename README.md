@@ -1,31 +1,36 @@
-# Osin
+<p align="center">
+  <img src="docs/images/icon.png" width="112" height="112" alt="">
+</p>
 
-**An honest, open-source health monitor and cleaner for macOS.**
+<h1 align="center">Osin</h1>
 
-Osin lives in your menu bar. It shows how your Mac is doing (CPU, memory pressure, disk, battery, network, processes) and reclaims disk space with one **Smart Scan → Review → Clean** flow.
+<p align="center">
+  <b>An honest health monitor and cleaner for your Mac.</b><br>
+  Lives in the menu bar. Free, open source, no telemetry.
+</p>
 
-> **Status:** v0.1 preview. Builds are not notarized yet; see [Install](#install).
+<p align="center">
+  <a href="https://github.com/Vigentix/osin/releases/latest"><img src="https://img.shields.io/github/v/release/Vigentix/osin?label=release&color=6B5AF7" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/macOS-14%2B-lightgrey?logo=apple&logoColor=white" alt="macOS 14 or later">
+  <a href="https://github.com/Vigentix/osin/actions/workflows/ci.yml"><img src="https://github.com/Vigentix/osin/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Vigentix/osin?color=blue" alt="GPL-3.0"></a>
+</p>
 
-## What it does
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#what-you-get">What you get</a> ·
+  <a href="#safety-guarantees">Safety</a> ·
+  <a href="#build-from-source">Build from source</a>
+</p>
 
-- **Menu bar health at a glance:** a health score with the reason behind it ("Disk almost full"), CPU with performance/efficiency cores, memory pressure, disk, battery health and cycles, network, and the apps using the most memory, each with a Quit button. Optional live CPU, memory and network text in the menu bar.
-- **Dashboard:** 1 hour / 24 hours / 7 days charts, a plain-language health report, memory breakdown, a sortable process list, battery details, large files.
-- **Smart Scan:** finds caches, logs, Xcode and package-manager leftovers, old `node_modules`, installers and old downloads, unavailable simulators and the Trash. You review a report before anything happens.
-- **Notifications** when the disk is almost full, memory pressure stays critical, or the battery is wearing out. Osin never cleans on its own.
-- English and Vietnamese.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/overview-dark.png">
+  <img src="docs/images/overview-light.png" alt="Osin Overview: a health score of 78 because the disk is 90% full, 14.52 GB that can be cleaned safely, live CPU, memory, disk, network and battery, the heaviest apps and a storage breakdown">
+</picture>
 
-## Safety guarantees
+Osin tells you how your Mac is doing in plain language and frees disk space without guesswork. One **Smart Scan → Review → Clean** flow finds what is safe to remove, shows you exactly what it found, and only deletes data that rebuilds itself. Everything else goes to the Trash, where you can restore it.
 
-Osin removes files on your Mac, so these rules are enforced in code and covered by tests on throwaway folders:
-
-1. **Only regenerable caches are deleted.** Everything else goes to the Trash and can be restored from the result screen or History.
-2. **Nothing outside the [rules](Packages/OsinCore/Sources/OsinCore/Rules/rules.json) is touched.** Rules are data (paths and patterns, never commands), limited to your home folder.
-3. **Protected locations are never cleaned:** Documents, Desktop, Pictures, Movies, Music, Mail, iCloud Drive, Messages, Keychains, Safari data, `.ssh`, system folders, and any folder that contains them.
-4. **Symlinks are never followed**, and every item is re-checked right before it is removed.
-5. **Every action is logged** (`~/Library/Application Support/Osin/cleanup-log.jsonl`).
-6. **No telemetry.** The only network request is the optional update check.
-
-Memory is handled honestly: Osin shows memory pressure (the signal that matters) and suggests apps to quit. A `purge` button exists only in Settings › Advanced, with an explanation of why its effect is temporary.
+It also refuses to play the "free up RAM" game. Unused memory is wasted memory, so Osin watches memory pressure, the signal macOS itself uses, and tells you which app to quit when pressure is actually high.
 
 ## Install
 
@@ -37,7 +42,14 @@ brew trust vigentix/tap      # recent Homebrew versions ask you to trust third-p
 brew install --cask osin
 ```
 
-Or download `Osin-x.y.z.dmg` from [Releases](https://github.com/Vigentix/osin/releases) and drag Osin to Applications.
+Or download `Osin-x.y.z.dmg` from [Releases](https://github.com/Vigentix/osin/releases/latest) and drag Osin to Applications.
+
+Requires macOS 14 Sonoma or later, on Apple Silicon or Intel. English and Vietnamese.
+
+<details>
+<summary><b>First launch: macOS says it cannot verify Osin</b></summary>
+
+<br>
 
 Releases are not notarized yet, so macOS blocks the first launch:
 
@@ -50,7 +62,72 @@ On macOS 15 and later, right-click › Open no longer bypasses this warning. To 
 xattr -dr com.apple.quarantine /Applications/Osin.app
 ```
 
-Requires macOS 14 Sonoma or later, Apple Silicon or Intel.
+</details>
+
+## What you get
+
+<table>
+  <tr>
+    <td width="58%" valign="top">
+      <h3>Health at a glance</h3>
+      <p>Click the menu bar icon for a health score with the reason behind it ("Disk almost full"), CPU, memory pressure, disk, battery and network, plus the apps using the most memory. Clean in one click or jump to the dashboard.</p>
+      <p>The icon's dot turns yellow or red when something needs attention. CPU, memory and network can also be shown as live text in the menu bar.</p>
+      <p>Optional notifications when the disk is almost full, memory pressure stays critical, or the battery is wearing out. Osin never cleans on its own.</p>
+    </td>
+    <td width="42%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/popover-dark.png">
+        <img src="docs/images/popover-light.png" width="330" alt="Menu bar popover: health score, Clean button, CPU, memory, disk and battery tiles, network speed and heaviest apps">
+      </picture>
+    </td>
+  </tr>
+</table>
+
+### Smart Scan you can read before you click
+
+Osin looks for Xcode DerivedData and device support files, app caches and logs, package-manager caches, old `node_modules`, installers in Downloads, unavailable simulators and the Trash. Results are split into **Safe to clean** (selected for you) and **Needs your review** (never selected unless you choose), with every item listed and sizes measured on disk.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/cleanup-dark.png">
+  <img src="docs/images/cleanup-light.png" alt="Smart Scan report: safe groups such as Xcode DerivedData, iOS device support files, app caches, logs and package manager caches are selected; old node_modules, installers, unavailable simulators and Empty Trash wait for review">
+</picture>
+
+### Activity that groups apps with their helpers
+
+Browser tabs, language servers and build services are counted with the app they belong to, so the numbers match what you can actually quit. Sort by memory or CPU, inspect the largest processes of an app, and quit it from the same place. System processes are listed but never offered for quitting.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/activity-dark.png">
+  <img src="docs/images/activity-light.png" alt="Activity: apps grouped with their helper processes, CPU and memory bars, and an inspector showing Xcode's memory over time and its largest processes">
+</picture>
+
+### History for the last hour, day and week
+
+CPU per core, memory pressure with its breakdown, disk throughput, network and battery charge, stored locally for seven days and downsampled so the database stays small.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/system-dark.png">
+  <img src="docs/images/system-light.png" alt="System: one-hour charts for CPU with per-core bars, memory pressure with app, wired, compressed and cached memory, disk read and write, network download and upload, and battery charge">
+</picture>
+
+<sub>Screenshots use built-in demo data (`make screenshots`), not a real Mac.</sub>
+
+## Safety guarantees
+
+Osin removes files on your Mac, so these rules are enforced in code and covered by tests that run against throwaway folders:
+
+1. **Only regenerable caches are deleted.** Everything else goes to the Trash and can be restored from the result screen or from History.
+2. **Nothing outside the [rules](Packages/OsinCore/Sources/OsinCore/Rules/rules.json) is touched.** Rules are data (paths and patterns, never commands) and are limited to your home folder.
+3. **Protected locations are never cleaned:** Documents, Desktop, Pictures, Movies, Music, Mail, iCloud Drive, Messages, Keychains, Safari data, `.ssh`, system folders, and any folder that contains them.
+4. **Symlinks are never followed**, and every item is checked again right before it is removed.
+5. **Unavailable simulators and Empty Trash cannot be undone.** They are never preselected, and Osin warns you before running them.
+6. **Every action is logged** in `~/Library/Application Support/Osin/cleanup-log.jsonl`.
+
+Osin runs in user space: no privileged helper, no kernel extension. Full Disk Access is optional and only lets the scan reach folders macOS protects, such as old device backups. The one admin action, `purge` in Settings › Advanced, asks for your password every time and explains why its effect is temporary.
+
+## Privacy
+
+No accounts, no analytics, no crash reporting. Metrics history and the cleanup log stay on your Mac. The only network request is the update check, which you can turn off in Settings.
 
 ## Build from source
 
@@ -58,7 +135,7 @@ Requires macOS 14 Sonoma or later, Apple Silicon or Intel.
 git clone https://github.com/Vigentix/osin.git
 cd osin
 make bootstrap   # installs XcodeGen, SwiftLint, SwiftFormat; generates Osin.xcodeproj
-make open        # opens Xcode — run the "Osin" scheme
+make open        # opens Xcode, then run the "Osin" scheme
 ```
 
 | Command | What it does |
@@ -67,21 +144,22 @@ make open        # opens Xcode — run the "Osin" scheme
 | `make build` / `make build-release` | Debug build / universal release build (unsigned) |
 | `make lint` / `make format` | SwiftFormat + SwiftLint |
 | `make l10n-check` | Fails if a UI string is missing from the String Catalog |
-| `make snapshots` | Renders every screen with live data to `build/snapshots` (Debug only) |
+| `make snapshots` | Renders every screen with your live data to `build/snapshots` (Debug only) |
+| `make screenshots` | Renders the README screenshots with demo data to `docs/images` |
 | `scripts/release.sh 0.1.0` | DMG + Sparkle ZIP; see [docs/RELEASING.md](docs/RELEASING.md) |
-
-## Project layout
 
 ```
 Osin/                 SwiftUI app: menu bar, dashboard, Smart Scan, settings, onboarding
 Packages/OsinCore/    UI-free core: metrics sampler, health score, history, rules, scanner, cleaner
-docs/                 PRD, roadmap, architecture decisions, release guide
+docs/                 PRD, roadmap, architecture decisions, release guide, README images
 packaging/homebrew/   Homebrew cask
 ```
 
+Design decisions are recorded in [docs/adr](docs/adr), and what comes next is in the [roadmap](docs/ROADMAP.md).
+
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Adding a cleanup rule for your favourite tool is a good first contribution.
+Bug reports, rule ideas and translations are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md). Adding a cleanup rule for a tool you use is a good first contribution: rules are plain JSON and the safety checks run on every rule.
 
 ## License
 

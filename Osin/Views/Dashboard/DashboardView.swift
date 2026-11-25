@@ -206,6 +206,16 @@ enum AppControl {
         }
     }
 
+    /// Whether Osin offers Quit for this group: a regular app that is running.
+    static func canQuit(_ group: ProcessGroup) -> Bool {
+        #if DEBUG
+            if DemoData.isActive {
+                return group.bundlePath != nil
+            }
+        #endif
+        return runningApp(for: group) != nil
+    }
+
     static func quit(_ group: ProcessGroup) {
         runningApp(for: group)?.terminate()
     }
