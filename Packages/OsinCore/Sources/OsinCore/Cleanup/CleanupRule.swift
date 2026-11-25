@@ -22,6 +22,7 @@ public enum CleanupRuleError: Error, Equatable, CustomStringConvertible {
     case rootNotGlobbed(String)
     case protectedPath(String)
     case invalidFind
+    case invalidExclude(String)
 
     public var description: String {
         switch self {
@@ -32,6 +33,7 @@ public enum CleanupRuleError: Error, Equatable, CustomStringConvertible {
         case let .rootNotGlobbed(path): "last path component must be a glob so the folder itself is kept: \(path)"
         case let .protectedPath(path): "path reaches a protected location: \(path)"
         case .invalidFind: "find needs roots, a plain directory name and a depth of 1-8"
+        case let .invalidExclude(pattern): "exclude must be a plain name pattern: \(pattern)"
         }
     }
 }
@@ -59,6 +61,8 @@ public struct CleanupRule: Codable, Sendable, Identifiable, Equatable {
     public let regenerable: Bool
     /// `~/`-relative patterns. `*` is allowed in any component and required in the last one.
     public let paths: [String]
+    /// Name patterns (last path component) never matched, e.g. `com.apple.*`.
+    public let excludes: [String]
     public let minAgeDays: Int?
     public let requiresFullDiskAccess: Bool
     public let find: Find?
@@ -71,6 +75,7 @@ public struct CleanupRule: Codable, Sendable, Identifiable, Equatable {
         action: CleanupAction,
         regenerable: Bool,
         paths: [String],
+        excludes: [String] = [],
         minAgeDays: Int? = nil,
         requiresFullDiskAccess: Bool = false,
         find: Find? = nil
@@ -82,6 +87,7 @@ public struct CleanupRule: Codable, Sendable, Identifiable, Equatable {
         self.action = action
         self.regenerable = regenerable
         self.paths = paths
+        self.excludes = excludes
         self.minAgeDays = minAgeDays
         self.requiresFullDiskAccess = requiresFullDiskAccess
         self.find = find
@@ -96,6 +102,7 @@ public struct CleanupRule: Codable, Sendable, Identifiable, Equatable {
         action = try container.decode(CleanupAction.self, forKey: .action)
         regenerable = try container.decode(Bool.self, forKey: .regenerable)
         paths = try container.decodeIfPresent([String].self, forKey: .paths) ?? []
+        excludes = try container.decodeIfPresent([String].self, forKey: .excludes) ?? []
         minAgeDays = try container.decodeIfPresent(Int.self, forKey: .minAgeDays)
         requiresFullDiskAccess = try container.decodeIfPresent(Bool.self, forKey: .requiresFullDiskAccess) ?? false
         find = try container.decodeIfPresent(Find.self, forKey: .find)
@@ -112,6 +119,9 @@ public struct CleanupRule: Codable, Sendable, Identifiable, Equatable {
         }
         for path in paths {
             try Self.validate(pattern: path, requireGlob: true)
+        }
+        for pattern in excludes where pattern.isEmpty || pattern.contains("/") {
+            throw CleanupRuleError.invalidExclude(pattern)
         }
         if let find {
             let name = find.directoryName

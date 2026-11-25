@@ -235,3 +235,40 @@ struct ScannerCompletionTests {
         #expect(finished.values == ["a:1", "b:0"])
     }
 }
+
+struct ScannerExcludeTests {
+    @Test func excludedNamesAreNeverMatched() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Library/Caches/com.apple.AppleMediaServices/x", bytes: 4000)
+        try fixture.file("Library/Caches/com.google.Chrome/x", bytes: 4000)
+        let rule = CleanupRule(
+            id: "caches", name: "c", detail: "", tier: .safe, action: .delete, regenerable: true,
+            paths: ["~/Library/Caches/*"], excludes: ["com.apple.*"]
+        )
+        let results = try await Scanner(home: fixture.home).scan([rule])
+        #expect(results.first?.items.map(\.url.lastPathComponent) == ["com.google.Chrome"])
+    }
+
+    @Test func excludePatternsCannotContainPaths() {
+        let rule = CleanupRule(
+            id: "x", name: "x", detail: "", tier: .safe, action: .delete, regenerable: true,
+            paths: ["~/Library/Caches/*"], excludes: ["../Documents"]
+        )
+        #expect(throws: CleanupRuleError.self) { try rule.validate() }
+    }
+
+    @Test func bundledCacheRuleSkipsAppleCaches() throws {
+        let caches = try #require(try CleanupRule.bundled().first { $0.id == "user.caches" })
+        #expect(caches.excludes.contains("com.apple.*"))
+    }
+
+    @Test func storageCachesSkipAppleCaches() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Library/Caches/com.apple.AppleMediaServices/x", bytes: 500_000)
+        try fixture.file("Library/Caches/com.google.Chrome/x", bytes: 4000)
+        let breakdown = try await StorageBreakdown.measure(
+            home: fixture.home, applications: fixture.outside, totalBytes: 10_000_000, availableBytes: 1_000_000, reclaimableBytes: 0
+        )
+        #expect(breakdown.caches < 500_000)
+    }
+}

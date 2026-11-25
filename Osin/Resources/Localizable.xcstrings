@@ -3544,12 +3544,12 @@
         }
       }
     },
-    "Temporary data apps keep to speed things up. Apps recreate it when needed.": {
+    "Temporary data apps keep to speed things up. Apps recreate it when needed. Apple's own caches are left alone.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dữ liệu tạm ứng dụng giữ để chạy nhanh hơn. Ứng dụng sẽ tạo lại khi cần."
+            "value": "Dữ liệu tạm ứng dụng giữ để chạy nhanh hơn. Ứng dụng sẽ tạo lại khi cần. Cache của chính Apple được giữ nguyên."
           }
         }
       }

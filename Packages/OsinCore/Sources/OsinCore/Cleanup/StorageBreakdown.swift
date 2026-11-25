@@ -37,7 +37,12 @@ public struct StorageBreakdown: Sendable, Equatable, Codable {
         let task = Task.detached(priority: .utility) { () throws -> (UInt64, UInt64, UInt64) in
             let apps = try DiskUsage.allocatedSize(of: applications)
             let developer = try DiskUsage.allocatedSize(of: home.appendingPathComponent("Library/Developer"))
-            let caches = try DiskUsage.allocatedSize(of: home.appendingPathComponent("Library/Caches"))
+            // Apple's own caches include TCC-protected folders (media, home data) whose reading triggers prompts.
+            let cachesRoot = home.appendingPathComponent("Library/Caches")
+            let children = (try? FileManager.default.contentsOfDirectory(at: cachesRoot, includingPropertiesForKeys: nil)) ?? []
+            let caches = try children
+                .filter { !$0.lastPathComponent.hasPrefix("com.apple.") }
+                .reduce(UInt64(0)) { try $0 + (DiskUsage.allocatedSize(of: $1)) }
             return (apps, developer, caches)
         }
         let (apps, developer, caches) = try await withTaskCancellationHandler {

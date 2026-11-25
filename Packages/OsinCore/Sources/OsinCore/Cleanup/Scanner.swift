@@ -70,7 +70,8 @@ public struct Scanner: Sendable {
             for candidate in collector.candidates {
                 try Task.checkCancellation()
                 let path = candidate.url.path
-                guard !Self.overlaps(path, claimed) else { continue }
+                let name = candidate.url.lastPathComponent
+                guard !rule.excludes.contains(where: { Self.matches($0, name) }), !Self.overlaps(path, claimed) else { continue }
                 if let cutoff, let modified = candidate.modified, modified > cutoff {
                     continue
                 }

@@ -16,7 +16,7 @@ open: generate ## Open the project in Xcode
 build: generate ## Debug build (unsigned)
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Debug \
 		-destination 'generic/platform=macOS' -derivedDataPath build \
-		CODE_SIGNING_ALLOWED=NO build
+		CODE_SIGN_IDENTITY=- build
 
 build-release: generate ## Universal release build (unsigned)
 	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Release \
