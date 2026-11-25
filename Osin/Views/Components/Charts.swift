@@ -131,68 +131,115 @@ struct TimeSeriesChart: View {
 
     @State private var hovered: Date?
 
+    /// One plotted value. Flattened up front so the chart builder stays simple for the type checker.
+    private struct Sample: Identifiable {
+        let id: Int
+        let date: Date
+        let value: Double
+        let series: Int
+    }
+
+    private var samples: [Sample] {
+        var result: [Sample] = []
+        for (index, item) in series.enumerated() {
+            for point in points {
+                if let value = item.value(point) {
+                    result.append(Sample(id: result.count, date: point.date, value: value, series: index))
+                }
+            }
+        }
+        return result
+    }
+
+    private var yDomain: ClosedRange<Double> {
+        if let domain {
+            return domain
+        }
+        let peak = samples.map(\.value).max() ?? 1
+        return 0 ... peak * 1.15 + 1
+    }
+
+    @ChartContentBuilder private func bandMarks() -> some ChartContent {
+        ForEach(Array(bands.enumerated()), id: \.offset) { _, band in
+            RectangleMark(yStart: .value("From", band.0.lowerBound), yEnd: .value("To", band.0.upperBound))
+                .foregroundStyle(band.1.opacity(0.07))
+        }
+    }
+
+    @ChartContentBuilder private func areaMarks(_ data: [Sample]) -> some ChartContent {
+        ForEach(data.filter { $0.series == 0 }) { sample in
+            AreaMark(x: .value("Time", sample.date), y: .value("Value", sample.value), series: .value("Series", sample.series))
+                .foregroundStyle(series[0].color.opacity(0.16))
+                .interpolationMethod(.monotone)
+        }
+    }
+
+    @ChartContentBuilder private func lineMarks(_ data: [Sample]) -> some ChartContent {
+        ForEach(data) { sample in
+            LineMark(x: .value("Time", sample.date), y: .value("Value", sample.value), series: .value("Series", sample.series))
+                .foregroundStyle(series[sample.series].color)
+                .lineStyle(StrokeStyle(lineWidth: 1.8))
+                .interpolationMethod(.monotone)
+        }
+    }
+
+    @ChartContentBuilder private func hoverMark() -> some ChartContent {
+        if let hovered, let point = nearest(to: hovered) {
+            RuleMark(x: .value("Time", point.date))
+                .foregroundStyle(Theme.borderStrong)
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                .annotation(position: .top, overflowResolution: .init(x: .fit, y: .disabled)) {
+                    readout(point)
+                }
+        }
+    }
+
+    private var chart: some View {
+        let data = samples
+        return Chart {
+            bandMarks()
+            if filled {
+                areaMarks(data)
+            }
+            lineMarks(data)
+            hoverMark()
+        }
+    }
+
     var body: some View {
-        Chart {
-            ForEach(Array(bands.enumerated()), id: \.offset) { _, band in
-                RectangleMark(yStart: .value("From", band.0.lowerBound), yEnd: .value("To", band.0.upperBound))
-                    .foregroundStyle(band.1.opacity(0.07))
-            }
-            ForEach(Array(series.enumerated()), id: \.offset) { index, item in
-                ForEach(points, id: \.date) { point in
-                    if let value = item.value(point) {
-                        if filled, index == 0 {
-                            AreaMark(x: .value("Time", point.date), y: .value("Value", value), series: .value("Series", index))
-                                .foregroundStyle(item.color.opacity(0.16))
-                                .interpolationMethod(.monotone)
+        chart
+            .chartYScale(domain: yDomain)
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { value in
+                    AxisGridLine().foregroundStyle(Theme.border)
+                    AxisValueLabel {
+                        if let number = value.as(Double.self) {
+                            Text(format(number)).font(.system(size: 10)).foregroundStyle(Theme.text3)
                         }
-                        LineMark(x: .value("Time", point.date), y: .value("Value", value), series: .value("Series", index))
-                            .foregroundStyle(item.color)
-                            .lineStyle(StrokeStyle(lineWidth: 1.8))
-                            .interpolationMethod(.monotone)
                     }
                 }
             }
-            if let hovered, let point = nearest(to: hovered) {
-                RuleMark(x: .value("Time", point.date))
-                    .foregroundStyle(Theme.borderStrong)
-                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                    .annotation(position: .top, overflowResolution: .init(x: .fit, y: .disabled)) {
-                        readout(point)
-                    }
-            }
-        }
-        .chartYScale(domain: domain ?? 0 ... (points.flatMap { point in series.compactMap { $0.value(point) } }.max() ?? 1) * 1.15 + 1)
-        .chartYAxis {
-            AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) { value in
-                AxisGridLine().foregroundStyle(Theme.border)
-                AxisValueLabel {
-                    if let number = value.as(Double.self) {
-                        Text(format(number)).font(.system(size: 10)).foregroundStyle(Theme.text3)
-                    }
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                    AxisValueLabel(format: .dateTime.hour().minute()).font(.system(size: 10)).foregroundStyle(Theme.text3)
                 }
             }
-        }
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-                AxisValueLabel(format: .dateTime.hour().minute()).font(.system(size: 10)).foregroundStyle(Theme.text3)
-            }
-        }
-        .chartOverlay { proxy in
-            Rectangle().fill(.clear).contentShape(Rectangle())
-                .onContinuousHover { phase in
-                    switch phase {
-                    case let .active(location): hovered = proxy.value(atX: location.x, as: Date.self)
-                    case .ended: hovered = nil
+            .chartOverlay { proxy in
+                Rectangle().fill(.clear).contentShape(Rectangle())
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case let .active(location): hovered = proxy.value(atX: location.x, as: Date.self)
+                        case .ended: hovered = nil
+                        }
                     }
-                }
-        }
-        .frame(height: height)
-        .overlay {
-            if points.count < 2 {
-                Text("Collecting data…").font(.callout).foregroundStyle(Theme.text2)
             }
-        }
-        .accessibilityLabel(Text("History chart"))
+            .frame(height: height)
+            .overlay {
+                if points.count < 2 {
+                    Text("Collecting data…").font(.callout).foregroundStyle(Theme.text2)
+                }
+            }
+            .accessibilityLabel(Text("History chart"))
     }
 
     private func nearest(to date: Date) -> HistoryPoint? {
