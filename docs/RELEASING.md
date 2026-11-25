@@ -22,7 +22,7 @@ Without any keys the workflow still produces an ad-hoc signed DMG; each key belo
 2. `git tag v0.1.0 && git push origin v0.1.0`
 3. The workflow uploads `Osin-0.1.0.dmg`, `Osin-0.1.0.zip` and (with Sparkle keys) `appcast.xml` to a **draft** release.
 4. Review the draft, then publish it. Sparkle's feed URL points at `releases/latest/download/appcast.xml`, so publishing is what ships the update.
-5. Update `packaging/homebrew/osin.rb` (version and the DMG sha256 printed by the script) in the tap.
+5. Update `Casks/osin.rb` in [Vigentix/homebrew-tap](https://github.com/Vigentix/homebrew-tap) (version and the DMG sha256 printed by the script), run `brew audit --cask --strict vigentix/tap/osin`, and mirror it to `packaging/homebrew/osin.rb`.
 
 ## Local build
 

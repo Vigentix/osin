@@ -66,7 +66,8 @@ Each milestone ends with a working, demoable build.
 - [ ] Sparkle EdDSA keys + GitHub secrets
 - [ ] README screenshots (`make snapshots` renders them)
 - [ ] Final product name
-- [ ] Tag and publish v0.1.0
+- [x] Tag and publish v0.1.0
+- [x] Homebrew tap `Vigentix/homebrew-tap`
 
 ## v2 backlog
 Docker prune · Time Machine snapshots · weekly nudge · CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · App uninstaller + leftovers · Duplicate finder · Disk treemap · Privileged helper daemon · Remote rule updates

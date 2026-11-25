@@ -29,7 +29,17 @@ Memory is handled honestly: Osin shows memory pressure (the signal that matters)
 
 ## Install
 
-Download `Osin-x.y.z.dmg` from [Releases](https://github.com/Vigentix/osin/releases) and drag Osin to Applications. Until releases are notarized, open it the first time with right-click › Open (or `xattr -dr com.apple.quarantine /Applications/Osin.app`).
+With [Homebrew](https://brew.sh):
+
+```sh
+brew tap vigentix/tap
+brew trust vigentix/tap      # recent Homebrew versions ask you to trust third-party taps
+brew install --cask osin
+```
+
+Or download `Osin-x.y.z.dmg` from [Releases](https://github.com/Vigentix/osin/releases) and drag Osin to Applications.
+
+Releases are not notarized yet, so macOS blocks the first launch: allow it in System Settings › Privacy & Security › Open Anyway, or run `xattr -dr com.apple.quarantine /Applications/Osin.app`.
 
 Requires macOS 14 Sonoma or later, Apple Silicon or Intel.
 
