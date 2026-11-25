@@ -199,10 +199,17 @@ struct OnboardingView: View {
 final class OnboardingWindowController {
     private var window: NSWindow?
 
+    /// Since macOS 14, activation is cooperative: `NSApp.activate()` is ignored unless the user started it,
+    /// which left the window behind other apps. `orderFrontRegardless` shows it on top anyway.
+    private func bringToFront(_ window: NSWindow) {
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
+        NSApp.activate()
+    }
+
     func show(onFinish: @escaping () -> Void) {
         if let window {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate()
+            bringToFront(window)
             return
         }
         let window = NSWindow(
@@ -219,8 +226,7 @@ final class OnboardingWindowController {
             self?.window = nil
         })
         window.center()
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate()
         self.window = window
+        bringToFront(window)
     }
 }
