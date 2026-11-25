@@ -198,6 +198,34 @@ struct RowButtonStyle: ButtonStyle {
     }
 }
 
+/// Borderless button for quiet actions (footers, toolbars): text or icon that lifts on hover.
+struct GhostButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        GhostBody(configuration: configuration)
+    }
+
+    private struct GhostBody: View {
+        let configuration: Configuration
+        @State private var hovering = false
+
+        var body: some View {
+            configuration.label
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(hovering ? Theme.text : Theme.text2)
+                .padding(.horizontal, 8)
+                .frame(minWidth: 28, minHeight: 28)
+                .background(
+                    configuration.isPressed ? Theme.control : (hovering ? Theme.hover : .clear),
+                    in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                )
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    withAnimation(HoverMotion.animation(entering: inside)) { hovering = inside }
+                }
+        }
+    }
+}
+
 /// A whole row (or tile) that acts as one button, with hover and selection states.
 /// The label receives `hovering` so it can reveal secondary actions on hover.
 struct HoverRowButton<Label: View>: View {

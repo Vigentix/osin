@@ -231,7 +231,9 @@ private struct ScanReportView: View {
                 Circle().fill(color).frame(width: 7, height: 7)
                 Text(title).font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.text2)
                 Spacer()
-                Text(Format.storage(total)).font(.system(size: 11)).monospacedDigit().foregroundStyle(Theme.text3)
+                if total > 0 {
+                    Text(Format.storage(total)).font(.system(size: 11)).monospacedDigit().foregroundStyle(Theme.text3)
+                }
             }
             .padding(.horizontal, 8)
             .padding(.top, 10)

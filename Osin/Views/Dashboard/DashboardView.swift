@@ -9,55 +9,61 @@ struct DashboardView: View {
     @Environment(SystemMonitor.self) private var monitor
 
     var body: some View {
-        NavigationSplitView {
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(spacing: 9) {
-                    LogoMark(size: 22, dot: monitor.snapshot?.health.level.color ?? Theme.text3)
-                    Text(verbatim: "Osin").font(.system(size: 15, weight: .semibold))
-                }
-                .padding(.horizontal, 18)
-                .padding(.bottom, 12)
-
-                List(DashboardSection.allCases, selection: Binding(
-                    get: { navigator.section },
-                    set: {
-                        if let value = $0 {
-                            navigator.section = value
-                        }
-                    }
-                )) { section in
-                    HStack(spacing: 10) {
-                        Label {
-                            Text(section.title)
-                        } icon: {
-                            Image(systemName: section.systemImage)
-                        }
-                        Spacer(minLength: 4)
-                        trailing(for: section)
-                    }
-                    .tag(section)
-                }
-                .listStyle(.sidebar)
-
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Circle().fill(FullDiskAccess.isGranted() ? Theme.good : Theme.text3).frame(width: 6, height: 6)
-                        Text(FullDiskAccess.isGranted() ? "Full Disk Access on" : "Full Disk Access off")
-                    }
-                    Text("No telemetry · data stays on this Mac").foregroundStyle(Theme.text3)
-                }
-                .font(.system(size: 11))
-                .foregroundStyle(Theme.text2)
-                .padding(16)
-            }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 260)
-        } detail: {
+        HStack(spacing: 0) {
+            sidebar
+            Rectangle().fill(Theme.border).frame(width: 1)
             ZStack {
-                Theme.background.ignoresSafeArea()
+                Theme.background
                 detail(for: navigator.section)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .background(Theme.background)
+        .ignoresSafeArea(edges: .top)
         .frame(minWidth: 960, minHeight: 640)
+    }
+
+    /// Solid sidebar drawn by Osin (the floating glass sidebar of `NavigationSplitView` does not
+    /// render correctly over the app's own dark surfaces).
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 9) {
+                LogoMark(size: 22, dot: monitor.snapshot?.health.level.color ?? Theme.text3)
+                Text(verbatim: "Osin").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text)
+            }
+            .padding(.horizontal, 10)
+            .padding(.top, 52) // clear the traffic lights
+            .padding(.bottom, 16)
+
+            ForEach(DashboardSection.allCases) { section in
+                SidebarItem(section: section, selected: navigator.section == section) {
+                    trailing(for: section)
+                } action: {
+                    navigator.section = section
+                }
+            }
+
+            Spacer(minLength: 20)
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Circle().fill(FullDiskAccess.isGranted() ? Theme.good : Theme.text3).frame(width: 6, height: 6)
+                    Text(FullDiskAccess.isGranted() ? "Full Disk Access on" : "Full Disk Access off")
+                }
+                Text("No telemetry · data stays on this Mac").foregroundStyle(Theme.text3)
+            }
+            .font(.system(size: 11))
+            .foregroundStyle(Theme.text2)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.surface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Theme.border, lineWidth: 1))
+            .padding(.bottom, 14)
+        }
+        .padding(.horizontal, 10)
+        .frame(width: 220)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Theme.sidebar)
     }
 
     @ViewBuilder private func trailing(for section: DashboardSection) -> some View {
@@ -81,6 +87,43 @@ struct DashboardView: View {
         case .activity: ActivityView()
         case .system: SystemView()
         }
+    }
+}
+
+/// One navigation row in the sidebar.
+private struct SidebarItem<Trailing: View>: View {
+    let section: DashboardSection
+    let selected: Bool
+    @ViewBuilder let trailing: Trailing
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: section.systemImage)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(selected ? Theme.accentText : Theme.text2)
+                    .frame(width: 18)
+                Text(section.title)
+                    .font(.system(size: 13, weight: selected ? .semibold : .medium))
+                    .foregroundStyle(selected || hovering ? Theme.text : Theme.text2)
+                Spacer(minLength: 4)
+                trailing
+            }
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .background(
+                selected ? Theme.accentSoft : (hovering ? Theme.hover : .clear),
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(RowButtonStyle())
+        .onHover { inside in
+            withAnimation(HoverMotion.animation(entering: inside)) { hovering = inside }
+        }
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 

@@ -7,6 +7,7 @@ enum Theme {
     // Surfaces
     static let background = Color(light: 0xF5F6F8, dark: 0x0E0F13)
     static let surface = Color(light: 0xFFFFFF, dark: 0x16181F)
+    static let sidebar = Color(light: 0xECEDF1, dark: 0x111217)
     static let raised = Color(light: 0xF3F4F7, dark: 0x1C1F27)
     static let control = Color(light: 0xE5E7EB, dark: 0x2A2D37)
     static let border = Color(light: 0x0F1115, lightAlpha: 0.08, dark: 0xFFFFFF, darkAlpha: 0.07)

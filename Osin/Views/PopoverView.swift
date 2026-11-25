@@ -215,6 +215,9 @@ struct PopoverView: View {
                                     .buttonStyle(SecondaryButtonStyle())
                                     .opacity(hovering ? 1 : 0)
                                     .accessibilityLabel(Text("Quit \(group.name)"))
+                            } else {
+                                // Keeps the memory column aligned with rows that have a Quit button.
+                                Button("Quit") {}.buttonStyle(SecondaryButtonStyle()).hidden()
                             }
                         }
                         .padding(.horizontal, 6)
@@ -226,16 +229,29 @@ struct PopoverView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 4) {
-            Button("Open Dashboard") { openDashboard(.overview) }
+        HStack(spacing: 6) {
+            LogoMark(size: 14, dot: monitor.snapshot?.health.level.color)
+            Text(verbatim: "Osin").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text2)
+            Text(verbatim: Self.version).font(.system(size: 11)).foregroundStyle(Theme.text3)
             Spacer()
-            SettingsLink { Text("Settings") }
-            Button("Quit Osin") { NSApp.terminate(nil) }
+            SettingsLink {
+                Image(systemName: "gearshape")
+            }
+            .buttonStyle(GhostButtonStyle())
+            .help(Text("Settings"))
+            .accessibilityLabel(Text("Settings"))
+            Button {
+                NSApp.terminate(nil)
+            } label: {
+                Image(systemName: "power")
+            }
+            .buttonStyle(GhostButtonStyle())
+            .help(Text("Quit Osin"))
+            .accessibilityLabel(Text("Quit Osin"))
         }
-        .buttonStyle(.borderless)
-        .font(.system(size: 12))
-        .foregroundStyle(Theme.text2)
         .padding(.top, 10)
         .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }
     }
+
+    private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
 }

@@ -25,6 +25,7 @@ struct OsinApp: App {
                 .onDisappear { appDelegate.monitor.setVisible(.dashboard, false) }
         }
         .defaultSize(width: 1200, height: 780)
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandMenu("Go") {
                 ForEach(DashboardSection.allCases) { section in
