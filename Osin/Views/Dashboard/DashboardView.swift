@@ -20,6 +20,7 @@ struct DashboardView: View {
         }
         .background(Theme.background)
         .ignoresSafeArea(edges: .top)
+        .osinFocusStyle()
         .frame(minWidth: 960, minHeight: 640)
     }
 

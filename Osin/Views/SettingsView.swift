@@ -14,6 +14,8 @@ struct SettingsView: View {
         }
         .frame(width: 520)
         .fixedSize(horizontal: false, vertical: true)
+        .tint(Theme.accentButton)
+        .osinFocusStyle()
     }
 }
 
@@ -104,6 +106,7 @@ private struct AdvancedSettings: View {
                     .onChange(of: automaticUpdateChecks) { _, enabled in updater.setAutomaticChecks(enabled) }
                     .disabled(!updater.isAvailable)
                 Button("Check for Updates…") { updater.checkForUpdates() }
+                    .buttonStyle(SecondaryButtonStyle())
                     .disabled(!updater.isAvailable)
             } footer: {
                 Text("The update check is the only network request Osin makes.")
@@ -124,6 +127,7 @@ private struct AdvancedSettings: View {
                     Button("Purge…") {
                         purgeResult = Purge.run() ? String(localized: "Done.") : String(localized: "Cancelled or failed.")
                     }
+                    .buttonStyle(SecondaryButtonStyle())
                 }
                 if let purgeResult {
                     Text(purgeResult).font(.caption).foregroundStyle(.secondary)
@@ -132,14 +136,17 @@ private struct AdvancedSettings: View {
                 Text("Memory")
             }
             Section {
-                Button("Show welcome screens again") {
-                    NotificationCenter.default.post(name: .osinShowOnboarding, object: nil)
-                }
-                Button("Open data folder in Finder") {
-                    if let url = try? CleanupLog.defaultURL().deletingLastPathComponent() {
-                        NSWorkspace.shared.open(url)
+                HStack(spacing: 8) {
+                    Button("Show welcome screens again") {
+                        NotificationCenter.default.post(name: .osinShowOnboarding, object: nil)
+                    }
+                    Button("Open data folder in Finder") {
+                        if let url = try? CleanupLog.defaultURL().deletingLastPathComponent() {
+                            NSWorkspace.shared.open(url)
+                        }
                     }
                 }
+                .buttonStyle(SecondaryButtonStyle())
             } footer: {
                 Text("Cleanup history and metrics stay on this Mac.")
             }

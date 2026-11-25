@@ -36,6 +36,7 @@ struct OnboardingView: View {
         }
         .frame(width: 720, height: 520)
         .background(Theme.surface)
+        .osinFocusStyle()
     }
 
     private var sidebar: some View {
@@ -156,7 +157,7 @@ struct OnboardingView: View {
                 }
                 .buttonStyle(SecondaryButtonStyle())
                 Button("Check again") { hasFullDiskAccess = FullDiskAccess.isGranted() }
-                    .buttonStyle(.link)
+                    .buttonStyle(LinkButtonStyle())
                     .font(.system(size: 12))
             }
             accessRow("Downloads folder", "Old installers. macOS asks once; you can say no.", granted: downloadsAsked) {

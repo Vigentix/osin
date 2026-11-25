@@ -341,7 +341,7 @@ struct OverviewView: View {
                 }
             }
             Button("All processes in Activity") { navigator.section = .activity }
-                .buttonStyle(.link)
+                .buttonStyle(LinkButtonStyle())
                 .font(.system(size: 12))
         }
         .frame(maxWidth: .infinity)

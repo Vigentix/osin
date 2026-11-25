@@ -86,12 +86,14 @@ struct PrimaryButtonStyle: ButtonStyle {
         let configuration: Configuration
         let large: Bool
         @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.isFocused) private var isFocused
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var hovering = false
 
         var body: some View {
             let radius: CGFloat = large ? 11 : 9
-            let active = hovering && isEnabled
+            // Keyboard focus looks like hover instead of the system's blue ring.
+            let active = (hovering || isFocused) && isEnabled
             configuration.label
                 .font(.system(size: large ? 14 : 13, weight: .semibold))
                 .foregroundStyle(.white)
@@ -127,12 +129,13 @@ struct SecondaryButtonStyle: ButtonStyle {
         let large: Bool
         let tint: Color
         @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.isFocused) private var isFocused
         @Environment(\.accessibilityReduceMotion) private var reduceMotion
         @State private var hovering = false
 
         var body: some View {
             let radius: CGFloat = large ? 9 : 7
-            let active = hovering && isEnabled
+            let active = (hovering || isFocused) && isEnabled
             configuration.label
                 .font(.system(size: large ? 13 : 12, weight: .medium))
                 .foregroundStyle(tint)
@@ -206,16 +209,18 @@ struct GhostButtonStyle: ButtonStyle {
 
     private struct GhostBody: View {
         let configuration: Configuration
+        @Environment(\.isFocused) private var isFocused
         @State private var hovering = false
 
         var body: some View {
+            let active = hovering || isFocused
             configuration.label
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(hovering ? Theme.text : Theme.text2)
+                .foregroundStyle(active ? Theme.text : Theme.text2)
                 .padding(.horizontal, 8)
                 .frame(minWidth: 28, minHeight: 28)
                 .background(
-                    configuration.isPressed ? Theme.control : (hovering ? Theme.hover : .clear),
+                    configuration.isPressed ? Theme.control : (active ? Theme.hover : .clear),
                     in: RoundedRectangle(cornerRadius: 7, style: .continuous)
                 )
                 .contentShape(Rectangle())
@@ -223,6 +228,36 @@ struct GhostButtonStyle: ButtonStyle {
                     withAnimation(HoverMotion.animation(entering: inside)) { hovering = inside }
                 }
         }
+    }
+}
+
+/// Inline text link in the accent colour; underlines on hover or keyboard focus.
+struct LinkButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        LinkBody(configuration: configuration)
+    }
+
+    private struct LinkBody: View {
+        let configuration: Configuration
+        @Environment(\.isFocused) private var isFocused
+        @State private var hovering = false
+
+        var body: some View {
+            configuration.label
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(Theme.accentText)
+                .underline(hovering || isFocused)
+                .opacity(configuration.isPressed ? 0.7 : 1)
+                .contentShape(Rectangle())
+                .onHover { hovering = $0 }
+        }
+    }
+}
+
+extension View {
+    /// Osin draws its own focus states, so the system's blue focus ring is turned off for a whole screen.
+    func osinFocusStyle() -> some View {
+        focusEffectDisabled()
     }
 }
 

@@ -28,6 +28,7 @@ struct PopoverView: View {
         .padding(16)
         .frame(width: 376, height: Self.height, alignment: .top)
         .background(Theme.surface)
+        .osinFocusStyle()
         .onAppear { monitor.setVisible(.popover, true) }
         .onDisappear { monitor.setVisible(.popover, false) }
     }
@@ -38,6 +39,7 @@ struct PopoverView: View {
         openWindow(id: WindowID.dashboard)
         NSApp.activate()
         closePanel(panel)
+        WindowFront.bringDashboardToFront()
     }
 
     /// `MenuBarExtra` has no API to close its panel, so hide the panel we were clicked in.
@@ -259,6 +261,7 @@ struct PopoverView: View {
                 openSettings()
                 NSApp.activate()
                 closePanel(panel)
+                WindowFront.bringSettingsToFront()
             } label: {
                 Image(systemName: "gearshape")
             }
@@ -279,4 +282,31 @@ struct PopoverView: View {
     }
 
     private static let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+}
+
+/// Brings app windows forward from the menu bar. Since macOS 14 activation is cooperative, so a
+/// window opened from a menu bar panel can stay behind the frontmost app unless ordered front.
+@MainActor
+enum WindowFront {
+    static func bringSettingsToFront() {
+        bring { $0.identifier?.rawValue == "com_apple_SwiftUI_Settings_window" }
+    }
+
+    static func bringDashboardToFront() {
+        bring { $0.identifier?.rawValue == WindowID.dashboard }
+    }
+
+    /// The window is created asynchronously, so retry for up to half a second.
+    private static func bring(attempt: Int = 0, matching match: @escaping (NSWindow) -> Bool) {
+        if let window = NSApp.windows.first(where: match), window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            window.orderFrontRegardless()
+            NSApp.activate()
+            return
+        }
+        guard attempt < 10 else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            bring(attempt: attempt + 1, matching: match)
+        }
+    }
 }
