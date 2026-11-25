@@ -37,7 +37,7 @@
                 Screen(name: "cleanup", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "activity", section: .activity, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 1300), view: nil),
-                Screen(name: "popover", section: nil, size: CGSize(width: 376, height: 640), view: AnyView(PopoverView())),
+                Screen(name: "popover", section: nil, size: CGSize(width: 376, height: PopoverView.height), view: AnyView(PopoverView())),
                 Screen(name: "onboarding", section: nil, size: CGSize(width: 720, height: 520), view: AnyView(OnboardingView {})),
                 Screen(name: "settings", section: nil, size: CGSize(width: 520, height: 420), view: AnyView(SettingsView()))
             ]

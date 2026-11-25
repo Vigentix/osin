@@ -120,6 +120,7 @@ private struct SidebarItem<Trailing: View>: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(RowButtonStyle())
+        .focusEffectDisabled()
         .onHover { inside in
             withAnimation(HoverMotion.animation(entering: inside)) { hovering = inside }
         }

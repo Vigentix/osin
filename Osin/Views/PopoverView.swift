@@ -8,6 +8,12 @@ struct PopoverView: View {
     @Environment(ScanCoordinator.self) private var scan
     @Environment(Navigator.self) private var navigator
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
+
+    /// `MenuBarExtra` sizes its panel once, when it opens. Content that grows afterwards (live data
+    /// arriving) would spill past the panel, where it is visible but not clickable. A fixed height
+    /// keeps every control inside the panel.
+    static let height: CGFloat = 600
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -16,19 +22,28 @@ struct PopoverView: View {
             tiles
             network
             apps
+            Spacer(minLength: 0)
             footer
         }
         .padding(16)
-        .frame(width: 376)
+        .frame(width: 376, height: Self.height, alignment: .top)
         .background(Theme.surface)
         .onAppear { monitor.setVisible(.popover, true) }
         .onDisappear { monitor.setVisible(.popover, false) }
     }
 
     private func openDashboard(_ section: DashboardSection) {
+        let panel = NSApp.keyWindow
         navigator.section = section
         openWindow(id: WindowID.dashboard)
         NSApp.activate()
+        closePanel(panel)
+    }
+
+    /// `MenuBarExtra` has no API to close its panel, so hide the panel we were clicked in.
+    private func closePanel(_ panel: NSWindow?) {
+        guard let panel, panel.identifier?.rawValue != WindowID.dashboard else { return }
+        panel.orderOut(nil)
     }
 
     // MARK: Sections
@@ -75,7 +90,6 @@ struct PopoverView: View {
                 .buttonStyle(PrimaryButtonStyle())
             }
             iconButton("waveform.path.ecg", label: "Open Activity") { openDashboard(.activity) }
-            iconButton("square.grid.2x2", label: "Open Dashboard") { openDashboard(.overview) }
         }
     }
 
@@ -233,8 +247,19 @@ struct PopoverView: View {
             LogoMark(size: 14, dot: monitor.snapshot?.health.level.color)
             Text(verbatim: "Osin").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text2)
             Text(verbatim: Self.version).font(.system(size: 11)).foregroundStyle(Theme.text3)
-            Spacer()
-            SettingsLink {
+            Spacer(minLength: 8)
+            Button {
+                openDashboard(.overview)
+            } label: {
+                Label("Open Dashboard", systemImage: "square.grid.2x2")
+            }
+            .buttonStyle(GhostButtonStyle())
+            Button {
+                let panel = NSApp.keyWindow
+                openSettings()
+                NSApp.activate()
+                closePanel(panel)
+            } label: {
                 Image(systemName: "gearshape")
             }
             .buttonStyle(GhostButtonStyle())
