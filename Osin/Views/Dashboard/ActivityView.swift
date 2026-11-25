@@ -121,9 +121,9 @@ struct ActivityView: View {
     }
 
     private func row(_ group: ProcessGroup, selected: Bool, largest: Double) -> some View {
-        Button {
+        HoverRowButton(selected: selected) {
             selection = group.id
-        } label: {
+        } label: { _ in
             HStack(spacing: 12) {
                 AppAvatar(name: group.name, bundlePath: group.bundlePath, size: 26)
                 VStack(alignment: .leading, spacing: 1) {
@@ -148,11 +148,7 @@ struct ActivityView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
-            .background(selected ? Theme.raised : .clear, in: RoundedRectangle(cornerRadius: 9))
-            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(selected ? Theme.accent.opacity(0.55) : .clear, lineWidth: 1))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
         .contextMenu {
             if AppControl.runningApp(for: group) != nil {
                 Button("Quit") { AppControl.quit(group) }

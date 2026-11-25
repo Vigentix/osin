@@ -66,44 +66,165 @@ extension PageHeader where Trailing == EmptyView {
     }
 }
 
-// MARK: - Buttons
+// MARK: - Buttons and hover
+
+/// Hover timing shared by every interactive element: quick in, softer out.
+enum HoverMotion {
+    static func animation(entering: Bool) -> Animation {
+        .easeOut(duration: entering ? 0.12 : 0.2)
+    }
+}
 
 struct PrimaryButtonStyle: ButtonStyle {
     var large = false
-    @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: large ? 14 : 13, weight: .semibold))
-            .foregroundStyle(.white)
-            .padding(.horizontal, large ? 22 : 14)
-            .frame(minHeight: large ? 44 : 32)
-            .background(Theme.accentButton, in: RoundedRectangle(cornerRadius: large ? 11 : 9, style: .continuous))
-            .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.45)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.spring(duration: 0.2), value: configuration.isPressed)
-            .contentShape(Rectangle())
+        PrimaryBody(configuration: configuration, large: large)
+    }
+
+    private struct PrimaryBody: View {
+        let configuration: Configuration
+        let large: Bool
+        @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @State private var hovering = false
+
+        var body: some View {
+            let radius: CGFloat = large ? 11 : 9
+            let active = hovering && isEnabled
+            configuration.label
+                .font(.system(size: large ? 14 : 13, weight: .semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, large ? 22 : 14)
+                .frame(minHeight: large ? 44 : 32)
+                .background(Theme.accentButton, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .fill(configuration.isPressed ? Color.black.opacity(0.12) : Color.white.opacity(active ? 0.10 : 0))
+                )
+                .shadow(color: Theme.accent.opacity(active ? 0.35 : 0), radius: active ? 10 : 0, y: active ? 3 : 0)
+                .opacity(isEnabled ? 1 : 0.45)
+                .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+                .animation(.spring(duration: 0.18), value: configuration.isPressed)
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    withAnimation(HoverMotion.animation(entering: inside)) { hovering = inside }
+                }
+        }
     }
 }
 
 struct SecondaryButtonStyle: ButtonStyle {
     var large = false
     var tint: Color = Theme.text
-    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        SecondaryBody(configuration: configuration, large: large, tint: tint)
+    }
+
+    private struct SecondaryBody: View {
+        let configuration: Configuration
+        let large: Bool
+        let tint: Color
+        @Environment(\.isEnabled) private var isEnabled
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @State private var hovering = false
+
+        var body: some View {
+            let radius: CGFloat = large ? 9 : 7
+            let active = hovering && isEnabled
+            configuration.label
+                .font(.system(size: large ? 13 : 12, weight: .medium))
+                .foregroundStyle(tint)
+                .padding(.horizontal, large ? 16 : 11)
+                .frame(minHeight: large ? 34 : 28)
+                .background(
+                    configuration.isPressed ? Theme.control : (active ? Theme.hover : Color.clear),
+                    in: RoundedRectangle(cornerRadius: radius, style: .continuous)
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: radius, style: .continuous)
+                        .strokeBorder(active ? Theme.borderHover : Theme.borderStrong, lineWidth: 1)
+                )
+                .opacity(isEnabled ? 1 : 0.45)
+                .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+                .animation(.spring(duration: 0.18), value: configuration.isPressed)
+                .contentShape(Rectangle())
+                .onHover { inside in
+                    withAnimation(HoverMotion.animation(entering: inside)) { hovering = inside }
+                }
+        }
+    }
+}
+
+/// For rows and tiles that act as one big button: hover lightens the surface, selection outlines it.
+struct HoverSurface: ViewModifier {
+    var radius: CGFloat = 9
+    var selected = false
+    var restingFill: Color = .clear
+    @Binding var hovering: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                selected ? Theme.raised : (hovering ? Theme.hover : restingFill),
+                in: RoundedRectangle(cornerRadius: radius, style: .continuous)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: radius, style: .continuous)
+                    .strokeBorder(selected ? Theme.accent.opacity(0.55) : (hovering ? Theme.border : .clear), lineWidth: 1)
+            )
+            .onHover { inside in
+                withAnimation(HoverMotion.animation(entering: inside)) { hovering = inside }
+            }
+    }
+}
+
+extension View {
+    func hoverSurface(radius: CGFloat = 9, selected: Bool = false, restingFill: Color = .clear, hovering: Binding<Bool>) -> some View {
+        modifier(HoverSurface(radius: radius, selected: selected, restingFill: restingFill, hovering: hovering))
+    }
+}
+
+/// Button style for whole-row buttons: no chrome of its own, a slight dip when pressed.
+struct RowButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: large ? 13 : 12, weight: .medium))
-            .foregroundStyle(tint)
-            .padding(.horizontal, large ? 16 : 11)
-            .frame(minHeight: large ? 34 : 28)
-            .background(
-                configuration.isPressed ? Theme.control : Color.clear,
-                in: RoundedRectangle(cornerRadius: large ? 9 : 7, style: .continuous)
-            )
-            .overlay(RoundedRectangle(cornerRadius: large ? 9 : 7, style: .continuous).strokeBorder(Theme.borderStrong, lineWidth: 1))
-            .opacity(isEnabled ? 1 : 0.45)
-            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.995 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+/// A whole row (or tile) that acts as one button, with hover and selection states.
+/// The label receives `hovering` so it can reveal secondary actions on hover.
+struct HoverRowButton<Label: View>: View {
+    var radius: CGFloat = 9
+    var selected = false
+    var restingFill: Color = .clear
+    let action: () -> Void
+    @ViewBuilder let label: (_ hovering: Bool) -> Label
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            label(hovering).contentShape(Rectangle())
+        }
+        .buttonStyle(RowButtonStyle())
+        .hoverSurface(radius: radius, selected: selected, restingFill: restingFill, hovering: $hovering)
+    }
+}
+
+/// A row that is not itself a button but contains actions; hover lightens it and lets it reveal them.
+struct HoverRow<Content: View>: View {
+    var radius: CGFloat = 8
+    @ViewBuilder let content: (_ hovering: Bool) -> Content
+    @State private var hovering = false
+
+    var body: some View {
+        content(hovering).hoverSurface(radius: radius, hovering: $hovering)
     }
 }
 
@@ -111,23 +232,31 @@ struct SecondaryButtonStyle: ButtonStyle {
 struct SegmentedPicker<Value: Hashable>: View {
     let options: [(Value, LocalizedStringResource)]
     @Binding var selection: Value
+    @State private var hovered: Int?
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(Array(options.enumerated()), id: \.offset) { _, option in
+            ForEach(Array(options.enumerated()), id: \.offset) { index, option in
                 let selected = option.0 == selection
+                let hovering = hovered == index && !selected
                 Button {
                     withAnimation(.spring(duration: 0.22)) { selection = option.0 }
                 } label: {
                     Text(option.1)
                         .font(.system(size: 12, weight: selected ? .semibold : .medium))
-                        .foregroundStyle(selected ? Theme.text : Theme.text2)
+                        .foregroundStyle(selected || hovering ? Theme.text : Theme.text2)
                         .padding(.horizontal, 12)
                         .frame(height: 28)
-                        .background(selected ? Theme.control : .clear, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .background(
+                            selected ? Theme.control : (hovering ? Theme.hover : .clear),
+                            in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        )
                         .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(RowButtonStyle())
+                .onHover { inside in
+                    withAnimation(HoverMotion.animation(entering: inside)) { hovered = inside ? index : (hovered == index ? nil : hovered) }
+                }
                 .accessibilityAddTraits(selected ? .isSelected : [])
             }
         }

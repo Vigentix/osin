@@ -267,11 +267,21 @@ struct OverviewView: View {
         detail: String,
         @ViewBuilder chart: () -> some View
     ) -> some View {
-        Button {
+        let chartView = chart()
+        return HoverRowButton(radius: 0) {
             navigator.section = .system
-        } label: {
+        } label: { hovering in
             VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.system(size: 12)).foregroundStyle(Theme.text2)
+                HStack {
+                    Text(title).font(.system(size: 12)).foregroundStyle(hovering ? Theme.text : Theme.text2)
+                    Spacer()
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(Theme.text3)
+                        .opacity(hovering ? 1 : 0)
+                        .offset(x: hovering ? 0 : -3, y: hovering ? 0 : 3)
+                        .accessibilityHidden(true)
+                }
                 Text(value)
                     .font(.system(size: 28, weight: .bold))
                     .tracking(-0.5)
@@ -286,13 +296,11 @@ struct OverviewView: View {
                     .foregroundStyle(Theme.text3)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                chart().frame(height: 52).padding(.top, 6)
+                chartView.frame(height: 52).padding(.top, 6)
             }
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityHint(Text("Opens System"))
     }
@@ -311,13 +319,23 @@ struct OverviewView: View {
             Text("Heaviest apps").font(.system(size: 15, weight: .semibold))
             let apps = Array((monitor.snapshot?.processes ?? []).prefix(5))
             ForEach(Array(apps.enumerated()), id: \.element.id) { index, group in
-                HStack(spacing: 12) {
-                    AppAvatar(name: group.name, bundlePath: group.bundlePath, size: 26)
-                    Text(group.name).lineLimit(1)
-                    Spacer()
-                    Text(Format.memory(group.footprintBytes)).monospacedDigit().foregroundStyle(Theme.text2)
+                HoverRowButton {
+                    navigator.section = .activity
+                } label: { hovering in
+                    HStack(spacing: 12) {
+                        AppAvatar(name: group.name, bundlePath: group.bundlePath, size: 26)
+                        Text(group.name).lineLimit(1)
+                        Spacer()
+                        Text(Format.memory(group.footprintBytes)).monospacedDigit().foregroundStyle(Theme.text2)
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(Theme.text3)
+                            .opacity(hovering ? 1 : 0)
+                            .accessibilityHidden(true)
+                    }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 6)
                 }
-                .padding(.vertical, 4)
                 if index < apps.count - 1 {
                     Divider().overlay(Theme.border)
                 }

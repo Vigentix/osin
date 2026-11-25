@@ -301,6 +301,7 @@ private struct GroupRow: View {
     let group: ScanCoordinator.Group
     let color: Color
     let largest: UInt64
+    @State private var hovering = false
 
     var body: some View {
         let focused = scan.focusedGroup?.id == group.id
@@ -328,14 +329,10 @@ private struct GroupRow: View {
                 }
                 .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
+            .buttonStyle(RowButtonStyle())
         }
         .padding(8)
-        .background(focused ? Theme.raised : .clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(
-            focused ? Theme.accent.opacity(0.55) : .clear,
-            lineWidth: 1
-        ))
+        .hoverSurface(radius: 10, selected: focused, hovering: $hovering)
     }
 }
 
@@ -403,35 +400,7 @@ private struct GroupDetail: View {
     }
 
     private func itemRow(_ item: ScanItem) -> some View {
-        let included = !scan.excludedItems.contains(item.id)
-        return HStack(spacing: 12) {
-            Toggle(isOn: Binding(get: { included }, set: { _ in scan.toggleItem(item.id) })) { EmptyView() }
-                .toggleStyle(.checkbox)
-                .labelsHidden()
-            Button {
-                focusedItem = item.id
-            } label: {
-                Text(item.url.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(included ? Theme.text : Theme.text3)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            Text(Format.storage(item.bytes)).monospacedDigit().foregroundStyle(Theme.text2)
-            Button {
-                NSWorkspace.shared.activateFileViewerSelecting([item.url])
-            } label: {
-                Image(systemName: "magnifyingglass")
-            }
-            .buttonStyle(.borderless)
-            .accessibilityLabel(Text("Show in Finder"))
-        }
-        .padding(.horizontal, 14)
-        .frame(height: 38)
-        .background(focusedItem == item.id ? Theme.raised : .clear)
+        ItemRow(item: item, focused: focusedItem == item.id) { focusedItem = item.id }
     }
 }
 
@@ -595,25 +564,28 @@ private struct LargeFilesView: View {
                     Card(padding: 8) {
                         VStack(spacing: 0) {
                             ForEach(files) { file in
-                                HStack(spacing: 12) {
-                                    Image(nsImage: NSWorkspace.shared.icon(forFile: file.url.path))
-                                        .resizable().frame(width: 26, height: 26).accessibilityHidden(true)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(file.url.lastPathComponent).lineLimit(1)
-                                        Text(file.url.deletingLastPathComponent().path.replacingOccurrences(
-                                            of: NSHomeDirectory(),
-                                            with: "~"
-                                        ))
-                                        .font(.system(size: 11)).foregroundStyle(Theme.text3).lineLimit(1).truncationMode(.middle)
+                                HoverRow { hovering in
+                                    HStack(spacing: 12) {
+                                        Image(nsImage: NSWorkspace.shared.icon(forFile: file.url.path))
+                                            .resizable().frame(width: 26, height: 26).accessibilityHidden(true)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(file.url.lastPathComponent).lineLimit(1)
+                                            Text(file.url.deletingLastPathComponent().path.replacingOccurrences(
+                                                of: NSHomeDirectory(),
+                                                with: "~"
+                                            ))
+                                            .font(.system(size: 11)).foregroundStyle(Theme.text3).lineLimit(1).truncationMode(.middle)
+                                        }
+                                        Spacer()
+                                        UsageBar(fraction: Double(file.bytes) / largest, color: Theme.accent, height: 4).frame(width: 90)
+                                        Text(Format.storage(file.bytes)).monospacedDigit().frame(width: 80, alignment: .trailing)
+                                        Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }
+                                            .buttonStyle(SecondaryButtonStyle())
+                                            .opacity(hovering ? 1 : 0.55)
                                     }
-                                    Spacer()
-                                    UsageBar(fraction: Double(file.bytes) / largest, color: Theme.accent, height: 4).frame(width: 90)
-                                    Text(Format.storage(file.bytes)).monospacedDigit().frame(width: 80, alignment: .trailing)
-                                    Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }
-                                        .buttonStyle(SecondaryButtonStyle())
+                                    .padding(.horizontal, 10)
+                                    .frame(height: 48)
                                 }
-                                .padding(.horizontal, 10)
-                                .frame(height: 48)
                             }
                         }
                     }
@@ -665,30 +637,32 @@ private struct CleanupHistoryView: View {
     }
 
     private func row(_ entry: CleanupLog.Entry) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon(for: entry.action)).foregroundStyle(Theme.text2).frame(width: 20).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(entry.path.isEmpty ? entry.ruleID : entry.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                    .font(.system(size: 12, design: .monospaced)).lineLimit(1).truncationMode(.middle)
-                Text("\(label(for: entry.action)) · \(entry.date.formatted(date: .abbreviated, time: .shortened))")
-                    .font(.system(size: 11)).foregroundStyle(Theme.text3)
-            }
-            Spacer()
-            Text(Format.storage(entry.bytes)).monospacedDigit().foregroundStyle(Theme.text2)
-            if entry.action == "trash", canRestore(entry) {
-                Button("Restore") {
-                    Task {
-                        if await scan.restore(entry) {
-                            restoredIDs.insert(entry.id)
-                            entries = scan.historyEntries()
+        HoverRow { _ in
+            HStack(spacing: 12) {
+                Image(systemName: icon(for: entry.action)).foregroundStyle(Theme.text2).frame(width: 20).accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.path.isEmpty ? entry.ruleID : entry.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                        .font(.system(size: 12, design: .monospaced)).lineLimit(1).truncationMode(.middle)
+                    Text("\(label(for: entry.action)) · \(entry.date.formatted(date: .abbreviated, time: .shortened))")
+                        .font(.system(size: 11)).foregroundStyle(Theme.text3)
+                }
+                Spacer()
+                Text(Format.storage(entry.bytes)).monospacedDigit().foregroundStyle(Theme.text2)
+                if entry.action == "trash", canRestore(entry) {
+                    Button("Restore") {
+                        Task {
+                            if await scan.restore(entry) {
+                                restoredIDs.insert(entry.id)
+                                entries = scan.historyEntries()
+                            }
                         }
                     }
+                    .buttonStyle(SecondaryButtonStyle())
                 }
-                .buttonStyle(SecondaryButtonStyle())
             }
+            .padding(.horizontal, 10)
+            .frame(minHeight: 44)
         }
-        .padding(.horizontal, 10)
-        .frame(minHeight: 44)
     }
 
     private func canRestore(_ entry: CleanupLog.Entry) -> Bool {
@@ -712,5 +686,45 @@ private struct CleanupHistoryView: View {
         case "restore": String(localized: "Restored")
         default: String(localized: "Built-in cleanup")
         }
+    }
+}
+
+/// One file or folder in the report, with Show in Finder revealed on hover.
+private struct ItemRow: View {
+    @Environment(ScanCoordinator.self) private var scan
+    let item: ScanItem
+    let focused: Bool
+    let focus: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        let included = !scan.excludedItems.contains(item.id)
+        HStack(spacing: 12) {
+            Toggle(isOn: Binding(get: { included }, set: { _ in scan.toggleItem(item.id) })) { EmptyView() }
+                .toggleStyle(.checkbox)
+                .labelsHidden()
+            Button(action: focus) {
+                Text(item.url.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
+                    .font(.system(size: 12, design: .monospaced))
+                    .foregroundStyle(included ? Theme.text : Theme.text3)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(RowButtonStyle())
+            Text(Format.storage(item.bytes)).monospacedDigit().foregroundStyle(Theme.text2)
+            Button {
+                NSWorkspace.shared.activateFileViewerSelecting([item.url])
+            } label: {
+                Image(systemName: "magnifyingglass").frame(width: 22, height: 22)
+            }
+            .buttonStyle(SecondaryButtonStyle())
+            .opacity(hovering || focused ? 1 : 0)
+            .accessibilityLabel(Text("Show in Finder"))
+        }
+        .padding(.horizontal, 14)
+        .frame(height: 38)
+        .hoverSurface(radius: 0, selected: focused, hovering: $hovering)
     }
 }

@@ -11,6 +11,9 @@ enum Theme {
     static let control = Color(light: 0xE5E7EB, dark: 0x2A2D37)
     static let border = Color(light: 0x0F1115, lightAlpha: 0.08, dark: 0xFFFFFF, darkAlpha: 0.07)
     static let borderStrong = Color(light: 0x0F1115, lightAlpha: 0.14, dark: 0xFFFFFF, darkAlpha: 0.12)
+    /// Fill under a hovered row or ghost button.
+    static let hover = Color(light: 0x0F1115, lightAlpha: 0.045, dark: 0xFFFFFF, darkAlpha: 0.055)
+    static let borderHover = Color(light: 0x0F1115, lightAlpha: 0.22, dark: 0xFFFFFF, darkAlpha: 0.22)
     static let track = Color(light: 0x0F1115, lightAlpha: 0.07, dark: 0xFFFFFF, darkAlpha: 0.07)
 
     // Text

@@ -143,8 +143,32 @@ struct PopoverView: View {
         highlight: Color? = nil,
         @ViewBuilder detail: () -> some View
     ) -> some View {
+        let detailView = detail()
+        return HoverRowButton(radius: 12, restingFill: Theme.raised) {
+            openDashboard(.system)
+        } label: { hovering in
+            tileContent(title, value: value, color: color, hovering: hovering, detail: detailView)
+        }
+        .overlay {
+            if let highlight {
+                RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(highlight.opacity(0.4), lineWidth: 1)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityHint(Text("Opens System"))
+    }
+
+    private func tileContent(_ title: LocalizedStringKey, value: String, color: Color, hovering: Bool, detail: some View) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title).font(.system(size: 11)).foregroundStyle(Theme.text2)
+            HStack {
+                Text(title).font(.system(size: 11)).foregroundStyle(hovering ? Theme.text : Theme.text2)
+                Spacer()
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Theme.text3)
+                    .opacity(hovering ? 1 : 0)
+                    .accessibilityHidden(true)
+            }
             Text(value)
                 .font(.system(size: 22, weight: .bold))
                 .monospacedDigit()
@@ -152,18 +176,11 @@ struct PopoverView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .contentTransition(.numericText())
-            detail().frame(height: 22, alignment: .bottom)
+            detail.frame(height: 22, alignment: .bottom)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.raised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            if let highlight {
-                RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(highlight.opacity(0.4), lineWidth: 1)
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 
     @ViewBuilder private var network: some View {
@@ -187,18 +204,22 @@ struct PopoverView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("HEAVIEST APPS").font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.text3).padding(.bottom, 4)
                 ForEach(Array(top)) { group in
-                    HStack(spacing: 10) {
-                        AppAvatar(name: group.name, bundlePath: group.bundlePath, size: 22)
-                        Text(group.name).lineLimit(1)
-                        Spacer()
-                        Text(Format.memory(group.footprintBytes)).monospacedDigit().foregroundStyle(Theme.text2)
-                        if AppControl.runningApp(for: group) != nil {
-                            Button("Quit") { AppControl.quit(group) }
-                                .buttonStyle(SecondaryButtonStyle())
-                                .accessibilityLabel(Text("Quit \(group.name)"))
+                    HoverRow { hovering in
+                        HStack(spacing: 10) {
+                            AppAvatar(name: group.name, bundlePath: group.bundlePath, size: 22)
+                            Text(group.name).lineLimit(1)
+                            Spacer()
+                            Text(Format.memory(group.footprintBytes)).monospacedDigit().foregroundStyle(Theme.text2)
+                            if AppControl.runningApp(for: group) != nil {
+                                Button("Quit") { AppControl.quit(group) }
+                                    .buttonStyle(SecondaryButtonStyle())
+                                    .opacity(hovering ? 1 : 0)
+                                    .accessibilityLabel(Text("Quit \(group.name)"))
+                            }
                         }
+                        .padding(.horizontal, 6)
+                        .frame(minHeight: 32)
                     }
-                    .frame(minHeight: 32)
                 }
             }
         }
