@@ -13,57 +13,96 @@ struct OnboardingView: View {
     @AppStorage(Preferences.Key.alertsEnabled) private var alertsEnabled = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    var body: some View {
-        VStack(spacing: 0) {
-            Group {
-                switch step {
-                case 0: welcome
-                case 1: access
-                default: startup
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(36)
-            .transition(.opacity.combined(with: .move(edge: .trailing)))
-            .id(step)
+    private let steps: [LocalizedStringResource] = ["Welcome", "Access", "Startup"]
 
-            Divider()
-            HStack {
-                HStack(spacing: 6) {
-                    ForEach(0 ..< 3) { index in
-                        Capsule()
-                            .fill(index == step ? Brand.accent : Color.secondary.opacity(0.4))
-                            .frame(width: index == step ? 18 : 7, height: 7)
+    var body: some View {
+        HStack(spacing: 0) {
+            sidebar
+            VStack(spacing: 0) {
+                Group {
+                    switch step {
+                    case 0: welcome
+                    case 1: access
+                    default: startup
                     }
                 }
-                .accessibilityElement()
-                .accessibilityLabel(Text("Step \(step + 1) of 3"))
-                Spacer()
-                if step > 0 {
-                    Button("Back") { go(step - 1) }
-                }
-                Button(step == 2 ? "Done" : "Continue") {
-                    if step == 2 {
-                        complete()
-                    } else {
-                        go(step + 1)
-                    }
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Brand.accent)
-                .keyboardShortcut(.defaultAction)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .padding(.horizontal, 36)
+                .padding(.top, 44)
+                .id(step)
+                .transition(.opacity.combined(with: .move(edge: .trailing)))
+                footer
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 16)
         }
-        .frame(width: 640, height: 460)
+        .frame(width: 720, height: 520)
+        .background(Theme.surface)
+    }
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            LogoMark(size: 72, dot: Theme.good)
+                .padding(.top, 28)
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(steps.enumerated()), id: \.offset) { index, name in
+                    HStack(spacing: 10) {
+                        ZStack {
+                            Circle().fill(index == step ? Theme.accentButton : (index < step ? Theme.good.opacity(0.18) : Theme.control))
+                            if index < step {
+                                Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)).foregroundStyle(Theme.goodText)
+                            } else {
+                                Text(verbatim: "\(index + 1)").font(.system(size: 11, weight: .semibold))
+                                    .foregroundStyle(index == step ? .white : Theme.text3)
+                            }
+                        }
+                        .frame(width: 20, height: 20)
+                        Text(name)
+                            .fontWeight(index == step ? .semibold : .regular)
+                            .foregroundStyle(index == step ? Theme.text : Theme.text2)
+                    }
+                    .frame(height: 32)
+                }
+            }
+            Spacer()
+            Text("Open source · GPL-3.0\nNo account, no telemetry")
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.text3)
+                .lineSpacing(3)
+                .padding(.bottom, 20)
+        }
+        .padding(.horizontal, 22)
+        .frame(width: 240, alignment: .leading)
+        .frame(maxHeight: .infinity)
+        .background(Theme.background)
+        .overlay(alignment: .trailing) { Rectangle().fill(Theme.border).frame(width: 1) }
+    }
+
+    private var footer: some View {
+        HStack(spacing: 10) {
+            Text("Step \(step + 1) of 3").font(.system(size: 12)).foregroundStyle(Theme.text3)
+            Spacer()
+            if step > 0 {
+                Button("Back") { go(step - 1) }.buttonStyle(SecondaryButtonStyle(large: true))
+            }
+            Button(step == 2 ? "Start using Osin" : "Continue") {
+                if step == 2 {
+                    complete()
+                } else {
+                    go(step + 1)
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .keyboardShortcut(.defaultAction)
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 18)
+        .overlay(alignment: .top) { Rectangle().fill(Theme.border).frame(height: 1) }
     }
 
     private func go(_ next: Int) {
         if reduceMotion {
             step = next
         } else {
-            withAnimation(.spring(duration: 0.25)) { step = next }
+            withAnimation(.spring(duration: 0.26)) { step = next }
         }
     }
 
@@ -78,119 +117,111 @@ struct OnboardingView: View {
 
     private var welcome: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Image(systemName: "gauge.with.dots.needle.67percent")
-                .font(.system(size: 40))
-                .foregroundStyle(Brand.accent)
-                .accessibilityHidden(true)
-            Text("Welcome to Osin").font(.largeTitle.bold())
-            Text("Osin watches your Mac's health from the menu bar and helps you reclaim disk space safely.")
-                .foregroundStyle(.secondary)
+            Text("Your Mac, honestly.").font(.system(size: 28, weight: .bold)).tracking(-0.6)
+            Text("Osin watches your Mac's health from the menu bar and frees space without surprises.")
+                .foregroundStyle(Theme.text2)
             promise(
-                "No surprise deletions",
-                "Only regenerable caches are deleted. Everything else goes to the Trash and can be restored.",
-                "arrow.uturn.backward.circle"
+                "arrow.uturn.backward",
+                Theme.good,
+                "Nothing vanishes by surprise",
+                "Only regenerable caches are deleted. Everything else goes to the Trash."
             )
-            promise("Honest about memory", "No placebo “Free RAM” button. Osin shows memory pressure and which app to quit.", "memorychip")
-            promise("Private", "No telemetry. Nothing leaves your Mac.", "lock.shield")
+            promise("memorychip", Theme.accent, "Honest about memory", "Pressure, not placebo. Osin tells you which app to quit.")
+            promise("lock.shield", Theme.text2, "Private by design", "No telemetry. Nothing leaves this Mac.")
         }
     }
 
-    private func promise(_ title: LocalizedStringKey, _ body: LocalizedStringKey, _ icon: String) -> some View {
+    private func promise(_ icon: String, _ tint: Color, _ title: LocalizedStringKey, _ body: LocalizedStringKey) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundStyle(.green)
-                .frame(width: 28)
-                .accessibilityHidden(true)
+            IconTile(systemName: icon, tint: tint, size: 28)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.headline)
-                Text(body).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                Text(title).fontWeight(.semibold)
+                Text(body).foregroundStyle(Theme.text2).fixedSize(horizontal: false, vertical: true)
             }
         }
     }
 
     private var access: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("OPTIONAL").font(.caption.weight(.semibold)).foregroundStyle(Brand.accent)
-            Text("Let Osin see more of your disk").font(.title.bold())
-            Text(
-                // swiftlint:disable:next line_length
-                "macOS protects some folders. Granting access lets Smart Scan measure caches there. Osin only reads paths listed in its open-source rules."
-            )
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
-            accessRow(
-                title: "Full Disk Access",
-                detail: "Mail, Safari and other apps' caches, device backups.",
-                granted: hasFullDiskAccess
-            ) {
-                Button("Open System Settings") {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("OPTIONAL").font(.system(size: 11, weight: .bold)).tracking(0.8).foregroundStyle(Theme.accentText)
+            Text("See more of your disk").font(.system(size: 26, weight: .bold)).tracking(-0.5)
+            Text("macOS protects some folders. Osin only reads paths listed in its open-source rules.")
+                .foregroundStyle(Theme.text2)
+                .fixedSize(horizontal: false, vertical: true)
+            accessRow("Full Disk Access", "Mail and Safari caches, device backups", granted: hasFullDiskAccess) {
+                Button(hasFullDiskAccess ? "Granted" : "Open Settings") {
                     if let url = FullDiskAccess.settingsURL {
                         NSWorkspace.shared.open(url)
                     }
                 }
+                .buttonStyle(SecondaryButtonStyle())
                 Button("Check again") { hasFullDiskAccess = FullDiskAccess.isGranted() }
+                    .buttonStyle(.link)
+                    .font(.system(size: 12))
             }
-            accessRow(
-                title: "Downloads folder",
-                detail: "Old installers and downloads. macOS asks once; you can say no.",
-                granted: downloadsAsked
-            ) {
-                Button("Allow access…") {
+            accessRow("Downloads folder", "Old installers. macOS asks once; you can say no.", granted: downloadsAsked) {
+                Button(downloadsAsked ? "Asked" : "Allow…") {
                     let downloads = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Downloads")
                     Task.detached {
                         _ = try? FileManager.default.contentsOfDirectory(atPath: downloads.path)
                         await MainActor.run { downloadsAsked = true }
                     }
                 }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(downloadsAsked)
             }
-            Text("Without access, those places are skipped and marked in the report.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
     private func accessRow(
-        title: LocalizedStringKey,
-        detail: LocalizedStringKey,
+        _ title: LocalizedStringKey,
+        _ detail: LocalizedStringKey,
         granted: Bool,
         @ViewBuilder actions: () -> some View
     ) -> some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(spacing: 12) {
             Image(systemName: granted ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(granted ? .green : .secondary)
-                .font(.title2)
+                .font(.system(size: 20))
+                .foregroundStyle(granted ? Theme.good : Theme.text3)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.headline)
-                Text(detail).font(.callout).foregroundStyle(.secondary)
+                Text(title).fontWeight(.semibold)
+                Text(detail).font(.system(size: 12)).foregroundStyle(Theme.text2)
             }
             Spacer()
-            if !granted {
-                actions()
-            }
+            actions()
         }
         .padding(12)
-        .background(.fill.quinary, in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.raised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var startup: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("Stay in the loop").font(.title.bold())
-            Text("Osin uses very little energy in the background: it checks every 30 seconds and never cleans by itself.")
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Quietly in the background").font(.system(size: 26, weight: .bold)).tracking(-0.5)
+            Text("Osin checks every 30 seconds using about 0.1% CPU, and never cleans on its own.")
+                .foregroundStyle(Theme.text2)
                 .fixedSize(horizontal: false, vertical: true)
-            Toggle("Open Osin at login", isOn: $launchAtLogin)
+            toggleRow("Open at login", "So the menu bar is always up to date", isOn: $launchAtLogin)
                 .onChange(of: launchAtLogin) { _, enabled in
                     try? LaunchAtLogin.set(enabled)
                     launchAtLogin = LaunchAtLogin.isEnabled
                 }
-            Toggle("Notify me when the disk is almost full or memory runs out", isOn: $alertsEnabled)
-            Text("You can change these any time in Settings.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            toggleRow("Alerts", "Disk almost full, memory running out", isOn: $alertsEnabled)
+            Text("You can change these any time in Settings.").font(.system(size: 12)).foregroundStyle(Theme.text3)
+        }
+    }
+
+    private func toggleRow(_ title: LocalizedStringKey, _ detail: LocalizedStringKey, isOn: Binding<Bool>) -> some View {
+        Toggle(isOn: isOn) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).fontWeight(.semibold)
+                Text(detail).font(.system(size: 12)).foregroundStyle(Theme.text2)
+            }
         }
         .toggleStyle(.switch)
+        .tint(Theme.accentButton)
+        .padding(12)
+        .background(Theme.raised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
@@ -213,12 +244,14 @@ final class OnboardingWindowController {
             return
         }
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 640, height: 460),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
+            styleMask: [.titled, .closable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.isReleasedWhenClosed = false
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
         window.title = String(localized: "Welcome to Osin")
         window.contentView = NSHostingView(rootView: OnboardingView { [weak self] in
             onFinish()

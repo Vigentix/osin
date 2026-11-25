@@ -13,6 +13,20 @@ public struct StorageBreakdown: Sendable, Equatable, Codable {
     public let total: UInt64
     public let measuredAt: Date
 
+    public init(
+        apps: UInt64, developer: UInt64, caches: UInt64, reclaimable: UInt64,
+        other: UInt64, free: UInt64, total: UInt64, measuredAt: Date
+    ) {
+        self.apps = apps
+        self.developer = developer
+        self.caches = caches
+        self.reclaimable = reclaimable
+        self.other = other
+        self.free = free
+        self.total = total
+        self.measuredAt = measuredAt
+    }
+
     public static func measure(
         home: URL = FileManager.default.homeDirectoryForCurrentUser,
         applications: URL = URL(fileURLWithPath: "/Applications"),

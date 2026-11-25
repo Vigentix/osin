@@ -38,7 +38,7 @@ final class ScanCoordinator {
             return true
         }
 
-        /// Cannot be undone and is not regenerable: built-ins.
+        /// Built-ins cannot be undone and are not regenerable.
         var isIrreversible: Bool {
             if case .rule = kind {
                 return false
@@ -54,25 +54,38 @@ final class ScanCoordinator {
         }
     }
 
+    struct Step: Identifiable {
+        let id: Int
+        let name: String
+        var bytes: UInt64?
+    }
+
     static let simulatorsID = "builtin.simulators"
     static let emptyTrashID = "builtin.empty-trash"
 
     private(set) var phase: Phase = .idle
     private(set) var groups: [Group] = []
-    private(set) var progress: Double = 0
-    private(set) var currentStep = ""
-    /// Names of the scan steps and the index of the one running, for the progress list.
-    private(set) var stepNames: [String] = []
+    private(set) var steps: [Step] = []
     private(set) var currentStepIndex = 0
-    /// Debug hook: limit which rules run (used by the snapshot renderer to avoid permission prompts).
-    @ObservationIgnored var ruleFilter: (CleanupRule) -> Bool = { _ in true }
+    private(set) var foundBytes: UInt64 = 0
+    private(set) var currentPath = ""
     private(set) var lastScanDate: Date?
+    private(set) var lastScanWasPartial = false
     private(set) var outcome: CleanupOutcome?
+    private(set) var scoreBefore: Int?
+    private(set) var freeBefore: UInt64?
     private(set) var restored = false
     private(set) var errorMessage: String?
     var selectedGroups: Set<String> = []
     var excludedItems: Set<String> = []
+    var focusedGroupID: String?
 
+    /// Called after a cleanup so metrics refresh right away.
+    @ObservationIgnored var onCleaned: (() -> Void)?
+    /// Called when any scan (background or user-started) completes.
+    @ObservationIgnored var onScanFinished: (() -> Void)?
+    /// Debug hook: limit which rules run (the snapshot renderer avoids permission prompts).
+    @ObservationIgnored var ruleFilter: (CleanupRule) -> Bool = { _ in true }
     @ObservationIgnored private var task: Task<Void, Never>?
     @ObservationIgnored private let log: CleanupLog? = (try? CleanupLog.defaultURL()).map(CleanupLog.init(url:))
     @ObservationIgnored private lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0) }
@@ -87,9 +100,17 @@ final class ScanCoordinator {
         groups.filter { $0.tier == .review && ($0.bytes > 0 || $0.needsAccess) }
     }
 
-    /// Size of the pre-selected safe groups from the last scan, for the popover.
+    /// Safe-tier total from the last scan, `nil` before any scan.
     var safeReclaimableBytes: UInt64? {
         lastScanDate == nil ? nil : safeGroups.reduce(0) { $0 + $1.bytes }
+    }
+
+    var reviewBytes: UInt64 {
+        reviewGroups.reduce(0) { $0 + $1.bytes }
+    }
+
+    var focusedGroup: Group? {
+        groups.first { $0.id == focusedGroupID } ?? safeGroups.first ?? reviewGroups.first
     }
 
     func selectedBytes(of group: Group) -> UInt64 {
@@ -117,18 +138,23 @@ final class ScanCoordinator {
         groups.contains(where: \.needsAccess)
     }
 
+    var progress: Double {
+        steps.isEmpty ? 0 : Double(min(currentStepIndex, steps.count)) / Double(steps.count)
+    }
+
     // MARK: Actions
 
+    /// Full, user-started scan.
     func start() {
-        task?.cancel()
-        phase = .scanning
-        progress = 0
-        currentStep = ""
-        groups = []
-        outcome = nil
-        restored = false
-        errorMessage = nil
-        task = Task { await runScan() }
+        runScan(silent: false, filter: ruleFilter)
+    }
+
+    /// Quiet scan at launch so the Overview can show what is reclaimable. Skips Downloads, which would
+    /// trigger a macOS permission prompt without context, and never interrupts what the user is doing.
+    func backgroundScan() {
+        guard phase == .idle || phase == .done else { return }
+        let filter = ruleFilter
+        runScan(silent: true) { rule in filter(rule) && !rule.paths.contains { $0.hasPrefix("~/Downloads") } }
     }
 
     func cancel() {
@@ -137,12 +163,9 @@ final class ScanCoordinator {
         phase = groups.isEmpty ? .idle : .report
     }
 
-    func reset() {
-        phase = lastScanDate == nil ? .idle : .report
+    func showReport() {
+        phase = groups.isEmpty ? .idle : .report
         outcome = nil
-        if lastScanDate != nil {
-            start()
-        }
     }
 
     func toggleGroup(_ id: String) {
@@ -161,10 +184,22 @@ final class ScanCoordinator {
         }
     }
 
-    func clean() {
+    /// One click from the Overview or popover: clean only the safe, regenerable groups from the last scan.
+    func cleanSafeNow(score: Int?, free: UInt64?) {
+        guard !safeGroups.isEmpty else { return }
+        selectedGroups = Set(safeGroups.map(\.id))
+        excludedItems = []
+        phase = .report
+        clean(score: score, free: free)
+    }
+
+    func clean(score: Int?, free: UInt64?) {
         guard let cleaner, phase == .report else { return }
         let chosen = groups.filter { selectedGroups.contains($0.id) }
         let excluded = excludedItems
+        scoreBefore = score
+        freeBefore = free
+        restored = false
         phase = .cleaning
         task = Task {
             var result = CleanupOutcome()
@@ -201,7 +236,9 @@ final class ScanCoordinator {
             result.trashed += ruleOutcome.trashed
             result.failures += ruleOutcome.failures
             outcome = result
+            removeCleaned(chosen.map(\.id))
             phase = .done
+            onCleaned?()
         }
     }
 
@@ -213,6 +250,7 @@ final class ScanCoordinator {
             if !failures.isEmpty {
                 errorMessage = String(localized: "\(failures.count) items could not be restored.")
             }
+            onCleaned?()
         }
     }
 
@@ -228,26 +266,46 @@ final class ScanCoordinator {
             bytes: entry.bytes,
             ruleID: entry.ruleID
         )
-        return await cleaner.undo([item]).isEmpty
+        let ok = await cleaner.undo([item]).isEmpty
+        onCleaned?()
+        return ok
     }
 
     // MARK: Scan
 
-    private func runScan() async {
+    private func runScan(silent: Bool, filter: @escaping (CleanupRule) -> Bool) {
+        task?.cancel()
+        if !silent {
+            phase = .scanning
+            outcome = nil
+            restored = false
+        }
+        errorMessage = nil
+        foundBytes = 0
+        currentStepIndex = 0
+        task = Task { await scan(silent: silent, filter: filter) }
+    }
+
+    private func scan(silent: Bool, filter: @escaping (CleanupRule) -> Bool) async {
         do {
-            let rules = try CleanupRule.bundled().filter { (try? $0.validate()) != nil && ruleFilter($0) }
-            let steps = Double(rules.count + 2)
-            stepNames = rules.map { String(localized: String.LocalizationValue($0.name)) } + [
-                String(localized: "Simulators"),
-                String(localized: "Trash")
-            ]
-            currentStepIndex = 0
-            let names = Dictionary(uniqueKeysWithValues: rules.map { ($0.id, String(localized: String.LocalizationValue($0.name))) })
+            let rules = try CleanupRule.bundled().filter { (try? $0.validate()) != nil && filter($0) }
+            let names = rules.map { String(localized: String.LocalizationValue($0.name)) }
+            steps = (names + [String(localized: "Simulators"), String(localized: "Trash")]).enumerated().map { Step(
+                id: $0.offset,
+                name: $0.element
+            ) }
+            let paths = rules.map { $0.paths.first ?? $0.find?.roots.first ?? "" }
+
             let results = try await Scanner().scan(rules) { event in
                 Task { @MainActor in
-                    self.progress = Double(event.index) / steps
-                    self.currentStep = names[event.ruleID] ?? event.ruleID
-                    self.currentStepIndex = event.index
+                    if let result = event.completed {
+                        self.steps[event.index].bytes = result.totalBytes
+                        self.foundBytes += result.totalBytes
+                        self.currentStepIndex = event.index + 1
+                    } else {
+                        self.currentStepIndex = event.index
+                        self.currentPath = paths[event.index]
+                    }
                 }
             }
             var found = results.map { result in
@@ -256,14 +314,18 @@ final class ScanCoordinator {
                     name: String(localized: String.LocalizationValue(result.rule.name)),
                     detail: String(localized: String.LocalizationValue(result.rule.detail)),
                     tier: result.rule.tier,
-                    bytes: result.totalBytes, kind: .rule(result), needsAccess: result.needsAccess
+                    bytes: result.totalBytes,
+                    kind: .rule(result),
+                    needsAccess: result.needsAccess
                 )
             }
 
-            currentStep = String(localized: "Simulators")
             currentStepIndex = rules.count
-            progress = Double(rules.count) / steps
-            if let simulators = await SimulatorInventory.measure(), simulators.bytes > 0 || simulators.count >= 1 {
+            currentPath = "xcrun simctl"
+            let simulators = await SimulatorInventory.measure()
+            steps[rules.count].bytes = simulators?.bytes ?? 0
+            if let simulators, simulators.bytes > 0 {
+                foundBytes += simulators.bytes
                 found.append(Group(
                     id: Self.simulatorsID,
                     name: String(localized: "Unavailable simulators"),
@@ -272,10 +334,12 @@ final class ScanCoordinator {
                 ))
             }
 
-            currentStep = String(localized: "Trash")
             currentStepIndex = rules.count + 1
-            progress = Double(rules.count + 1) / steps
-            if let trashBytes = try? await EmptyTrash.measure(), trashBytes > 0 {
+            currentPath = "~/.Trash"
+            let trashBytes = await (try? EmptyTrash.measure()) ?? 0
+            steps[rules.count + 1].bytes = trashBytes
+            if trashBytes > 0 {
+                foundBytes += trashBytes
                 found.append(Group(
                     id: Self.emptyTrashID,
                     name: String(localized: "Empty Trash"),
@@ -285,17 +349,30 @@ final class ScanCoordinator {
             }
 
             try Task.checkCancellation()
+            currentStepIndex = steps.count
             groups = found
             selectedGroups = Set(found.filter { $0.tier == .safe }.map(\.id))
             excludedItems = []
+            focusedGroupID = (found.first { $0.tier == .safe && $0.bytes > 0 } ?? found.first)?.id
             lastScanDate = Date()
-            progress = 1
-            phase = .report
+            lastScanWasPartial = silent
+            if !silent {
+                phase = .report
+            }
+            onScanFinished?()
         } catch is CancellationError {
             return
         } catch {
             errorMessage = error.localizedDescription
-            phase = .idle
+            if !silent {
+                phase = .idle
+            }
         }
+    }
+
+    private func removeCleaned(_ ids: [String]) {
+        let cleaned = Set(ids)
+        groups.removeAll { cleaned.contains($0.id) }
+        selectedGroups.subtract(cleaned)
     }
 }

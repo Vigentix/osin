@@ -8,8 +8,9 @@
     enum SnapshotRenderer {
         private struct Screen {
             let name: String
-            let view: AnyView
+            let section: DashboardSection?
             let size: CGSize
+            let view: AnyView?
         }
 
         static var outputDirectory: URL? {
@@ -21,46 +22,45 @@
         static func run(monitor: SystemMonitor, scan: ScanCoordinator, into directory: URL) async {
             monitor.setVisible(.dashboard, true)
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            // Let a few samples arrive so rates and sparklines have data.
-            try? await Task.sleep(for: .seconds(7))
-
-            let screens: [Screen] = [
-                Screen(name: "popover", view: AnyView(PopoverView()), size: CGSize(width: 368, height: 640)),
-                Screen(name: "overview", view: AnyView(OverviewView()), size: CGSize(width: 1000, height: 900)),
-                Screen(name: "memory", view: AnyView(MemoryView()), size: CGSize(width: 1000, height: 1000)),
-                Screen(name: "processes", view: AnyView(ProcessesView()), size: CGSize(width: 900, height: 600)),
-                Screen(name: "battery", view: AnyView(BatteryView()), size: CGSize(width: 1000, height: 640))
-            ]
-            // Smart Scan is read-only; render its report too.
-            scan.ruleFilter = { !$0.paths.contains { $0.hasPrefix("~/Downloads") } } // avoid the Downloads permission prompt
+            // Smart Scan is read-only; skip Downloads to avoid a permission prompt.
+            scan.ruleFilter = { !$0.paths.contains { $0.hasPrefix("~/Downloads") } }
             scan.start()
             for _ in 0 ..< 240 where scan.phase == .scanning {
                 try? await Task.sleep(for: .milliseconds(500))
             }
-            let reportScreens = [
-                Screen(name: "smartscan", view: AnyView(SmartScanView()), size: CGSize(width: 1000, height: 1100)),
-                Screen(name: "storage", view: AnyView(StorageView()), size: CGSize(width: 1000, height: 800)),
-                Screen(name: "history", view: AnyView(CleanupHistoryView()), size: CGSize(width: 900, height: 500)),
-                Screen(name: "onboarding", view: AnyView(OnboardingView {}), size: CGSize(width: 640, height: 460)),
-                Screen(name: "settings", view: AnyView(SettingsView()), size: CGSize(width: 520, height: 420))
+            monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
+            try? await Task.sleep(for: .seconds(6))
+
+            let navigator = Navigator()
+            let screens = [
+                Screen(name: "overview", section: .overview, size: CGSize(width: 1200, height: 1180), view: nil),
+                Screen(name: "cleanup", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil),
+                Screen(name: "activity", section: .activity, size: CGSize(width: 1200, height: 780), view: nil),
+                Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 1300), view: nil),
+                Screen(name: "popover", section: nil, size: CGSize(width: 376, height: 640), view: AnyView(PopoverView())),
+                Screen(name: "onboarding", section: nil, size: CGSize(width: 720, height: 520), view: AnyView(OnboardingView {})),
+                Screen(name: "settings", section: nil, size: CGSize(width: 520, height: 420), view: AnyView(SettingsView()))
             ]
             for scheme in [ColorScheme.dark, .light] {
-                for screen in screens + reportScreens {
-                    let (name, view, size) = (screen.name, screen.view, screen.size)
-                    let content = view
+                for screen in screens {
+                    if let section = screen.section {
+                        navigator.section = section
+                    }
+                    let root = screen.view ?? AnyView(DashboardView())
+                    let content = root
                         .environment(monitor)
                         .environment(scan)
-                        .environment(Navigator())
+                        .environment(navigator)
                         .environment(Updater())
                         .environment(\.colorScheme, scheme)
-                        .frame(width: size.width, height: size.height)
-                        .background(Color(nsColor: .windowBackgroundColor))
+                        .frame(width: screen.size.width, height: screen.size.height)
+                        .background(Theme.background)
                     let suffix = scheme == .dark ? "dark" : "light"
                     await render(
                         content,
-                        size: size,
+                        size: screen.size,
                         appearance: scheme == .dark ? .darkAqua : .aqua,
-                        to: directory.appendingPathComponent("\(name)-\(suffix).png")
+                        to: directory.appendingPathComponent("\(screen.name)-\(suffix).png")
                     )
                 }
             }

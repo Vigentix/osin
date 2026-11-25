@@ -20,6 +20,11 @@ final class SystemMonitor {
     private(set) var snapshot: SystemSnapshot?
     private(set) var cpuHistory = RollingWindow<Double>(capacity: historyLength)
     private(set) var memoryHistory = RollingWindow<Double>(capacity: historyLength)
+    private(set) var networkHistory = RollingWindow<Double>(capacity: historyLength)
+    /// Recent memory footprint per process group, for the Activity inspector.
+    private(set) var groupMemoryHistory: [String: RollingWindow<Double>] = [:]
+    /// Disk usage by category, measured at most once a day (cached across launches).
+    private(set) var storage: StorageBreakdown? = SystemMonitor.loadStorage()
 
     @ObservationIgnored private let sampler = SystemSampler()
     @ObservationIgnored private let history: HistoryStore? = try? HistoryStore(url: HistoryStore.defaultURL())
@@ -51,6 +56,11 @@ final class SystemMonitor {
         }
     }
 
+    /// Samples immediately (after a cleanup, for example) without waiting for the next tick.
+    func refreshNow() {
+        restartLoop()
+    }
+
     private func restartLoop() {
         loop?.cancel()
         loop = Task { [weak self] in
@@ -71,7 +81,45 @@ final class SystemMonitor {
         cpuHistory.append(next.cpu.total)
         let memory = next.memory
         memoryHistory.append(memory.physicalBytes == 0 ? 0 : Double(memory.usedBytes) / Double(memory.physicalBytes))
+        networkHistory.append(next.network.receiveBytesPerSecond + next.network.sendBytesPerSecond)
+        var groups: [String: RollingWindow<Double>] = [:]
+        for group in next.processes.prefix(30) {
+            var window = groupMemoryHistory[group.id] ?? RollingWindow<Double>(capacity: Self.historyLength)
+            window.append(Double(group.footprintBytes))
+            groups[group.id] = window
+        }
+        groupMemoryHistory = groups
         await persist(next)
+    }
+
+    // MARK: Storage
+
+    private static let storageKey = "storageBreakdown"
+
+    private static func loadStorage() -> StorageBreakdown? {
+        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return nil }
+        return try? JSONDecoder().decode(StorageBreakdown.self, from: data)
+    }
+
+    /// Re-measures categories when the cached value is older than a day, or always when `force` is set.
+    func refreshStorage(reclaimable: UInt64, force: Bool = false) {
+        guard let disk = snapshot?.disk else { return }
+        if !force, let storage, Date().timeIntervalSince(storage.measuredAt) < 86400 {
+            self.storage = StorageBreakdown(
+                apps: storage.apps, developer: storage.developer, caches: storage.caches, reclaimable: reclaimable,
+                other: storage.other, free: disk.availableBytes, total: disk.totalBytes, measuredAt: storage.measuredAt
+            )
+            return
+        }
+        Task {
+            guard let measured = try? await StorageBreakdown.measure(
+                totalBytes: disk.totalBytes, availableBytes: disk.availableBytes, reclaimableBytes: reclaimable
+            ) else { return }
+            storage = measured
+            if let data = try? JSONEncoder().encode(measured) {
+                UserDefaults.standard.set(data, forKey: Self.storageKey)
+            }
+        }
     }
 
     // MARK: History

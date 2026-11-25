@@ -2,14 +2,23 @@ import OsinCore
 import SwiftUI
 import SystemConfiguration
 
-enum Brand {
-    /// #6352E0, the accent chosen in the mockups.
-    static let accent = Color(red: 0x63 / 255, green: 0x52 / 255, blue: 0xE0 / 255)
-}
-
 enum MachineInfo {
     /// The user-visible computer name. `Host.current()` can block on DNS, so it is avoided.
     static let computerName: String = SCDynamicStoreCopyComputerName(nil, nil) as String? ?? "Mac"
+
+    /// "Apple M1 · 8 cores · 16 GB · macOS 26.6"
+    static let summary: String = {
+        var size = 0
+        sysctlbyname("machdep.cpu.brand_string", nil, &size, nil, 0)
+        var buffer = [CChar](repeating: 0, count: max(size, 1))
+        sysctlbyname("machdep.cpu.brand_string", &buffer, &size, nil, 0)
+        let chip = String(bytes: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, encoding: .utf8) ?? ""
+        let info = ProcessInfo.processInfo
+        let version = info.operatingSystemVersion
+        let memory = ByteCountFormatter.string(fromByteCount: Int64(info.physicalMemory), countStyle: .memory)
+        let system = "macOS \(version.majorVersion).\(version.minorVersion)"
+        return [chip, String(localized: "\(info.processorCount) cores"), memory, system].filter { !$0.isEmpty }.joined(separator: " · ")
+    }()
 }
 
 enum Format {
@@ -41,42 +50,6 @@ enum Format {
 
     static func percent(_ fraction: Double) -> String {
         fraction.formatted(.percent.precision(.fractionLength(0)))
-    }
-}
-
-extension HealthLevel {
-    var color: Color {
-        switch self {
-        case .good: .green
-        case .fair: .orange
-        case .poor: .red
-        }
-    }
-
-    var title: LocalizedStringResource {
-        switch self {
-        case .good: "Good"
-        case .fair: "Fair"
-        case .poor: "Poor"
-        }
-    }
-}
-
-extension MemoryPressure {
-    var color: Color {
-        switch self {
-        case .normal: .green
-        case .warning: .orange
-        case .critical: .red
-        }
-    }
-
-    var title: LocalizedStringResource {
-        switch self {
-        case .normal: "Normal"
-        case .warning: "Warning"
-        case .critical: "Critical"
-        }
     }
 }
 

@@ -43,6 +43,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.vigentix.osin
         PRODUCT_NAME: Osin
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Osin/Info.plist
         # Set by scripts/release.sh. Empty disables the updater (local and CI builds).

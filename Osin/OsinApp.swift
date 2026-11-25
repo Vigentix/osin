@@ -24,7 +24,26 @@ struct OsinApp: App {
                 .onAppear { appDelegate.monitor.setVisible(.dashboard, true) }
                 .onDisappear { appDelegate.monitor.setVisible(.dashboard, false) }
         }
-        .defaultSize(width: 1100, height: 720)
+        .defaultSize(width: 1200, height: 780)
+        .commands {
+            CommandMenu("Go") {
+                ForEach(DashboardSection.allCases) { section in
+                    Button {
+                        appDelegate.navigator.section = section
+                    } label: {
+                        Text(section.title)
+                    }
+                    .keyboardShortcut(section.key, modifiers: .command)
+                }
+                Divider()
+                Button("Rescan") {
+                    appDelegate.navigator.section = .cleanup
+                    appDelegate.navigator.cleanupTab = .smartScan
+                    appDelegate.scan.start()
+                }
+                .keyboardShortcut("r", modifiers: .command)
+            }
+        }
 
         Settings {
             SettingsView()
@@ -47,7 +66,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_: Notification) {
         Preferences.registerDefaults()
         Preferences.applyDockIcon()
-        monitor.onSnapshot = { [notifier] snapshot in notifier.handle(snapshot) }
+        var measuredStorage = false
+        monitor.onSnapshot = { [notifier, weak self] snapshot in
+            notifier.handle(snapshot)
+            guard let self, !measuredStorage else { return }
+            measuredStorage = true
+            monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
+        }
+        scan.onCleaned = { [weak self] in
+            guard let self else { return }
+            monitor.refreshNow()
+            Task {
+                try? await Task.sleep(for: .seconds(1))
+                self.monitor.refreshStorage(reclaimable: self.scan.safeReclaimableBytes ?? 0, force: true)
+            }
+        }
+        scan.onScanFinished = { [weak self] in
+            guard let self else { return }
+            monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
+        }
         monitor.start()
         NotificationCenter.default.addObserver(forName: .osinShowOnboarding, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.showOnboarding() }
@@ -60,6 +97,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #endif
         if !UserDefaults.standard.bool(forKey: Preferences.Key.onboardingCompleted) {
             showOnboarding()
+        }
+        // Read-only scan so the Overview and popover can offer one-click cleaning right away.
+        Task {
+            try? await Task.sleep(for: .seconds(5))
+            scan.backgroundScan()
         }
     }
 
@@ -75,6 +117,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 @Observable
 final class Navigator {
     var section: DashboardSection = .overview
+    var cleanupTab: CleanupTab = .smartScan
 }
 
 extension Notification.Name {

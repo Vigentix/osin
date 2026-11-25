@@ -46,25 +46,32 @@ struct MenuBarLabel: View {
 }
 
 enum MenuBarIcon {
-    private static let size = NSSize(width: 22, height: 18)
+    private static let size = NSSize(width: 18, height: 18)
 
-    /// The glyph is drawn with `labelColor` inside a drawing handler, so it resolves against the
-    /// menu bar's appearance at draw time. The image is not a template because the dot keeps its colour.
+    /// The Osin mark: a ring with a gap at the top right and the health dot inside the gap.
+    /// Drawn with `labelColor` inside a drawing handler so it follows the menu bar appearance;
+    /// not a template image because the dot keeps its colour.
     static func image(dot: NSColor?) -> NSImage {
         let image = NSImage(size: size, flipped: false) { rect in
-            let configuration = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
-                .applying(.init(paletteColors: [.labelColor]))
-            if let glyph = NSImage(systemSymbolName: "gauge.with.dots.needle.67percent", accessibilityDescription: nil)?
-                .withSymbolConfiguration(configuration)
-            {
-                let origin = NSPoint(x: 1, y: (rect.height - glyph.size.height) / 2)
-                glyph.draw(in: NSRect(origin: origin, size: glyph.size))
-            }
+            let center = NSPoint(x: rect.midX, y: rect.midY)
+            let radius: CGFloat = 6.2
+            let ring = NSBezierPath()
+            // Gap of 65° centred on 45° (top right); angles are counter-clockwise from 3 o'clock.
+            ring.appendArc(withCenter: center, radius: radius, startAngle: 77.5, endAngle: 372.5, clockwise: false)
+            ring.lineWidth = 2.3
+            ring.lineCapStyle = .round
+            NSColor.labelColor.setStroke()
+            ring.stroke()
             if let dot {
-                let diameter: CGFloat = 6
-                let dotRect = NSRect(x: rect.maxX - diameter - 0.5, y: 1.5, width: diameter, height: diameter)
+                let dotCenter = NSPoint(x: center.x + radius * 0.707, y: center.y + radius * 0.707)
+                let diameter: CGFloat = 5.4
                 dot.setFill()
-                NSBezierPath(ovalIn: dotRect).fill()
+                NSBezierPath(ovalIn: NSRect(
+                    x: dotCenter.x - diameter / 2,
+                    y: dotCenter.y - diameter / 2,
+                    width: diameter,
+                    height: diameter
+                )).fill()
             }
             return true
         }

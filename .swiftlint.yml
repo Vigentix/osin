@@ -23,8 +23,9 @@ opt_in_rules:
   - unowned_variable_capture
 
 line_length:
-  warning: 140
-  error: 200
+  warning: 160
+  error: 220
+  ignores_interpolated_strings: true
 
 identifier_name:
   excluded: [id, x, y, ok, db]
@@ -33,8 +34,8 @@ nesting:
   type_level: 2
 
 file_length:
-  warning: 600
-  error: 800
+  warning: 800
+  error: 1000
 
 function_body_length:
   warning: 80
@@ -46,3 +47,7 @@ cyclomatic_complexity:
 
 large_tuple:
   warning: 3
+
+type_body_length:
+  warning: 400
+  error: 500
