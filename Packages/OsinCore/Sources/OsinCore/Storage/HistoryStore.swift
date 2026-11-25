@@ -12,6 +12,9 @@ public struct HistoryPoint: Sendable, Equatable {
     public let networkSend: Double
     public let batteryCharge: Double?
     public let score: Int
+    /// Disk throughput in bytes per second.
+    public let diskRead: Double
+    public let diskWrite: Double
 
     public init(
         date: Date,
@@ -22,7 +25,9 @@ public struct HistoryPoint: Sendable, Equatable {
         networkReceive: Double,
         networkSend: Double,
         batteryCharge: Double?,
-        score: Int
+        score: Int,
+        diskRead: Double = 0,
+        diskWrite: Double = 0
     ) {
         self.date = date
         self.cpu = cpu
@@ -33,6 +38,8 @@ public struct HistoryPoint: Sendable, Equatable {
         self.networkSend = networkSend
         self.batteryCharge = batteryCharge
         self.score = score
+        self.diskRead = diskRead
+        self.diskWrite = diskWrite
     }
 
     public init(snapshot: SystemSnapshot) {
@@ -46,7 +53,9 @@ public struct HistoryPoint: Sendable, Equatable {
             networkReceive: snapshot.network.receiveBytesPerSecond,
             networkSend: snapshot.network.sendBytesPerSecond,
             batteryCharge: snapshot.battery?.chargeFraction,
-            score: snapshot.health.score
+            score: snapshot.health.score,
+            diskRead: snapshot.disk.readBytesPerSecond,
+            diskWrite: snapshot.disk.writeBytesPerSecond
         )
     }
 }
@@ -110,7 +119,10 @@ public actor HistoryStore {
     }
 
     public func record(_ point: HistoryPoint) throws {
-        let sql = "INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score) VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?)"
+        let sql = """
+        INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score, dr, dw)
+        VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
         try withStatement(sql) { statement in
             sqlite3_bind_int64(statement, 1, Int64(point.date.timeIntervalSince1970))
             sqlite3_bind_double(statement, 2, point.cpu)
@@ -125,6 +137,8 @@ public actor HistoryStore {
                 sqlite3_bind_null(statement, 8)
             }
             sqlite3_bind_int(statement, 9, Int32(point.score))
+            sqlite3_bind_double(statement, 10, point.diskRead)
+            sqlite3_bind_double(statement, 11, point.diskWrite)
             try step(statement)
         }
     }
@@ -134,7 +148,8 @@ public actor HistoryStore {
     public func points(since: Date, bucket: Int) throws -> [HistoryPoint] {
         let size = Int64(max(1, bucket))
         let sql = """
-        SELECT (ts / \(size)) * \(size) AS t, AVG(cpu), AVG(mem), MAX(pressure), AVG(disk), AVG(rx), AVG(tx), AVG(battery), MIN(score)
+        SELECT (ts / \(size)) * \(size) AS t, AVG(cpu), AVG(mem), MAX(pressure), AVG(disk),
+               AVG(rx), AVG(tx), AVG(battery), MIN(score), AVG(dr), AVG(dw)
         FROM samples WHERE ts >= ? GROUP BY t ORDER BY t
         """
         var result: [HistoryPoint] = []
@@ -150,7 +165,9 @@ public actor HistoryStore {
                     networkReceive: sqlite3_column_double(statement, 5),
                     networkSend: sqlite3_column_double(statement, 6),
                     batteryCharge: sqlite3_column_type(statement, 7) == SQLITE_NULL ? nil : sqlite3_column_double(statement, 7),
-                    score: Int(sqlite3_column_int(statement, 8))
+                    score: Int(sqlite3_column_int(statement, 8)),
+                    diskRead: sqlite3_column_double(statement, 9),
+                    diskWrite: sqlite3_column_double(statement, 10)
                 ))
             }
         }
@@ -187,9 +204,9 @@ public actor HistoryStore {
     private func merge(from source: Resolution, into target: Resolution, bucket: Int64, olderThan cutoff: Int64) throws {
         let aligned = (cutoff / bucket) * bucket
         try execute("""
-        INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score)
+        INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score, dr, dw)
         SELECT (ts / \(bucket)) * \(bucket), \(target.rawValue),
-               AVG(cpu), AVG(mem), MAX(pressure), AVG(disk), AVG(rx), AVG(tx), AVG(battery), MIN(score)
+               AVG(cpu), AVG(mem), MAX(pressure), AVG(disk), AVG(rx), AVG(tx), AVG(battery), MIN(score), AVG(dr), AVG(dw)
         FROM samples WHERE res = \(source.rawValue) AND ts < \(aligned) GROUP BY ts / \(bucket)
         """)
         try execute("DELETE FROM samples WHERE res = \(source.rawValue) AND ts < \(aligned)")
@@ -213,7 +230,8 @@ public actor HistoryStore {
         CREATE TABLE IF NOT EXISTS samples (
             ts INTEGER NOT NULL, res INTEGER NOT NULL,
             cpu REAL NOT NULL, mem REAL NOT NULL, pressure INTEGER NOT NULL, disk REAL NOT NULL,
-            rx REAL NOT NULL, tx REAL NOT NULL, battery REAL, score INTEGER NOT NULL
+            rx REAL NOT NULL, tx REAL NOT NULL, battery REAL, score INTEGER NOT NULL,
+            dr REAL NOT NULL DEFAULT 0, dw REAL NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS samples_ts ON samples (ts);
         CREATE INDEX IF NOT EXISTS samples_res_ts ON samples (res, ts);
@@ -221,6 +239,27 @@ public actor HistoryStore {
         let code = sqlite3_exec(db, sql, nil, nil, nil)
         guard code == SQLITE_OK else {
             throw HistoryStoreError(code: code, message: String(cString: sqlite3_errmsg(db)))
+        }
+        try migrate(db)
+    }
+
+    /// Adds columns introduced after the first release to existing databases.
+    private static func migrate(_ db: OpaquePointer) throws {
+        var columns: Set<String> = []
+        var statement: OpaquePointer?
+        if sqlite3_prepare_v2(db, "PRAGMA table_info(samples)", -1, &statement, nil) == SQLITE_OK, let statement {
+            while sqlite3_step(statement) == SQLITE_ROW {
+                if let name = sqlite3_column_text(statement, 1) {
+                    columns.insert(String(cString: name))
+                }
+            }
+            sqlite3_finalize(statement)
+        }
+        for column in ["dr", "dw"] where !columns.contains(column) {
+            let code = sqlite3_exec(db, "ALTER TABLE samples ADD COLUMN \(column) REAL NOT NULL DEFAULT 0", nil, nil, nil)
+            guard code == SQLITE_OK else {
+                throw HistoryStoreError(code: code, message: String(cString: sqlite3_errmsg(db)))
+            }
         }
     }
 

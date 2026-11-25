@@ -27,10 +27,12 @@ public struct RuleScanResult: Sendable, Identifiable {
     }
 }
 
+/// Sent when a rule starts (`completed == nil`) and again when it finishes, with its result.
 public struct ScanProgress: Sendable {
     public let ruleID: String
     public let index: Int
     public let count: Int
+    public let completed: RuleScanResult?
 }
 
 /// Read-only evaluation of cleanup rules. Never modifies anything.
@@ -55,7 +57,7 @@ public struct Scanner: Sendable {
         var results: [RuleScanResult] = []
         for (index, rule) in rules.enumerated() {
             try Task.checkCancellation()
-            progress(ScanProgress(ruleID: rule.id, index: index, count: rules.count))
+            progress(ScanProgress(ruleID: rule.id, index: index, count: rules.count, completed: nil))
             var collector = Collector()
             if let find = rule.find {
                 try collectFind(find, into: &collector)
@@ -76,7 +78,9 @@ public struct Scanner: Sendable {
                 items.append(ScanItem(url: candidate.url, bytes: bytes, modified: candidate.modified))
                 claimed.append(path)
             }
-            results.append(RuleScanResult(rule: rule, items: items, needsAccess: collector.needsAccess))
+            let result = RuleScanResult(rule: rule, items: items, needsAccess: collector.needsAccess)
+            results.append(result)
+            progress(ScanProgress(ruleID: rule.id, index: index, count: rules.count, completed: result))
         }
         return results
     }

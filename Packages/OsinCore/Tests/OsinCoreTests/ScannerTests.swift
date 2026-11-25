@@ -186,7 +186,9 @@ struct ScannerTests {
         let fixture = try FixtureHome()
         let recorder = ProgressRecorder()
         _ = try await Scanner(home: fixture.home).scan([rule("a", ["~/a/*"]), rule("b", ["~/b/*"])]) { event in
-            recorder.append(event.ruleID)
+            if event.completed == nil {
+                recorder.append(event.ruleID)
+            }
         }
         #expect(recorder.values == ["a", "b"])
     }
@@ -213,5 +215,23 @@ final class ProgressRecorder: @unchecked Sendable {
 
     func append(_ value: String) {
         lock.withLock { storage.append(value) }
+    }
+}
+
+struct ScannerCompletionTests {
+    @Test func eachRuleReportsItsResultWhenFinished() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("a/x", bytes: 5000)
+        let finished = ProgressRecorder()
+        let rules = [
+            CleanupRule(id: "a", name: "a", detail: "", tier: .safe, action: .delete, regenerable: true, paths: ["~/a/*"]),
+            CleanupRule(id: "b", name: "b", detail: "", tier: .safe, action: .delete, regenerable: true, paths: ["~/b/*"])
+        ]
+        _ = try await Scanner(home: fixture.home).scan(rules) { event in
+            if let result = event.completed {
+                finished.append("\(result.rule.id):\(result.items.count)")
+            }
+        }
+        #expect(finished.values == ["a:1", "b:0"])
     }
 }

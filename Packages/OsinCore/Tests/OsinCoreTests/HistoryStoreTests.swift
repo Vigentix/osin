@@ -1,4 +1,5 @@
 import Foundation
+import SQLite3
 import Testing
 @testable import OsinCore
 
@@ -92,5 +93,36 @@ struct HistoryStoreTests {
         }
         let reopened = try HistoryStore(url: url)
         #expect(try await reopened.rowCount() == 1)
+    }
+}
+
+struct HistoryDiskIOTests {
+    @Test func diskThroughputRoundTrips() async throws {
+        let store = try HistoryStore.inMemory()
+        let now = Date()
+        try await store.record(HistoryPoint(
+            date: now, cpu: 0.1, memoryUsed: 0.5, pressure: .normal, diskFree: 0.3,
+            networkReceive: 1, networkSend: 2, batteryCharge: nil, score: 90, diskRead: 300, diskWrite: 400
+        ))
+        let point = try await store.points(since: now.addingTimeInterval(-60), bucket: 1).first
+        #expect(point?.diskRead == 300)
+        #expect(point?.diskWrite == 400)
+    }
+
+    @Test func olderDatabasesGainTheNewColumns() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("osin-old-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        var db: OpaquePointer?
+        sqlite3_open(url.path, &db)
+        sqlite3_exec(db, """
+        CREATE TABLE samples (ts INTEGER NOT NULL, res INTEGER NOT NULL, cpu REAL NOT NULL, mem REAL NOT NULL,
+          pressure INTEGER NOT NULL, disk REAL NOT NULL, rx REAL NOT NULL, tx REAL NOT NULL, battery REAL, score INTEGER NOT NULL);
+        INSERT INTO samples VALUES (\(Int(Date().timeIntervalSince1970)), 0, 0.2, 0.5, 0, 0.3, 1, 2, NULL, 80);
+        """, nil, nil, nil)
+        sqlite3_close(db)
+        let store = try HistoryStore(url: url)
+        let points = try await store.points(since: Date().addingTimeInterval(-3600), bucket: 1)
+        #expect(points.count == 1)
+        #expect(points.first?.diskRead == 0)
     }
 }

@@ -26,6 +26,26 @@ public struct ProcessGroup: Sendable, Equatable, Identifiable {
     public let pids: [Int32]
     public let footprintBytes: UInt64
     public let cpuFraction: Double
+    /// The group's largest processes, by memory (at most five).
+    public let members: [ProcessRecord]
+
+    public init(
+        id: String,
+        name: String,
+        bundlePath: String?,
+        pids: [Int32],
+        footprintBytes: UInt64,
+        cpuFraction: Double,
+        members: [ProcessRecord] = []
+    ) {
+        self.id = id
+        self.name = name
+        self.bundlePath = bundlePath
+        self.pids = pids
+        self.footprintBytes = footprintBytes
+        self.cpuFraction = cpuFraction
+        self.members = members
+    }
 }
 
 public enum ProcessGrouping {
@@ -62,7 +82,8 @@ public enum ProcessGrouping {
                 bundlePath: bundle,
                 pids: members.map(\.pid).sorted(),
                 footprintBytes: members.reduce(0) { $0 + $1.footprintBytes },
-                cpuFraction: members.reduce(0) { $0 + $1.cpuFraction }
+                cpuFraction: members.reduce(0) { $0 + $1.cpuFraction },
+                members: Array(members.sorted { $0.footprintBytes > $1.footprintBytes }.prefix(5))
             )
         }
     }
