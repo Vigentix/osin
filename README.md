@@ -39,7 +39,16 @@ brew install --cask osin
 
 Or download `Osin-x.y.z.dmg` from [Releases](https://github.com/Vigentix/osin/releases) and drag Osin to Applications.
 
-Releases are not notarized yet, so macOS blocks the first launch: allow it in System Settings › Privacy & Security › Open Anyway, or run `xattr -dr com.apple.quarantine /Applications/Osin.app`.
+Releases are not notarized yet, so macOS blocks the first launch:
+
+1. Open Osin once and close the warning.
+2. Go to **System Settings › Privacy & Security**, scroll down, click **Open Anyway** next to Osin and confirm with your password.
+
+On macOS 15 and later, right-click › Open no longer bypasses this warning. To skip it entirely, remove the quarantine flag:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Osin.app
+```
 
 Requires macOS 14 Sonoma or later, Apple Silicon or Intel.
 

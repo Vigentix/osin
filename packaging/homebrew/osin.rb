@@ -28,8 +28,11 @@ cask "osin" do
   ]
 
   caveats <<~EOS
-    Osin #{version} is not notarized yet, so macOS blocks the first launch.
-    Allow it in System Settings > Privacy & Security > Open Anyway, or run:
+    Osin #{version} is not notarized yet, so macOS blocks the first launch:
+      1. Open Osin once and close the warning.
+      2. Go to System Settings > Privacy & Security, scroll down,
+         click Open Anyway next to Osin and confirm with your password.
+    Or skip the warning by removing the quarantine flag:
       xattr -dr com.apple.quarantine #{appdir}/Osin.app
   EOS
 end

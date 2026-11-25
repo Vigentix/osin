@@ -31,7 +31,7 @@ scripts/release.sh 0.1.0            # ad-hoc signed DMG in build/release/
 DEVELOPER_ID="Developer ID Application: …" NOTARY_PROFILE=osin-notary scripts/release.sh 0.1.0
 ```
 
-Unsigned (ad-hoc) builds open with right-click › Open the first time, or:
+Ad-hoc signed builds are blocked on first launch. Open the app once, then click **Open Anyway** in System Settings › Privacy & Security (right-click › Open no longer works on macOS 15 and later), or:
 
 ```sh
 xattr -dr com.apple.quarantine /Applications/Osin.app
