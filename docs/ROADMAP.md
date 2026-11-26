@@ -67,6 +67,7 @@ Each milestone ends with a working, demoable build.
 - [ ] README screenshots (`make snapshots` renders them)
 - [ ] Final product name
 - [x] Tag and publish v0.1.0
+- [x] v0.1.1: safety and reliability fixes from three review rounds
 - [x] Homebrew tap `Vigentix/homebrew-tap`
 
 ## v2 backlog
