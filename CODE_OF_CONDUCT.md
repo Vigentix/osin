@@ -4,4 +4,4 @@ This project adopts the [Contributor Covenant, version 2.1](https://www.contribu
 
 In short: be respectful, assume good intent, and keep discussion about the work. Harassment, personal attacks and discriminatory language are not tolerated.
 
-Report unacceptable behaviour to the maintainers at **[CONTACT EMAIL]**. All reports are reviewed and kept confidential.
+Report unacceptable behaviour to the maintainers at **[gwin@vigentix.com](mailto:gwin@vigentix.com)**. All reports are reviewed and kept confidential.
