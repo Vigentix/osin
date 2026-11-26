@@ -95,6 +95,17 @@ final class Notifier {
         }
     }
 
+    /// Reads the notification permission. Nonisolated on purpose: macOS calls the completion handler on a
+    /// background queue, and with older SDKs (Xcode 16) a closure written inside this @MainActor class would
+    /// be inferred as main-actor isolated, so Swift's runtime isolation check would stop the app.
+    nonisolated static func authorizationStatus() async -> UNAuthorizationStatus {
+        await withCheckedContinuation { (continuation: CheckedContinuation<UNAuthorizationStatus, Never>) in
+            UNUserNotificationCenter.current().getNotificationSettings { @Sendable settings in
+                continuation.resume(returning: settings.authorizationStatus)
+            }
+        }
+    }
+
     static func requestAuthorization() async -> Bool {
         await (try? UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
@@ -103,10 +114,7 @@ final class Notifier {
     /// the permission is read fresh for every sample, right before deciding.
     func handle(_ snapshot: SystemSnapshot) {
         Task {
-            // Only the (Sendable) status crosses back; UNNotificationSettings itself is not Sendable on older SDKs.
-            let status = await withCheckedContinuation { continuation in
-                UNUserNotificationCenter.current().getNotificationSettings { continuation.resume(returning: $0.authorizationStatus) }
-            }
+            let status = await Self.authorizationStatus()
             guard status == .authorized || status == .provisional else { return }
             evaluator.settings = Preferences.alertSettings
             let alerts = evaluator.evaluate(AlertReading(snapshot: snapshot), at: Date())

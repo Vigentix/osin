@@ -65,3 +65,23 @@ jobs:
           bin=build/Build/Products/Release/Osin.app/Contents/MacOS/Osin
           lipo "$bin" -verify_arch x86_64
           lipo "$bin" -verify_arch arm64
+      # Runtime checks (for example Swift's actor isolation assertions) only fire when the app runs,
+      # and CI's Xcode can differ from the one used locally. Keep the app running for two minutes.
+      - name: Smoke test (launch and stay up)
+        run: |
+          bin=build/Build/Products/Release/Osin.app/Contents/MacOS/Osin
+          "$bin" > "$RUNNER_TEMP/osin.log" 2>&1 &
+          pid=$!
+          for _ in $(seq 1 120); do
+            if ! kill -0 "$pid" 2>/dev/null; then
+              echo "::error::Osin exited within two minutes of launch"
+              cat "$RUNNER_TEMP/osin.log"
+              for f in $(ls -t ~/Library/Logs/DiagnosticReports/ 2>/dev/null | grep -i osin | head -2); do
+                head -c 6000 ~/Library/Logs/DiagnosticReports/"$f"
+              done
+              exit 1
+            fi
+            sleep 1
+          done
+          kill "$pid"
+          echo "Osin stayed up for two minutes"
