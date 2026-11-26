@@ -63,7 +63,7 @@ Each milestone ends with a working, demoable build.
 - [x] Homebrew cask template (`packaging/homebrew/osin.rb`)
 - [x] README with safety guarantees and rule contribution guide
 - [ ] Apple Developer ID + notarization (needs the $99/year account; workflow is ready; first-launch steps documented meanwhile)
-- [ ] Sparkle EdDSA keys + GitHub secrets
+- [x] Sparkle EdDSA keys + GitHub secrets (0.1.2; update from 0.1.2 to a newer build verified end to end)
 - [ ] README screenshots (`make snapshots` renders them)
 - [x] Final product name: Osin (kept)
 - [x] Tag and publish v0.1.0
