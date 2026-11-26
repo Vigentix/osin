@@ -1,8 +1,8 @@
 # Mirror of Casks/osin.rb in https://github.com/Vigentix/homebrew-tap (the tap is the source of truth).
 # After each release, update version and sha256 there; scripts/release.sh prints the DMG checksum.
 cask "osin" do
-  version "0.1.0"
-  sha256 "56b6366e7a96eb3d3d1cbf6702c72af330442827e62d278fb27f3190ae6af4f9"
+  version "0.1.1"
+  sha256 "0f34dc533c69ba472db2bfc3644fa9933069ff2ffffc7b19c42e1d77c49ece39"
 
   url "https://github.com/Vigentix/osin/releases/download/v#{version}/Osin-#{version}.dmg"
   name "Osin"
