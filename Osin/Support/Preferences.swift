@@ -103,7 +103,10 @@ final class Notifier {
     /// the permission is read fresh for every sample, right before deciding.
     func handle(_ snapshot: SystemSnapshot) {
         Task {
-            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+            // Only the (Sendable) status crosses back; UNNotificationSettings itself is not Sendable on older SDKs.
+            let status = await withCheckedContinuation { continuation in
+                UNUserNotificationCenter.current().getNotificationSettings { continuation.resume(returning: $0.authorizationStatus) }
+            }
             guard status == .authorized || status == .provisional else { return }
             evaluator.settings = Preferences.alertSettings
             let alerts = evaluator.evaluate(AlertReading(snapshot: snapshot), at: Date())
