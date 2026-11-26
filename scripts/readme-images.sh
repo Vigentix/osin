@@ -6,7 +6,7 @@ set -eu
 src=$1
 dst=$2
 names=""
-for screen in overview popover cleanup activity system; do
+for screen in overview popover keepawake cleanup activity system; do
     names="$names $screen-dark $screen-light"
 done
 

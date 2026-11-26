@@ -70,5 +70,13 @@ Each milestone ends with a working, demoable build.
 - [x] v0.1.1: safety and reliability fixes from three review rounds
 - [x] Homebrew tap `Vigentix/homebrew-tap`
 
+## v0.2 — Keep Awake
+- [x] Keep the Mac awake (IOPM assertion, released automatically if Osin quits): screen on, display may sleep, or lock now
+- [x] Until stopped, timer, until a time, until a process ends (PID + start time), optional maximum
+- [x] Safety stops: low battery, hot, unplugged (optional); notification with the reason
+- [x] Popover row and options, menu bar indicator, Overview banner, Settings tab, optional global shortcut
+- [x] Warns about lid-close sleep and pending automatic macOS updates
+- [ ] Lid-closed mode (needs root: `pmset disablesleep`; only with a crash-safe restore)
+
 ## v2 backlog
 Docker prune · Time Machine snapshots · weekly nudge · CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · App uninstaller + leftovers · Duplicate finder · Disk treemap · Privileged helper daemon · Remote rule updates

@@ -1,4 +1,5 @@
 import AppKit
+import OsinCore
 import SwiftUI
 import UserNotifications
 
@@ -12,8 +13,9 @@ struct OsinApp: App {
                 .environment(appDelegate.monitor)
                 .environment(appDelegate.scan)
                 .environment(appDelegate.navigator)
+                .environment(appDelegate.keepAwake)
         } label: {
-            MenuBarLabel(snapshot: appDelegate.monitor.snapshot)
+            MenuBarLabel(snapshot: appDelegate.monitor.snapshot, keepingAwake: appDelegate.keepAwake.isActive)
         }
         .menuBarExtraStyle(.window)
 
@@ -22,6 +24,7 @@ struct OsinApp: App {
                 .environment(appDelegate.monitor)
                 .environment(appDelegate.scan)
                 .environment(appDelegate.navigator)
+                .environment(appDelegate.keepAwake)
                 .onWindowVisibilityChange { appDelegate.monitor.setVisible(.dashboard, $0) }
                 .onDisappear { appDelegate.monitor.setVisible(.dashboard, false) }
         }
@@ -51,6 +54,7 @@ struct OsinApp: App {
         Settings {
             SettingsView()
                 .environment(appDelegate.updater)
+                .environment(appDelegate.keepAwake)
         }
     }
 }
@@ -62,6 +66,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     let monitor = SystemMonitor()
     let scan = ScanCoordinator()
     let navigator = Navigator()
+    let keepAwake = KeepAwakeController()
     let updater: Updater
     private let notifier: Notifier
     private let onboarding = OnboardingWindowController()
@@ -96,13 +101,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             guard let self else { return }
             monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
         }
+        keepAwake.onEnded = { [notifier] reason, session, end in
+            notifier.keepAwakeEnded(reason, session: session, at: end)
+        }
+        keepAwake.onSleptDuringSession = { [notifier] in notifier.keepAwakeInterrupted() }
+        let shortcut = KeepAwakeShortcut(rawValue: UserDefaults.standard.string(forKey: Preferences.Key.keepAwakeShortcut) ?? "") ?? .none
+        GlobalHotKey.shared.register(shortcut) { [keepAwake] in keepAwake.toggle() }
         monitor.start()
         NotificationCenter.default.addObserver(forName: .osinShowOnboarding, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.showOnboarding() }
         }
         #if DEBUG
+            // `--keep-awake-seconds N`: start a short Keep Awake session (manual testing).
+            let arguments = CommandLine.arguments
+            if let index = arguments.firstIndex(of: "--keep-awake-seconds"), arguments.indices.contains(index + 1),
+               let seconds = Double(arguments[index + 1])
+            {
+                keepAwake.start(KeepAwakeOptions(duration: .until(Date().addingTimeInterval(seconds))))
+            }
+            // `--keep-awake-pid N`: keep awake until that process ends (manual testing).
+            if let index = arguments.firstIndex(of: "--keep-awake-pid"), arguments.indices.contains(index + 1),
+               let pid = Int32(arguments[index + 1]), let watched = RunningProcesses.watched(pid: pid)
+            {
+                keepAwake.start(KeepAwakeOptions(mode: .awake, keepDisplayOn: false, duration: .process(watched)))
+            }
             if let directory = SnapshotRenderer.outputDirectory {
-                Task { await SnapshotRenderer.run(monitor: monitor, scan: scan, into: directory) }
+                Task { await SnapshotRenderer.run(monitor: monitor, scan: scan, keepAwake: keepAwake, into: directory) }
                 return
             }
         #endif

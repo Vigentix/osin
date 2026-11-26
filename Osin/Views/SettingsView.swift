@@ -9,6 +9,8 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             AlertSettingsView()
                 .tabItem { Label("Alerts", systemImage: "bell") }
+            KeepAwakeSettings()
+                .tabItem { Label("Keep Awake", systemImage: "cup.and.saucer") }
             AdvancedSettings()
                 .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
         }

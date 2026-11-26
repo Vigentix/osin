@@ -11,6 +11,7 @@ struct OverviewView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 28) {
+                KeepAwakeBanner()
                 hero
                 recommended
                 rightNow

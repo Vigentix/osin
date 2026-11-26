@@ -1,5 +1,6 @@
 #if DEBUG
     import AppKit
+    import OsinCore
     import SwiftUI
 
     /// Debug-only: `Osin --render-snapshots <dir> [--demo]` renders the main screens to PNG files and exits.
@@ -20,11 +21,12 @@
             return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
         }
 
-        static func run(monitor: SystemMonitor, scan: ScanCoordinator, into directory: URL) async {
+        static func run(monitor: SystemMonitor, scan: ScanCoordinator, keepAwake: KeepAwakeController, into directory: URL) async {
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             if DemoData.isActive {
                 monitor.loadDemo()
                 scan.loadDemo()
+                keepAwake.loadDemo(KeepAwakeOptions(mode: .awake, keepDisplayOn: true, duration: .minutes(120)), startedMinutesAgo: 18)
                 monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
             } else {
                 monitor.setVisible(.dashboard, true)
@@ -40,11 +42,15 @@
 
             let navigator = Navigator()
             let screens = [
-                Screen(name: "overview", section: .overview, size: CGSize(width: 1200, height: 1120), view: nil),
+                Screen(name: "overview", section: .overview, size: CGSize(width: 1200, height: 1200), view: nil),
                 Screen(name: "cleanup", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "activity", section: .activity, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 940), view: nil),
                 Screen(name: "popover", section: nil, size: CGSize(width: 376, height: PopoverView.height), view: AnyView(PopoverView())),
+                Screen(
+                    name: "keepawake", section: nil, size: CGSize(width: 376, height: PopoverView.height),
+                    view: AnyView(KeepAwakeOptionsView {}.padding(16).frame(width: 376, height: PopoverView.height, alignment: .top))
+                ),
                 Screen(name: "onboarding", section: nil, size: CGSize(width: 720, height: 520), view: AnyView(OnboardingView {})),
                 Screen(name: "settings", section: nil, size: CGSize(width: 520, height: 420), view: AnyView(SettingsView()))
             ]
@@ -58,6 +64,7 @@
                         .environment(monitor)
                         .environment(scan)
                         .environment(navigator)
+                        .environment(keepAwake)
                         .environment(Updater())
                         .environment(\.colorScheme, scheme)
                         .frame(width: screen.size.width, height: screen.size.height)

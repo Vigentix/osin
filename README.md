@@ -28,7 +28,7 @@
   <img src="docs/images/overview-light.png" alt="Osin Overview: a health score of 78 because the disk is 90% full, 14.52 GB that can be cleaned safely, live CPU, memory, disk, network and battery, the heaviest apps and a storage breakdown">
 </picture>
 
-Osin tells you how your Mac is doing in plain language and frees disk space without guesswork. One **Smart Scan → Review → Clean** flow finds what is safe to remove, shows you exactly what it found, and only deletes data that rebuilds itself. Everything else goes to the Trash, where you can restore it.
+Osin tells you how your Mac is doing in plain language, frees disk space without guesswork, and keeps the Mac awake while it works for you. One **Smart Scan → Review → Clean** flow finds what is safe to remove, shows you exactly what it found, and only deletes data that rebuilds itself. Everything else goes to the Trash, where you can restore it.
 
 It also refuses to play the "free up RAM" game. Unused memory is wasted memory, so Osin watches memory pressure, the signal macOS itself uses, and tells you which app to quit when pressure is actually high.
 
@@ -78,6 +78,26 @@ xattr -dr com.apple.quarantine /Applications/Osin.app
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/popover-dark.png">
         <img src="docs/images/popover-light.png" width="330" alt="Menu bar popover: health score, Clean button, CPU, memory, disk and battery tiles, network speed and heaviest apps">
+      </picture>
+    </td>
+  </tr>
+</table>
+
+### Keep Awake while your Mac works
+
+Leave a build, a download, a backup or a long script running without the Mac falling asleep. Choose to keep the screen on, or lock it right away while everything keeps running, and decide for how long: until you stop it, on a timer, until a time such as 7:00, or **until a command or app finishes**: pick `rsync`, `xcodebuild` or `python3 train.py` from the list and the Mac may sleep again once it ends.
+
+<table>
+  <tr>
+    <td width="58%" valign="top">
+      <p>Safety rules stop it when the battery runs low or the Mac gets hot, and you can limit it to when the power adapter is connected. You get a notification when it ends, with the reason.</p>
+      <p>Keep Awake only prevents idle sleep. Closing the lid still sleeps the Mac (unless an external display is connected), and no app can block a forced restart. If a macOS update is waiting to install automatically, Osin warns you that the Mac may restart overnight.</p>
+      <p>Turn it on from the menu bar, or set a global shortcut in Settings.</p>
+    </td>
+    <td width="42%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/keepawake-dark.png">
+        <img src="docs/images/keepawake-light.png" width="330" alt="Keep Awake options: keep the screen unlocked or lock it, keep the display on, and choose until you stop, a timer, a time of day or until a command finishes">
       </picture>
     </td>
   </tr>

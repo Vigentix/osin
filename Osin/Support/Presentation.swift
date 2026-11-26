@@ -89,3 +89,47 @@ extension CleanupFailure {
         }
     }
 }
+
+extension Format {
+    /// "2 h 14 min", "45 min", "30 s".
+    static func duration(_ seconds: TimeInterval) -> String {
+        let formatter = DateComponentsFormatter()
+        formatter.unitsStyle = .abbreviated
+        formatter.allowedUnits = seconds >= 3600 ? [.hour, .minute] : seconds >= 60 ? [.minute] : [.second]
+        return formatter.string(from: max(0, seconds)) ?? ""
+    }
+
+    /// A countdown: "1:42:05" or "12:30".
+    static func countdown(_ seconds: TimeInterval) -> String {
+        let total = Int(max(0, seconds).rounded(.up))
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let secs = total % 60
+        return hours > 0 ? String(format: "%d:%02d:%02d", hours, minutes, secs) : String(format: "%d:%02d", minutes, secs)
+    }
+}
+
+extension KeepAwakeStopReason {
+    func notificationBody(after seconds: TimeInterval) -> String {
+        let length = Format.duration(seconds)
+        return switch self {
+        case .stoppedByUser: String(localized: "Stopped after \(length).")
+        case .timeUp: String(localized: "The time you set is up after \(length). Your Mac can sleep again.")
+        case .reachedMaxDuration: String(localized: "Reached the maximum duration after \(length). Your Mac can sleep again.")
+        case let .processEnded(name): String(localized: "\(name) finished after \(length). Your Mac can sleep again.")
+        case .lowBattery: String(localized: "Stopped after \(length) because the battery is low.")
+        case .tooHot: String(localized: "Stopped after \(length) because your Mac is running hot.")
+        case .unplugged: String(localized: "Stopped after \(length) because the power adapter was disconnected.")
+        }
+    }
+
+    /// Why Keep Awake could not start.
+    var refusal: String {
+        switch self {
+        case .lowBattery: String(localized: "The battery is too low to keep your Mac awake. Connect the power adapter.")
+        case .tooHot: String(localized: "Your Mac is running hot. Let it cool down first.")
+        case .unplugged: String(localized: "Connect the power adapter: Keep Awake is set to run only while plugged in.")
+        default: String(localized: "Keep Awake could not start.")
+        }
+    }
+}

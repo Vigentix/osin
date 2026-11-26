@@ -16,6 +16,12 @@ enum Preferences {
         static let alertMemory = "alertMemory"
         static let alertBattery = "alertBattery"
         static let automaticUpdateChecks = "automaticUpdateChecks"
+        static let keepAwakeOptions = "keepAwakeOptions"
+        static let keepAwakeStopOnLowBattery = "keepAwakeStopOnLowBattery"
+        static let keepAwakeLowBatteryThreshold = "keepAwakeLowBatteryThreshold"
+        static let keepAwakeStopWhenHot = "keepAwakeStopWhenHot"
+        static let keepAwakeStopWhenUnplugged = "keepAwakeStopWhenUnplugged"
+        static let keepAwakeShortcut = "keepAwakeShortcut"
     }
 
     static func registerDefaults() {
@@ -29,7 +35,12 @@ enum Preferences {
             Key.alertDiskThreshold: 0.10,
             Key.alertMemory: true,
             Key.alertBattery: true,
-            Key.automaticUpdateChecks: true
+            Key.automaticUpdateChecks: true,
+            Key.keepAwakeStopOnLowBattery: true,
+            Key.keepAwakeLowBatteryThreshold: 0.20,
+            Key.keepAwakeStopWhenHot: true,
+            Key.keepAwakeStopWhenUnplugged: false,
+            Key.keepAwakeShortcut: KeepAwakeShortcut.none.rawValue
         ])
     }
 
@@ -40,6 +51,16 @@ enum Preferences {
             diskFreeThreshold: defaults.double(forKey: Key.alertDiskThreshold),
             memoryPressureEnabled: defaults.bool(forKey: Key.alertMemory),
             batteryHealthEnabled: defaults.bool(forKey: Key.alertBattery)
+        )
+    }
+
+    static var keepAwakeRules: KeepAwakeRules {
+        let defaults = UserDefaults.standard
+        return KeepAwakeRules(
+            stopOnLowBattery: defaults.bool(forKey: Key.keepAwakeStopOnLowBattery),
+            lowBatteryThreshold: defaults.double(forKey: Key.keepAwakeLowBatteryThreshold),
+            stopWhenHot: defaults.bool(forKey: Key.keepAwakeStopWhenHot),
+            stopWhenUnplugged: defaults.bool(forKey: Key.keepAwakeStopWhenUnplugged)
         )
     }
 
@@ -124,6 +145,37 @@ final class Notifier {
             if !alerts.isEmpty {
                 saveHistory()
             }
+        }
+    }
+
+    /// Tells the user Keep Awake ended and why. Skipped when they stopped it themselves.
+    func keepAwakeEnded(_ reason: KeepAwakeStopReason, session: KeepAwakeSession, at end: Date) {
+        guard reason != .stoppedByUser else { return }
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Keep Awake ended")
+        content.body = reason.notificationBody(after: end.timeIntervalSince(session.startedAt))
+        deliver(UNNotificationRequest(identifier: "osin.keepAwake.ended", content: content, trigger: nil))
+    }
+
+    /// The Mac slept during a session (lid closed, Apple menu, or low battery).
+    func keepAwakeInterrupted() {
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Your Mac slept during Keep Awake")
+        content
+            .body =
+            String(
+                localized: "Keep Awake prevents idle sleep only. Closing the lid still puts the Mac to sleep unless an external display is connected."
+            )
+        deliver(UNNotificationRequest(identifier: "osin.keepAwake.slept", content: content, trigger: nil))
+    }
+
+    /// Keep Awake notifications follow the same "Send notifications" switch as alerts.
+    private func deliver(_ request: UNNotificationRequest) {
+        guard UserDefaults.standard.bool(forKey: Preferences.Key.alertsEnabled) else { return }
+        Task {
+            let status = await Self.authorizationStatus()
+            guard status == .authorized || status == .provisional else { return }
+            UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
         }
     }
 

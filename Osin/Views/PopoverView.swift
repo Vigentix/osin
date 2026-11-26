@@ -9,21 +9,27 @@ struct PopoverView: View {
     @Environment(Navigator.self) private var navigator
     @Environment(\.openWindow) private var openWindow
     @Environment(\.openSettings) private var openSettings
+    @State private var showingKeepAwake = false
 
     /// `MenuBarExtra` sizes its panel once, when it opens. Content that grows afterwards (live data
     /// arriving) would spill past the panel, where it is visible but not clickable. A fixed height
     /// keeps every control inside the panel.
-    static let height: CGFloat = 600
+    static let height: CGFloat = 644
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            header
-            actions
-            tiles
-            network
-            apps
-            Spacer(minLength: 0)
-            footer
+            if showingKeepAwake {
+                KeepAwakeOptionsView { showingKeepAwake = false }
+            } else {
+                header
+                actions
+                KeepAwakeRow { showingKeepAwake = true }
+                tiles
+                network
+                apps
+                Spacer(minLength: 0)
+                footer
+            }
         }
         .padding(16)
         .frame(width: 376, height: Self.height, alignment: .top)

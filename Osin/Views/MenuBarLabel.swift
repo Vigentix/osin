@@ -5,6 +5,7 @@ import SwiftUI
 /// Menu bar glyph with a health-coloured dot, plus optional live metrics chosen in Settings.
 struct MenuBarLabel: View {
     let snapshot: SystemSnapshot?
+    var keepingAwake = false
     @AppStorage(Preferences.Key.menuBarCPU) private var showCPU = false
     @AppStorage(Preferences.Key.menuBarMemory) private var showMemory = false
     @AppStorage(Preferences.Key.menuBarNetwork) private var showNetwork = false
@@ -17,6 +18,9 @@ struct MenuBarLabel: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(nsImage: MenuBarIcon.image(dot: level.map { NSColor($0.color) }))
+            if keepingAwake {
+                Image(systemName: "cup.and.saucer.fill")
+            }
             if let text = metricsText {
                 Text(text).monospacedDigit()
             }
@@ -47,8 +51,8 @@ struct MenuBarLabel: View {
     }
 
     private var accessibilityText: Text {
-        guard let level else { return Text("Osin") }
-        return Text("Osin, health \(String(localized: level.title))")
+        let health = level.map { Text("Osin, health \(String(localized: $0.title))") } ?? Text("Osin")
+        return keepingAwake ? Text("\(health), keeping awake") : health
     }
 }
 

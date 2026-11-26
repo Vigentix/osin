@@ -24,6 +24,16 @@
         }
       }
     },
+    "%@ finished after %@. Your Mac can sleep again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đã chạy xong sau %@. Máy có thể ngủ lại bình thường."
+          }
+        }
+      }
+    },
     "%@ free": {
       "localizations": {
         "vi": {
@@ -80,6 +90,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ đang dùng %2$@."
+          }
+        }
+      }
+    },
+    "%@ is waiting and macOS installs updates automatically, so your Mac may restart overnight.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đang chờ cài và macOS đang bật tự cài cập nhật, nên máy có thể tự khởi động lại trong đêm."
+          }
+        }
+      }
+    },
+    "%@ left": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "còn %@"
           }
         }
       }
@@ -193,6 +223,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%1$@ — %2$@"
+          }
+        }
+      }
+    },
+    "%@, keeping awake": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@, đang giữ máy thức"
           }
         }
       }
@@ -696,12 +736,32 @@
         }
       }
     },
+    "Battery level": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mức pin"
+          }
+        }
+      }
+    },
     "Before": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Trước"
+          }
+        }
+      }
+    },
+    "Below %@ while not charging": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dưới %@ khi không cắm sạc"
           }
         }
       }
@@ -996,6 +1056,16 @@
         }
       }
     },
+    "Closing the lid still puts your Mac to sleep, unless an external display is connected.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gập nắp máy vẫn sẽ ngủ, trừ khi đang nối màn hình ngoài."
+          }
+        }
+      }
+    },
     "Collecting data…": {
       "localizations": {
         "vi": {
@@ -1012,6 +1082,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã nén"
+          }
+        }
+      }
+    },
+    "Connect the power adapter: Keep Awake is set to run only while plugged in.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy cắm sạc: Giữ máy thức đang được đặt chỉ chạy khi cắm điện."
           }
         }
       }
@@ -1439,6 +1519,16 @@
         }
       }
     },
+    "For how long": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong bao lâu"
+          }
+        }
+      }
+    },
     "Force Quit": {
       "localizations": {
         "vi": {
@@ -1822,6 +1912,96 @@
         }
       }
     },
+    "Keep Awake": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ máy thức"
+          }
+        }
+      }
+    },
+    "Keep Awake could not start.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không bật được Giữ máy thức."
+          }
+        }
+      }
+    },
+    "Keep Awake ended": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã tắt Giữ máy thức"
+          }
+        }
+      }
+    },
+    "Keep Awake options": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuỳ chọn Giữ máy thức"
+          }
+        }
+      }
+    },
+    "Keep Awake prevents idle sleep only. Closing the lid still puts the Mac to sleep unless an external display is connected.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ máy thức chỉ ngăn máy tự ngủ khi để không. Gập nắp máy vẫn ngủ, trừ khi đang nối màn hình ngoài."
+          }
+        }
+      }
+    },
+    "Keep Awake prevents idle sleep only. Closing the lid, the Apple menu or a forced restart still win.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ máy thức chỉ ngăn máy tự ngủ khi để không. Gập nắp, lệnh ngủ từ menu Apple hay khởi động lại bắt buộc vẫn có hiệu lực."
+          }
+        }
+      }
+    },
+    "Keep the display on": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giữ màn hình sáng"
+          }
+        }
+      }
+    },
+    "Keep unlocked": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không khoá"
+          }
+        }
+      }
+    },
+    "Keeping your Mac awake": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang giữ máy thức"
+          }
+        }
+      }
+    },
     "Large files": {
       "localizations": {
         "vi": {
@@ -1878,6 +2058,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tải %@"
+          }
+        }
+      }
+    },
+    "Lock screen": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoá màn hình"
+          }
+        }
+      }
+    },
+    "Locked": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khoá"
+          }
+        }
+      }
+    },
+    "Locks now and turns the display off. Apps, downloads and Terminal jobs keep running.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoá ngay và tắt màn hình. App, lượt tải và lệnh trong Terminal vẫn chạy tiếp."
           }
         }
       }
@@ -2302,6 +2512,16 @@
         }
       }
     },
+    "None": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không dùng"
+          }
+        }
+      }
+    },
     "Normal": {
       "localizations": {
         "vi": {
@@ -2312,12 +2532,32 @@
         }
       }
     },
+    "Not locked": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa khoá được"
+          }
+        }
+      }
+    },
     "Not selected by default.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Không chọn sẵn."
+          }
+        }
+      }
+    },
+    "Nothing matches. Start the command first, then pick it here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có kết quả. Hãy chạy lệnh trước rồi chọn ở đây."
           }
         }
       }
@@ -2368,6 +2608,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "TUỲ CHỌN"
+          }
+        }
+      }
+    },
+    "Off · your Mac sleeps as usual": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tắt · máy ngủ như bình thường"
           }
         }
       }
@@ -2508,6 +2758,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chỉ xoá cache tạo lại được. Mọi thứ khác vào Thùng rác."
+          }
+        }
+      }
+    },
+    "Only while connected to power": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ khi đang cắm sạc"
           }
         }
       }
@@ -2958,6 +3218,16 @@
         }
       }
     },
+    "Reached the maximum duration after %@. Your Mac can sleep again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã đạt thời gian tối đa sau %@. Máy có thể ngủ lại bình thường."
+          }
+        }
+      }
+    },
     "Read": {
       "localizations": {
         "vi": {
@@ -3148,6 +3418,16 @@
         }
       }
     },
+    "Runs until you turn it off or a safety rule stops it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạy cho đến khi bạn tắt hoặc một quy tắc an toàn dừng nó."
+          }
+        }
+      }
+    },
     "SAFE TO CLEAN": {
       "localizations": {
         "vi": {
@@ -3164,6 +3444,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dọn an toàn"
+          }
+        }
+      }
+    },
+    "Safety": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "An toàn"
           }
         }
       }
@@ -3208,12 +3498,52 @@
         }
       }
     },
+    "Screen": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình"
+          }
+        }
+      }
+    },
+    "Screen may sleep": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình tự tắt"
+          }
+        }
+      }
+    },
+    "Screen on": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Màn hình sáng"
+          }
+        }
+      }
+    },
     "Search apps": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tìm ứng dụng"
+          }
+        }
+      }
+    },
+    "Search apps and commands": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tìm app và lệnh"
           }
         }
       }
@@ -3267,6 +3597,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phần cài đặt sẽ có ở M5."
+          }
+        }
+      }
+    },
+    "Shortcut": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phím tắt"
           }
         }
       }
@@ -3474,6 +3814,16 @@
         }
       }
     },
+    "Start": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu"
+          }
+        }
+      }
+    },
     "Start scan": {
       "localizations": {
         "vi": {
@@ -3520,6 +3870,86 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bước %lld / 3"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng"
+          }
+        }
+      }
+    },
+    "Stop after at most": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng sau tối đa"
+          }
+        }
+      }
+    },
+    "Stop when the Mac runs hot": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng khi máy quá nóng"
+          }
+        }
+      }
+    },
+    "Stop when the battery is low": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng khi pin yếu"
+          }
+        }
+      }
+    },
+    "Stopped after %@ because the battery is low.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã dừng sau %@ vì pin yếu."
+          }
+        }
+      }
+    },
+    "Stopped after %@ because the power adapter was disconnected.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã dừng sau %@ vì sạc đã bị rút."
+          }
+        }
+      }
+    },
+    "Stopped after %@ because your Mac is running hot.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã dừng sau %@ vì máy quá nóng."
+          }
+        }
+      }
+    },
+    "Stopped after %@.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã dừng sau %@."
           }
         }
       }
@@ -3590,6 +4020,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dữ liệu tạm ứng dụng giữ để chạy nhanh hơn. Ứng dụng sẽ tạo lại khi cần. Cache của chính Apple được giữ nguyên."
+          }
+        }
+      }
+    },
+    "The battery is too low to keep your Mac awake. Connect the power adapter.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pin quá yếu để giữ máy thức. Hãy cắm sạc."
           }
         }
       }
@@ -3674,6 +4114,16 @@
         }
       }
     },
+    "The time you set is up after %@. Your Mac can sleep again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hết thời gian bạn đặt sau %@. Máy có thể ngủ lại bình thường."
+          }
+        }
+      }
+    },
     "The update check is the only network request Osin makes.": {
       "localizations": {
         "vi": {
@@ -3724,6 +4174,16 @@
         }
       }
     },
+    "This shortcut is already used by another app. Pick another.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phím tắt này đang được app khác dùng. Hãy chọn phím khác."
+          }
+        }
+      }
+    },
     "This takes a couple of seconds.": {
       "localizations": {
         "vi": {
@@ -3736,6 +4196,16 @@
     },
     "Time": {
       "shouldTranslate": false
+    },
+    "Timer": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hẹn giờ"
+          }
+        }
+      }
     },
     "To": {
       "shouldTranslate": false
@@ -3766,6 +4236,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thùng rác"
+          }
+        }
+      }
+    },
+    "Turns Keep Awake on with your last choice, or off.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật Giữ máy thức với lựa chọn lần trước, hoặc tắt đi."
           }
         }
       }
@@ -3806,6 +4286,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Các thay đổi chưa lưu trong ứng dụng này sẽ mất."
+          }
+        }
+      }
+    },
+    "Until": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đến giờ"
+          }
+        }
+      }
+    },
+    "Until I stop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không hẹn"
+          }
+        }
+      }
+    },
+    "Until done": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chờ xong"
+          }
+        }
+      }
+    },
+    "Update": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cập nhật"
           }
         }
       }
@@ -3913,6 +4433,16 @@
         }
       }
     },
+    "Whether your Mac locks follows your Lock Screen settings.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy có khoá hay không tuỳ theo cài đặt Màn hình khoá của bạn."
+          }
+        }
+      }
+    },
     "Wired": {
       "localizations": {
         "vi": {
@@ -3973,6 +4503,16 @@
         }
       }
     },
+    "Your Mac does not lock when the display turns off.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy không khoá khi màn hình tắt."
+          }
+        }
+      }
+    },
     "Your Mac is in good shape.": {
       "localizations": {
         "vi": {
@@ -4003,6 +4543,16 @@
         }
       }
     },
+    "Your Mac is running hot. Let it cool down first.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy đang quá nóng. Hãy để máy nguội bớt trước."
+          }
+        }
+      }
+    },
     "Your Mac is short on memory and may feel slow. Quit heavy apps to recover.": {
       "localizations": {
         "vi": {
@@ -4019,6 +4569,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Máy đang thiếu bộ nhớ. Hãy thoát các ứng dụng không dùng."
+          }
+        }
+      }
+    },
+    "Your Mac locks %@ after the display turns off.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy sẽ khoá sau khi màn hình tắt %@."
+          }
+        }
+      }
+    },
+    "Your Mac locks as soon as the display turns off.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy khoá ngay khi màn hình tắt."
+          }
+        }
+      }
+    },
+    "Your Mac slept during Keep Awake": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy đã ngủ trong lúc Giữ máy thức"
           }
         }
       }
@@ -4199,6 +4779,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "nhiệt"
+          }
+        }
+      }
+    },
+    "until %@ finishes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đến khi %@ chạy xong"
+          }
+        }
+      }
+    },
+    "until you stop it": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "đến khi bạn tắt"
           }
         }
       }
