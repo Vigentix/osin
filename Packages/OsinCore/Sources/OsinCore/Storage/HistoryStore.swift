@@ -118,10 +118,12 @@ public actor HistoryStore {
         return support.appendingPathComponent("Osin", isDirectory: true).appendingPathComponent("history.sqlite")
     }
 
-    public func record(_ point: HistoryPoint) throws {
+    /// Records one sample. `seconds` is how long it stands for (the sampling interval), so averages
+    /// mixing 2 s foreground and 30 s background samples, or raw and merged rows, stay fair.
+    public func record(_ point: HistoryPoint, seconds: Double = 2) throws {
         let sql = """
-        INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score, dr, dw)
-        VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score, dr, dw, w, bw)
+        VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         try withStatement(sql) { statement in
             sqlite3_bind_int64(statement, 1, Int64(point.date.timeIntervalSince1970))
@@ -139,6 +141,10 @@ public actor HistoryStore {
             sqlite3_bind_int(statement, 9, Int32(point.score))
             sqlite3_bind_double(statement, 10, point.diskRead)
             sqlite3_bind_double(statement, 11, point.diskWrite)
+            let weight = max(0.1, seconds)
+            sqlite3_bind_double(statement, 12, weight)
+            // Battery has its own weight: time without a reading must not dilute or inflate it.
+            sqlite3_bind_double(statement, 13, point.batteryCharge == nil ? 0 : weight)
             try step(statement)
         }
     }
@@ -148,8 +154,7 @@ public actor HistoryStore {
     public func points(since: Date, bucket: Int) throws -> [HistoryPoint] {
         let size = Int64(max(1, bucket))
         let sql = """
-        SELECT (ts / \(size)) * \(size) AS t, AVG(cpu), AVG(mem), MAX(pressure), AVG(disk),
-               AVG(rx), AVG(tx), AVG(battery), MIN(score), AVG(dr), AVG(dw)
+        SELECT (ts / \(size)) * \(size) AS t, \(Self.weightedColumns)
         FROM samples WHERE ts >= ? GROUP BY t ORDER BY t
         """
         var result: [HistoryPoint] = []
@@ -201,12 +206,18 @@ public actor HistoryStore {
 
     // MARK: - Internals
 
+    /// Time-weighted averages in column order; pressure keeps the worst value and score the lowest.
+    private static let weightedColumns = [
+        "SUM(cpu * w) / SUM(w)", "SUM(mem * w) / SUM(w)", "MAX(pressure)", "SUM(disk * w) / SUM(w)",
+        "SUM(rx * w) / SUM(w)", "SUM(tx * w) / SUM(w)", "SUM(battery * bw) / NULLIF(SUM(bw), 0)",
+        "MIN(score)", "SUM(dr * w) / SUM(w)", "SUM(dw * w) / SUM(w)"
+    ].joined(separator: ", ")
+
     private func merge(from source: Resolution, into target: Resolution, bucket: Int64, olderThan cutoff: Int64) throws {
         let aligned = (cutoff / bucket) * bucket
         try execute("""
-        INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score, dr, dw)
-        SELECT (ts / \(bucket)) * \(bucket), \(target.rawValue),
-               AVG(cpu), AVG(mem), MAX(pressure), AVG(disk), AVG(rx), AVG(tx), AVG(battery), MIN(score), AVG(dr), AVG(dw)
+        INSERT INTO samples (ts, res, cpu, mem, pressure, disk, rx, tx, battery, score, dr, dw, w, bw)
+        SELECT (ts / \(bucket)) * \(bucket), \(target.rawValue), \(Self.weightedColumns), SUM(w), SUM(bw)
         FROM samples WHERE res = \(source.rawValue) AND ts < \(aligned) GROUP BY ts / \(bucket)
         """)
         try execute("DELETE FROM samples WHERE res = \(source.rawValue) AND ts < \(aligned)")
@@ -227,11 +238,13 @@ public actor HistoryStore {
     private static func prepareSchema(_ db: OpaquePointer) throws {
         let sql = """
         PRAGMA journal_mode = WAL;
+        PRAGMA synchronous = NORMAL;
         CREATE TABLE IF NOT EXISTS samples (
             ts INTEGER NOT NULL, res INTEGER NOT NULL,
             cpu REAL NOT NULL, mem REAL NOT NULL, pressure INTEGER NOT NULL, disk REAL NOT NULL,
             rx REAL NOT NULL, tx REAL NOT NULL, battery REAL, score INTEGER NOT NULL,
-            dr REAL NOT NULL DEFAULT 0, dw REAL NOT NULL DEFAULT 0
+            dr REAL NOT NULL DEFAULT 0, dw REAL NOT NULL DEFAULT 0, w REAL NOT NULL DEFAULT 2,
+            bw REAL NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS samples_ts ON samples (ts);
         CREATE INDEX IF NOT EXISTS samples_res_ts ON samples (res, ts);
@@ -255,10 +268,27 @@ public actor HistoryStore {
             }
             sqlite3_finalize(statement)
         }
+        var statements: [String] = []
         for column in ["dr", "dw"] where !columns.contains(column) {
-            let code = sqlite3_exec(db, "ALTER TABLE samples ADD COLUMN \(column) REAL NOT NULL DEFAULT 0", nil, nil, nil)
+            statements.append("ALTER TABLE samples ADD COLUMN \(column) REAL NOT NULL DEFAULT 0")
+        }
+        if !columns.contains("w") {
+            // Existing merged rows stand for a minute or a quarter hour.
+            statements.append("ALTER TABLE samples ADD COLUMN w REAL NOT NULL DEFAULT 2")
+            statements.append("UPDATE samples SET w = CASE res WHEN 1 THEN 60 WHEN 2 THEN 900 ELSE 2 END")
+        }
+        if !columns.contains("bw") {
+            statements.append("ALTER TABLE samples ADD COLUMN bw REAL NOT NULL DEFAULT 0")
+            statements.append("UPDATE samples SET bw = CASE WHEN battery IS NULL THEN 0 ELSE w END")
+        }
+        guard !statements.isEmpty else { return }
+        // All or nothing: a column added without its backfill would never be repaired later.
+        for sql in ["BEGIN"] + statements + ["COMMIT"] {
+            let code = sqlite3_exec(db, sql, nil, nil, nil)
             guard code == SQLITE_OK else {
-                throw HistoryStoreError(code: code, message: String(cString: sqlite3_errmsg(db)))
+                let error = HistoryStoreError(code: code, message: String(cString: sqlite3_errmsg(db)))
+                sqlite3_exec(db, "ROLLBACK", nil, nil, nil)
+                throw error
             }
         }
     }

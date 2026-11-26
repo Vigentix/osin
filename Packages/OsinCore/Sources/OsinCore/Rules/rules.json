@@ -34,7 +34,8 @@
       "~/Library/Caches/*"
     ],
     "excludes": [
-      "com.apple.*"
+      "com.apple.*",
+      "JetBrains"
     ]
   },
   {

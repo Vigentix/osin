@@ -142,7 +142,7 @@ struct SystemView: View {
         let level = DiskLevel(disk)
         return Card(radius: 16, borderColor: level == .ok ? Theme.border : level.color.opacity(0.3)) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Disk · Macintosh HD").font(.system(size: 12)).foregroundStyle(Theme.text2)
+                Text("Disk · \(MachineInfo.bootVolumeName)").font(.system(size: 12)).foregroundStyle(Theme.text2)
                 Spacer()
                 Text("\(Format.storage(disk.availableBytes)) free").font(.system(size: 22, weight: .bold)).monospacedDigit()
                     .foregroundStyle(level.textColor)

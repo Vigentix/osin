@@ -68,16 +68,51 @@ enum LaunchAtLogin {
 /// Posts local notifications for health alerts. Nothing leaves the Mac.
 @MainActor
 final class Notifier {
-    private var evaluator = AlertEvaluator(settings: Preferences.alertSettings)
+    private static let historyKey = "alertHistory"
+    private var evaluator = AlertEvaluator(settings: Preferences.alertSettings, lastAlerts: Notifier.loadHistory())
+
+    /// Last alert times survive relaunches, so a worn battery is mentioned once a month, not every login.
+    private static func loadHistory() -> [HealthAlert.Kind: Date] {
+        let saved = UserDefaults.standard.dictionary(forKey: historyKey) as? [String: Double] ?? [:]
+        return saved.reduce(into: [:]) { result, entry in
+            if let kind = HealthAlert.Kind(rawValue: entry.key) {
+                result[kind] = Date(timeIntervalSince1970: entry.value)
+            }
+        }
+    }
+
+    private func saveHistory() {
+        let saved = evaluator.lastAlerts.reduce(into: [String: Double]()) { $0[$1.key.rawValue] = $1.value.timeIntervalSince1970 }
+        UserDefaults.standard.set(saved, forKey: Self.historyKey)
+    }
+
+    /// Where clicking an alert takes the user.
+    static func section(forNotification identifier: String) -> DashboardSection {
+        switch identifier {
+        case "osin.\(HealthAlert.Kind.lowDisk.rawValue)": .cleanup
+        case "osin.\(HealthAlert.Kind.memoryPressure.rawValue)": .activity
+        default: .system
+        }
+    }
 
     static func requestAuthorization() async -> Bool {
         await (try? UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
+    /// Alerts are only evaluated, and their cooldowns saved, when macOS will actually show them:
+    /// the permission is read fresh for every sample, right before deciding.
     func handle(_ snapshot: SystemSnapshot) {
-        evaluator.settings = Preferences.alertSettings
-        for alert in evaluator.evaluate(AlertReading(snapshot: snapshot), at: Date()) {
-            post(alert, snapshot: snapshot)
+        Task {
+            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+            guard status == .authorized || status == .provisional else { return }
+            evaluator.settings = Preferences.alertSettings
+            let alerts = evaluator.evaluate(AlertReading(snapshot: snapshot), at: Date())
+            for alert in alerts {
+                post(alert, snapshot: snapshot)
+            }
+            if !alerts.isEmpty {
+                saveHistory()
+            }
         }
     }
 
@@ -100,11 +135,23 @@ final class Notifier {
 }
 
 /// Runs `/usr/sbin/purge` with administrator privileges (Settings › Advanced). Its effect is temporary (ADR 0005).
+/// Runs `osascript` as a separate process so the app stays responsive during the password prompt and the purge.
 enum Purge {
-    @MainActor
-    static func run() -> Bool {
-        var error: NSDictionary?
-        NSAppleScript(source: "do shell script \"/usr/sbin/purge\" with administrator privileges")?.executeAndReturnError(&error)
-        return error == nil
+    static func run() async -> Bool {
+        await withCheckedContinuation { continuation in
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+            process.arguments = ["-e", "do shell script \"/usr/sbin/purge\" with administrator privileges"]
+            process.standardOutput = FileHandle.nullDevice
+            process.standardError = FileHandle.nullDevice
+            process.terminationHandler = { finished in
+                continuation.resume(returning: finished.terminationStatus == 0)
+            }
+            do {
+                try process.run()
+            } catch {
+                continuation.resume(returning: false)
+            }
+        }
     }
 }

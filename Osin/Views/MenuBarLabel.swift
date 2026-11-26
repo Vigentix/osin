@@ -8,6 +8,7 @@ struct MenuBarLabel: View {
     @AppStorage(Preferences.Key.menuBarCPU) private var showCPU = false
     @AppStorage(Preferences.Key.menuBarMemory) private var showMemory = false
     @AppStorage(Preferences.Key.menuBarNetwork) private var showNetwork = false
+    @Environment(\.openWindow) private var openWindow
 
     private var level: HealthLevel? {
         snapshot?.health.level
@@ -22,6 +23,12 @@ struct MenuBarLabel: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
+        // The label lives as long as the app, so it can open the dashboard for notification clicks.
+        .onReceive(NotificationCenter.default.publisher(for: .osinOpenDashboard)) { _ in
+            openWindow(id: WindowID.dashboard)
+            NSApp.activate()
+            WindowFront.bringDashboardToFront()
+        }
     }
 
     private var metricsText: String? {

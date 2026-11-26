@@ -20,7 +20,7 @@ enum Theme {
     // Text
     static let text = Color(light: 0x0F1115, dark: 0xECEEF3)
     static let text2 = Color(light: 0x5B6170, dark: 0xA3A8B5)
-    static let text3 = Color(light: 0x6B7280, dark: 0x7C8291)
+    static let text3 = Color(light: 0x5B6170, dark: 0x7C8291)
 
     /// Brand
     /// Rings, charts and icons.
@@ -34,7 +34,7 @@ enum Theme {
     static let good = Color(light: 0x059669, dark: 0x34D399)
     static let goodText = Color(light: 0x047857, dark: 0x6EE7B7)
     static let fair = Color(light: 0xD97706, dark: 0xFBBF24)
-    static let fairText = Color(light: 0xB45309, dark: 0xFCD34D)
+    static let fairText = Color(light: 0x92400E, dark: 0xFCD34D)
     static let poor = Color(light: 0xDC2626, dark: 0xF87171)
     static let poorText = Color(light: 0xB91C1C, dark: 0xFCA5A5)
 

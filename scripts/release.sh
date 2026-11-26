@@ -65,8 +65,13 @@ fi
 if [[ -n "${SPARKLE_PRIVATE_KEY_FILE:-}" ]]; then
   echo "==> Generating appcast"
   GENERATE_APPCAST="$(find build/SourcePackages/artifacts -name generate_appcast -type f -perm -u+x | head -1)"
+  # generate_appcast rejects two archives of the same version, so give it only the ZIP.
+  APPCAST_DIR="$(mktemp -d)"
+  cp "$ZIP" "$APPCAST_DIR/"
   "$GENERATE_APPCAST" --ed-key-file "$SPARKLE_PRIVATE_KEY_FILE" \
-    --download-url-prefix "https://github.com/Vigentix/osin/releases/download/v$VERSION/" "$OUT"
+    --download-url-prefix "https://github.com/Vigentix/osin/releases/download/v$VERSION/" "$APPCAST_DIR"
+  cp "$APPCAST_DIR/appcast.xml" "$OUT/appcast.xml"
+  rm -rf "$APPCAST_DIR"
 fi
 
 echo "==> Done"

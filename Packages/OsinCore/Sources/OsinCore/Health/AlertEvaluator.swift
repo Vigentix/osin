@@ -70,11 +70,13 @@ public struct AlertEvaluator: Sendable {
     public static let memorySustain: TimeInterval = 60
 
     public var settings: AlertSettings
-    private var lastAlert: [HealthAlert.Kind: Date] = [:]
+    /// When each kind last fired. Persist it so cooldowns survive relaunches (login, updates).
+    public private(set) var lastAlerts: [HealthAlert.Kind: Date]
     private var criticalSince: Date?
 
-    public init(settings: AlertSettings) {
+    public init(settings: AlertSettings, lastAlerts: [HealthAlert.Kind: Date] = [:]) {
         self.settings = settings
+        self.lastAlerts = lastAlerts
     }
 
     public mutating func evaluate(_ reading: AlertReading, at now: Date) -> [HealthAlert] {
@@ -99,10 +101,10 @@ public struct AlertEvaluator: Sendable {
     }
 
     private mutating func fire(_ kind: HealthAlert.Kind, value: Double, at now: Date, into alerts: inout [HealthAlert]) {
-        if let last = lastAlert[kind], now.timeIntervalSince(last) < Self.cooldowns[kind, default: 86400] {
+        if let last = lastAlerts[kind], now.timeIntervalSince(last) < Self.cooldowns[kind, default: 86400] {
             return
         }
-        lastAlert[kind] = now
+        lastAlerts[kind] = now
         alerts.append(HealthAlert(kind: kind, reading: value))
     }
 }

@@ -30,6 +30,7 @@ struct PopoverView: View {
         .background(Theme.surface)
         .osinFocusStyle()
         .onAppear { monitor.setVisible(.popover, true) }
+        .onWindowVisibilityChange { monitor.setVisible(.popover, $0) }
         .onDisappear { monitor.setVisible(.popover, false) }
     }
 
@@ -81,6 +82,7 @@ struct PopoverView: View {
                     Text("Clean \(Format.storage(bytes))").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PrimaryButtonStyle())
+                .disabled(scan.isBusy)
             } else {
                 Button {
                     openDashboard(.cleanup)
@@ -90,6 +92,7 @@ struct PopoverView: View {
                     Text("Smart Scan").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PrimaryButtonStyle())
+                .disabled(!scan.canStartScan)
             }
             iconButton("waveform.path.ecg", label: "Open Activity") { openDashboard(.activity) }
         }

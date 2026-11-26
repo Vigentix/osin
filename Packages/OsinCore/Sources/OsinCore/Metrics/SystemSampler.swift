@@ -22,13 +22,50 @@ public actor SystemSampler {
     private var lastDiskIO: (read: UInt64, written: UInt64)?
     private var lastCPUTime: [Int32: UInt64] = [:]
     private var cpuHistory = RollingWindow<CPUPoint>(capacity: 600)
+    private let minimumInterval: Duration
+    private var lastSnapshot: SystemSnapshot?
+    private var diskCapacity: (value: (total: UInt64, available: UInt64), at: ContinuousClock.Instant)?
+    private var reportedBatteryHealth: (value: Double?, at: ContinuousClock.Instant)?
 
-    public init(config: HealthConfig = HealthConfig(), topCount: Int = 5) {
+    /// - Parameter minimumInterval: calls closer together than this return the previous snapshot, so
+    ///   rates and per-core CPU are never computed over a few milliseconds.
+    public init(config: HealthConfig = HealthConfig(), topCount: Int = 5, minimumInterval: Duration = .milliseconds(900)) {
         self.config = config
         self.topCount = topCount
+        self.minimumInterval = minimumInterval
     }
 
-    public func sample() -> SystemSnapshot {
+    public func sample() async -> SystemSnapshot {
+        if let lastSnapshot, let lastInstant, clock.now - lastInstant < minimumInterval {
+            return lastSnapshot
+        }
+        await refreshBatteryHealthIfNeeded()
+        // Another call may have sampled while this one waited for system_profiler.
+        if let lastSnapshot, let lastInstant, clock.now - lastInstant < minimumInterval {
+            return lastSnapshot
+        }
+        let snapshot = takeSample()
+        lastSnapshot = snapshot
+        return snapshot
+    }
+
+    /// Makes the next `sample()` measure everything afresh, e.g. right after a cleanup.
+    public func invalidate() {
+        lastSnapshot = nil
+        diskCapacity = nil
+    }
+
+    /// Reads "Maximum Capacity" as macOS reports it, at most every 6 hours and only on Macs with a battery.
+    private func refreshBatteryHealthIfNeeded() async {
+        if let reportedBatteryHealth, clock.now - reportedBatteryHealth.at < .seconds(6 * 3600) {
+            return
+        }
+        reportedBatteryHealth = (nil, clock.now) // also stops concurrent refreshes
+        guard BatteryReader.read() != nil else { return }
+        reportedBatteryHealth = await (BatteryHealth.systemReported(), clock.now)
+    }
+
+    private func takeSample() -> SystemSnapshot {
         let now = clock.now
         let seconds = lastInstant.map { (now - $0) / .seconds(1) } ?? 0
 
@@ -50,7 +87,15 @@ public actor SystemSampler {
         )
         let disk = sampleDisk(seconds: seconds)
         let network = sampleNetwork(seconds: seconds)
-        let battery = BatteryReader.read()
+        let battery = BatteryReader.read().map { reading in
+            BatterySnapshot(
+                chargeFraction: reading.chargeFraction,
+                isCharging: reading.isCharging,
+                isOnACPower: reading.isOnACPower,
+                health: reportedBatteryHealth?.value ?? reading.health,
+                cycleCount: reading.cycleCount
+            )
+        }
         let thermal = ThermalLevel(ProcessInfo.processInfo.thermalState)
         let groups = ProcessGrouping.group(sampleProcesses(seconds: seconds))
         let byMemory = ProcessGrouping.top(groups, by: .memory, limit: groups.count)
@@ -100,7 +145,12 @@ public actor SystemSampler {
     }
 
     private func sampleDisk(seconds: Double) -> DiskSnapshot {
-        let capacity = DiskReader.capacity() ?? (0, 0)
+        // "Available for important usage" costs ~10 ms per call; free space moves slowly.
+        let now = clock.now
+        if (diskCapacity.map { now - $0.at > .seconds(60) } ?? true), let fresh = DiskReader.capacity() {
+            diskCapacity = (fresh, now)
+        }
+        let capacity: (total: UInt64, available: UInt64) = diskCapacity?.value ?? (0, 0)
         let counters = DiskReader.ioCounters()
         defer { lastDiskIO = counters }
         return DiskSnapshot(

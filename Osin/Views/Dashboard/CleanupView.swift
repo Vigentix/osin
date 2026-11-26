@@ -442,10 +442,21 @@ private struct ScanResultView: View {
                 if outcome.trashedBytes > 0 {
                     trashCard(outcome)
                 }
+                if !scan.undoFailures.isEmpty {
+                    DisclosureGroup("\(scan.undoFailures.count) items could not be restored") {
+                        ForEach(scan.undoFailures) { failure in
+                            Text(verbatim: "\(failure.url.lastPathComponent): \(failure.localizedReason)").font(.caption)
+                                .foregroundStyle(Theme.text2)
+                        }
+                    }
+                    .foregroundStyle(Theme.fairText)
+                    .frame(maxWidth: 680)
+                }
                 if !outcome.failures.isEmpty {
                     DisclosureGroup("\(outcome.failures.count) items were skipped") {
                         ForEach(outcome.failures) { failure in
-                            Text("\(failure.url.lastPathComponent): \(failure.reason)").font(.caption).foregroundStyle(Theme.text2)
+                            Text(verbatim: "\(failure.url.lastPathComponent): \(failure.localizedReason)").font(.caption)
+                                .foregroundStyle(Theme.text2)
                         }
                     }
                     .frame(maxWidth: 680)
@@ -453,6 +464,7 @@ private struct ScanResultView: View {
                 HStack(spacing: 10) {
                     Button("Done") { scan.showReport() }
                         .buttonStyle(PrimaryButtonStyle(large: true))
+                        .disabled(scan.isUndoing)
                         .keyboardShortcut(.defaultAction)
                     Button("View in History") { navigator.cleanupTab = .history }
                         .buttonStyle(SecondaryButtonStyle(large: true))
@@ -517,10 +529,18 @@ private struct ScanResultView: View {
     private func trashCard(_ outcome: CleanupOutcome) -> some View {
         HStack(spacing: 14) {
             Image(systemName: "trash").foregroundStyle(Theme.blue).accessibilityHidden(true)
-            Text(scan.restored
-                ? "\(Format.storage(outcome.trashedBytes)) restored from the Trash."
-                : "\(Format.storage(outcome.trashedBytes)) moved to the Trash. Restorable until you empty it.")
-                .foregroundStyle(Theme.text)
+            Group {
+                if scan.restored {
+                    Text("\(Format.storage(scan.restoredBytes)) restored from the Trash.")
+                } else if scan.restoredBytes > 0 {
+                    Text(
+                        "\(Format.storage(scan.restoredBytes)) restored. \(Format.storage(outcome.trashedBytes > scan.restoredBytes ? outcome.trashedBytes - scan.restoredBytes : 0)) is still in the Trash."
+                    )
+                } else {
+                    Text("\(Format.storage(outcome.trashedBytes)) moved to the Trash. Restorable until you empty it.")
+                }
+            }
+            .foregroundStyle(Theme.text)
             Spacer()
             Button {
                 scan.undo()
@@ -528,7 +548,7 @@ private struct ScanResultView: View {
                 HStack(spacing: 6) { Text("Undo"); KeyHint(keys: "⌘Z") }
             }
             .buttonStyle(SecondaryButtonStyle())
-            .disabled(scan.restored)
+            .disabled(scan.pendingRestore.isEmpty || scan.isUndoing)
             .keyboardShortcut("z", modifiers: .command)
             Button("Show in Trash") {
                 NSWorkspace.shared.open(URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".Trash"))
@@ -611,6 +631,8 @@ private struct CleanupHistoryView: View {
     @Environment(ScanCoordinator.self) private var scan
     @State private var entries: [CleanupLog.Entry] = []
     @State private var restoredIDs: Set<String> = []
+    /// Why a Restore from History did not work, per entry.
+    @State private var restoreErrors: [String: String] = [:]
 
     private var totalFreed: UInt64 {
         entries.filter { $0.action == "delete" || $0.action.hasPrefix("builtin:") }.reduce(0) { $0 + $1.bytes }
@@ -647,14 +669,20 @@ private struct CleanupHistoryView: View {
                         .font(.system(size: 12, design: .monospaced)).lineLimit(1).truncationMode(.middle)
                     Text("\(label(for: entry.action)) · \(entry.date.formatted(date: .abbreviated, time: .shortened))")
                         .font(.system(size: 11)).foregroundStyle(Theme.text3)
+                    if let error = restoreErrors[entry.id] {
+                        Text(verbatim: error).font(.system(size: 11)).foregroundStyle(Theme.fairText)
+                    }
                 }
                 Spacer()
                 Text(Format.storage(entry.bytes)).monospacedDigit().foregroundStyle(Theme.text2)
                 if entry.action == "trash", canRestore(entry) {
                     Button("Restore") {
                         Task {
-                            if await scan.restore(entry) {
+                            if let failure = await scan.restore(entry) {
+                                restoreErrors[entry.id] = failure.localizedReason
+                            } else {
                                 restoredIDs.insert(entry.id)
+                                restoreErrors[entry.id] = nil
                                 entries = scan.historyEntries()
                             }
                         }
@@ -668,8 +696,10 @@ private struct CleanupHistoryView: View {
     }
 
     private func canRestore(_ entry: CleanupLog.Entry) -> Bool {
-        guard !restoredIDs.contains(entry.id), let trashPath = entry.trashPath else { return false }
-        return FileManager.default.fileExists(atPath: trashPath) && !FileManager.default.fileExists(atPath: entry.path)
+        // Only offered while the exact trashed item is still in the Trash. Entries without a recorded
+        // identity (before v0.1.1) cannot be verified, so they are not offered.
+        guard !restoredIDs.contains(entry.id), let identity = entry.identity, let trashPath = entry.trashPath else { return false }
+        return FileIdentity(path: trashPath) == identity && !FileManager.default.fileExists(atPath: entry.path)
     }
 
     private func icon(for action: String) -> String {

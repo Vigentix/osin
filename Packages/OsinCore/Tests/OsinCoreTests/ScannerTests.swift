@@ -43,6 +43,15 @@ final class FixtureHome {
         return url
     }
 
+    /// Ages a folder and everything inside it (deepest first, so parents keep the old date).
+    func ageTree(_ relative: String, days: Double) throws {
+        let root = home.appendingPathComponent(relative)
+        let children = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil)?.compactMap { $0 as? URL } ?? []
+        for url in children.reversed() + [root] {
+            try age(url, days: days)
+        }
+    }
+
     func age(_ url: URL, days: Double) throws {
         guard days > 0 else { return }
         let date = Date().addingTimeInterval(-days * 86400)
@@ -161,7 +170,7 @@ struct ScannerTests {
         let fixture = try FixtureHome()
         try fixture.file("Projects/old-app/node_modules/left-pad/index.js", bytes: 3000)
         try fixture.file("Projects/old-app/node_modules/dep/node_modules/inner/index.js", bytes: 3000)
-        try fixture.age(fixture.home.appendingPathComponent("Projects/old-app/node_modules"), days: 200)
+        try fixture.ageTree("Projects/old-app/node_modules", days: 200)
         try fixture.file("Projects/new-app/node_modules/react/index.js", bytes: 3000)
         let find = CleanupRule(
             id: "node", name: "node", detail: "", tier: .review, action: .trash, regenerable: false, paths: [],

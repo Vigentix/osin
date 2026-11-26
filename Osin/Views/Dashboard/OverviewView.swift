@@ -94,9 +94,10 @@ struct OverviewView: View {
 
     @ViewBuilder private var primaryAction: some View {
         if let bytes = scan.safeReclaimableBytes, bytes >= Recommendations.minimumCleanBytes {
+            // No Return shortcut: Overview is the first page, and Return must not delete anything.
             Button("Clean \(Format.storage(bytes))") { cleanSafe() }
                 .buttonStyle(PrimaryButtonStyle(large: true))
-                .keyboardShortcut(.defaultAction)
+                .disabled(scan.isBusy)
         } else {
             Button("Run Smart Scan") {
                 navigator.section = .cleanup
@@ -104,6 +105,7 @@ struct OverviewView: View {
                 scan.start()
             }
             .buttonStyle(PrimaryButtonStyle(large: true))
+            .disabled(!scan.canStartScan)
         }
     }
 
@@ -541,9 +543,11 @@ private struct RecommendationCard: View {
             }
             .buttonStyle(PrimaryButtonStyle())
             .frame(maxWidth: .infinity)
+            .disabled(!scan.canStartScan)
         case let .cleanSafe(bytes):
             Button("Clean \(Format.storage(bytes))", action: cleanSafe)
                 .buttonStyle(PrimaryButtonStyle())
+                .disabled(scan.isBusy)
         case let .quitApp(group):
             Button("Quit \(group.name)") { AppControl.quit(group) }
                 .buttonStyle(SecondaryButtonStyle(large: true))

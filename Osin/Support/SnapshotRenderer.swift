@@ -90,7 +90,20 @@
             // Give SwiftUI a moment for tasks (history queries) and animations to settle.
             try? await Task.sleep(for: .seconds(2))
             host.layoutSubtreeIfNeeded()
-            guard let bitmap = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { return }
+            // Always 2x, whatever display is attached, so README images stay sharp on Retina screens.
+            guard let bitmap = NSBitmapImageRep(
+                bitmapDataPlanes: nil,
+                pixelsWide: Int(size.width * 2),
+                pixelsHigh: Int(size.height * 2),
+                bitsPerSample: 8,
+                samplesPerPixel: 4,
+                hasAlpha: true,
+                isPlanar: false,
+                colorSpaceName: .deviceRGB,
+                bytesPerRow: 0,
+                bitsPerPixel: 0
+            ) else { return }
+            bitmap.size = size
             host.cacheDisplay(in: host.bounds, to: bitmap)
             try? bitmap.representation(using: .png, properties: [:])?.write(to: url)
             window.close()

@@ -6,6 +6,10 @@ enum MachineInfo {
     /// The user-visible computer name. `Host.current()` can block on DNS, so it is avoided.
     static let computerName: String = SCDynamicStoreCopyComputerName(nil, nil) as String? ?? "Mac"
 
+    /// The startup disk's name as Finder shows it ("Macintosh HD" unless renamed).
+    static let bootVolumeName: String = (try? URL(fileURLWithPath: "/").resourceValues(forKeys: [.volumeLocalizedNameKey]))?
+        .volumeLocalizedName ?? "Macintosh HD"
+
     /// "Apple M1 · 8 cores · 16 GB · macOS 26.6"
     static let summary: String = {
         var size = 0
@@ -62,6 +66,26 @@ extension HealthComponent {
         case .cpu: "CPU busy for a while"
         case .thermal: "Mac is running hot"
         case .battery: "Battery is wearing out"
+        }
+    }
+}
+
+extension CleanupFailure {
+    /// The reason in the user's language. System errors already come localized from macOS.
+    var localizedReason: String {
+        switch kind {
+        case .deleteNotAllowed: String(localized: "This rule is not allowed to delete permanently.")
+        case .symbolicLink: String(localized: "The item is a symbolic link.")
+        case .throughSymbolicLink: String(localized: "The path goes through a symbolic link.")
+        case .outsideHome: String(localized: "The item is outside your home folder.")
+        case .protectedLocation: String(localized: "The item is in a protected location.")
+        case .changedSinceScan: String(localized: "The item changed since the scan. Scan again to include it.")
+        case .usedRecently: String(localized: "The item was used recently, so it was kept.")
+        case .logUnavailable: String(localized: "Osin could not write its cleanup log, so nothing was removed.")
+        case .couldNotCheckAge: String(localized: "Part of the item could not be read, so Osin could not confirm it is old. It was kept.")
+        case .originalExists: String(localized: "Something already exists at the original location.")
+        case .notTheTrashedItem: String(localized: "The item in the Trash is not the one Osin moved there.")
+        case let .system(message): message
         }
     }
 }

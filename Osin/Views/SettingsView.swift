@@ -98,6 +98,7 @@ private struct AdvancedSettings: View {
     @Environment(Updater.self) private var updater
     @AppStorage(Preferences.Key.automaticUpdateChecks) private var automaticUpdateChecks = true
     @State private var purgeResult: String?
+    @State private var isPurging = false
 
     var body: some View {
         Form {
@@ -125,9 +126,16 @@ private struct AdvancedSettings: View {
                     }
                     Spacer()
                     Button("Purge…") {
-                        purgeResult = Purge.run() ? String(localized: "Done.") : String(localized: "Cancelled or failed.")
+                        isPurging = true
+                        purgeResult = nil
+                        Task {
+                            let ok = await Purge.run()
+                            purgeResult = ok ? String(localized: "Done.") : String(localized: "Cancelled or failed.")
+                            isPurging = false
+                        }
                     }
                     .buttonStyle(SecondaryButtonStyle())
+                    .disabled(isPurging)
                 }
                 if let purgeResult {
                     Text(purgeResult).font(.caption).foregroundStyle(.secondary)

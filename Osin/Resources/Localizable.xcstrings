@@ -144,6 +144,16 @@
         }
       }
     },
+    "%@ restored. %@ is still in the Trash.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã khôi phục %@. Còn %@ vẫn nằm trong Thùng rác."
+          }
+        }
+      }
+    },
     "%@ safe to clean": {
       "localizations": {
         "vi": {
@@ -250,12 +260,12 @@
         }
       }
     },
-    "%lld items could not be restored.": {
+    "%lld items could not be restored": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld mục không khôi phục được."
+            "value": "%lld mục không khôi phục được"
           }
         }
       }
@@ -1266,12 +1276,12 @@
         }
       }
     },
-    "Disk · Macintosh HD": {
+    "Disk · %@": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ổ đĩa · Macintosh HD"
+            "value": "Ổ đĩa · %@"
           }
         }
       }
@@ -2605,6 +2615,16 @@
         }
       }
     },
+    "Osin could not write its cleanup log, so nothing was removed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin không ghi được nhật ký dọn dẹp nên không xoá gì cả."
+          }
+        }
+      }
+    },
     "Osin keeps watching and will tell you when something changes.": {
       "localizations": {
         "vi": {
@@ -2734,6 +2754,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cache trình quản lý gói"
+          }
+        }
+      }
+    },
+    "Part of the item could not be read, so Osin could not confirm it is old. It was kept.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin không đọc được một phần của mục này nên không xác nhận được nó đã cũ. Mục được giữ lại."
           }
         }
       }
@@ -3414,6 +3444,16 @@
         }
       }
     },
+    "Something already exists at the original location.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vị trí ban đầu đã có một mục khác."
+          }
+        }
+      }
+    },
     "Space to Quick Look": {
       "localizations": {
         "vi": {
@@ -3564,6 +3604,76 @@
         }
       }
     },
+    "The item changed since the scan. Scan again to include it.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục này đã thay đổi kể từ lần quét. Hãy quét lại để đưa vào."
+          }
+        }
+      }
+    },
+    "The item in the Trash is not the one Osin moved there.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục trong Thùng rác không phải là mục Osin đã chuyển vào."
+          }
+        }
+      }
+    },
+    "The item is a symbolic link.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục này là liên kết tượng trưng (symlink)."
+          }
+        }
+      }
+    },
+    "The item is in a protected location.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục này nằm trong vị trí được bảo vệ."
+          }
+        }
+      }
+    },
+    "The item is outside your home folder.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục này nằm ngoài thư mục người dùng."
+          }
+        }
+      }
+    },
+    "The item was used recently, so it was kept.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục này vừa được dùng gần đây nên được giữ lại."
+          }
+        }
+      }
+    },
+    "The path goes through a symbolic link.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đường dẫn đi qua một liên kết tượng trưng (symlink)."
+          }
+        }
+      }
+    },
     "The update check is the only network request Osin makes.": {
       "localizations": {
         "vi": {
@@ -3590,6 +3700,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Máy này chạy bằng điện lưới."
+          }
+        }
+      }
+    },
+    "This rule is not allowed to delete permanently.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy tắc này không được phép xoá vĩnh viễn."
           }
         }
       }

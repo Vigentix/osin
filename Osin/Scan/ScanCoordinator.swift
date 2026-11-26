@@ -6,13 +6,7 @@ import SwiftUI
 @MainActor
 @Observable
 final class ScanCoordinator {
-    enum Phase: Equatable {
-        case idle
-        case scanning
-        case report
-        case cleaning
-        case done
-    }
+    typealias Phase = ScanPhase
 
     /// A report row: a rule result or a built-in action.
     struct Group: Identifiable {
@@ -74,7 +68,19 @@ final class ScanCoordinator {
     private(set) var outcome: CleanupOutcome?
     private(set) var scoreBefore: Int?
     private(set) var freeBefore: UInt64?
-    private(set) var restored = false
+    /// Bytes put back from the Trash by Undo for the current outcome.
+    private(set) var restoredBytes: UInt64 = 0
+    private(set) var isUndoing = false
+    /// Items Undo could not put back yet; Undo retries exactly these.
+    private(set) var pendingRestore: [TrashedItem] = []
+    /// Why the last Undo left items behind, shown on the result screen.
+    private(set) var undoFailures: [CleanupFailure] = []
+
+    /// Everything trashed by the last clean is back in place.
+    var restored: Bool {
+        restoredBytes > 0 && pendingRestore.isEmpty
+    }
+
     private(set) var errorMessage: String?
     var selectedGroups: Set<String> = []
     var excludedItems: Set<String> = []
@@ -87,6 +93,9 @@ final class ScanCoordinator {
     /// Debug hook: limit which rules run (the snapshot renderer avoids permission prompts).
     @ObservationIgnored var ruleFilter: (CleanupRule) -> Bool = { _ in true }
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// Bumped for every scan; a cancelled scan that is still finishing its last await checks it and
+    /// stops instead of writing into the newer scan's state.
+    @ObservationIgnored private var scanGeneration = 0
     @ObservationIgnored private let log: CleanupLog? = (try? CleanupLog.defaultURL()).map(CleanupLog.init(url:))
     @ObservationIgnored private lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0) }
 
@@ -144,26 +153,39 @@ final class ScanCoordinator {
 
     // MARK: Actions
 
+    /// A user-started scan is allowed now.
+    var canStartScan: Bool {
+        phase.canStartScan && !isUndoing
+    }
+
+    /// Scanning, cleaning or undoing: actions that would replace the current outcome must wait.
+    var isBusy: Bool {
+        phase.isBusy || isUndoing
+    }
+
     /// Full, user-started scan.
     func start() {
+        guard phase.canStartScan, !isUndoing else { return }
         runScan(silent: false, filter: ruleFilter)
     }
 
     /// Quiet scan at launch so the Overview can show what is reclaimable. Skips Downloads, which would
     /// trigger a macOS permission prompt without context, and never interrupts what the user is doing.
     func backgroundScan() {
-        guard phase == .idle || phase == .done else { return }
+        guard phase.canStartBackgroundScan, !isUndoing else { return }
         let filter = ruleFilter
         runScan(silent: true) { rule in filter(rule) && !rule.paths.contains { $0.hasPrefix("~/Downloads") } }
     }
 
     func cancel() {
+        guard phase.canCancel else { return }
         task?.cancel()
         task = nil
         phase = groups.isEmpty ? .idle : .report
     }
 
     func showReport() {
+        guard phase.canShowReport, !isUndoing else { return }
         phase = groups.isEmpty ? .idle : .report
         outcome = nil
     }
@@ -186,7 +208,7 @@ final class ScanCoordinator {
 
     /// One click from the Overview or popover: clean only the safe, regenerable groups from the last scan.
     func cleanSafeNow(score: Int?, free: UInt64?) {
-        guard !safeGroups.isEmpty else { return }
+        guard phase.canCleanSafeNow, !isUndoing, !safeGroups.isEmpty else { return }
         selectedGroups = Set(safeGroups.map(\.id))
         excludedItems = []
         phase = .report
@@ -194,12 +216,14 @@ final class ScanCoordinator {
     }
 
     func clean(score: Int?, free: UInt64?) {
-        guard let cleaner, phase == .report else { return }
+        guard let cleaner, phase == .report, !isUndoing else { return }
         let chosen = groups.filter { selectedGroups.contains($0.id) }
         let excluded = excludedItems
         scoreBefore = score
         freeBefore = free
-        restored = false
+        restoredBytes = 0
+        pendingRestore = []
+        undoFailures = []
         phase = .cleaning
         task = Task {
             var result = CleanupOutcome()
@@ -207,13 +231,9 @@ final class ScanCoordinator {
             for group in chosen {
                 switch group.kind {
                 case .emptyTrash:
-                    do {
-                        try await EmptyTrash.perform()
-                        result.freedBytes += group.bytes
-                        await cleaner.record(builtin: "empty-trash", bytes: group.bytes)
-                    } catch {
-                        result.failures.append(CleanupFailure(url: URL(fileURLWithPath: "~/.Trash"), reason: error.localizedDescription))
-                    }
+                    let emptied = await cleaner.emptyTrash()
+                    result.freedBytes += emptied.freedBytes
+                    result.failures += emptied.failures
                 case .simulators:
                     do {
                         try await SimulatorInventory.deleteUnavailable()
@@ -236,6 +256,7 @@ final class ScanCoordinator {
             result.trashed += ruleOutcome.trashed
             result.failures += ruleOutcome.failures
             outcome = result
+            pendingRestore = result.trashed
             removeCleaned(chosen.map(\.id))
             phase = .done
             onCleaned?()
@@ -243,13 +264,17 @@ final class ScanCoordinator {
     }
 
     func undo() {
-        guard let cleaner, let trashed = outcome?.trashed, !trashed.isEmpty else { return }
+        guard let cleaner, !isUndoing, !pendingRestore.isEmpty else { return }
+        let items = pendingRestore
+        isUndoing = true
         Task {
-            let failures = await cleaner.undo(trashed)
-            restored = failures.isEmpty
-            if !failures.isEmpty {
-                errorMessage = String(localized: "\(failures.count) items could not be restored.")
-            }
+            let failures = await cleaner.undo(items)
+            let failed = Set(failures.map(\.url))
+            let stillPending = items.filter { failed.contains($0.originalURL) }
+            restoredBytes += items.filter { !failed.contains($0.originalURL) }.reduce(0) { $0 + $1.bytes }
+            pendingRestore = stillPending
+            undoFailures = failures
+            isUndoing = false
             onCleaned?()
         }
     }
@@ -258,17 +283,25 @@ final class ScanCoordinator {
         ((try? log?.entries()) ?? []).reversed()
     }
 
-    func restore(_ entry: CleanupLog.Entry) async -> Bool {
-        guard let cleaner, let trashPath = entry.trashPath else { return false }
+    /// Restores one History entry. Returns why it failed, or `nil` on success.
+    func restore(_ entry: CleanupLog.Entry) async -> CleanupFailure? {
+        let original = URL(fileURLWithPath: entry.path)
+        guard let cleaner, let trashPath = entry.trashPath else { return CleanupFailure(url: original, kind: .notTheTrashedItem) }
         let item = TrashedItem(
             originalURL: URL(fileURLWithPath: entry.path),
             trashURL: URL(fileURLWithPath: trashPath),
             bytes: entry.bytes,
-            ruleID: entry.ruleID
+            ruleID: entry.ruleID,
+            identity: entry.identity
         )
-        let ok = await cleaner.undo([item]).isEmpty
+        let failure = await cleaner.undo([item]).first
+        if failure == nil, let index = pendingRestore.firstIndex(where: { $0.trashURL.path == trashPath }) {
+            // Keep the result screen's Undo in step with restores made from History.
+            restoredBytes += pendingRestore.remove(at: index).bytes
+            undoFailures.removeAll { $0.url.path == entry.path }
+        }
         onCleaned?()
-        return ok
+        return failure
     }
 
     // MARK: Scan
@@ -278,15 +311,35 @@ final class ScanCoordinator {
         if !silent {
             phase = .scanning
             outcome = nil
-            restored = false
+            restoredBytes = 0
+            pendingRestore = []
+            undoFailures = []
         }
         errorMessage = nil
         foundBytes = 0
         currentStepIndex = 0
-        task = Task { await scan(silent: silent, filter: filter) }
+        scanGeneration += 1
+        let generation = scanGeneration
+        task = Task { await scan(silent: silent, filter: filter, generation: generation) }
     }
 
-    private func scan(silent: Bool, filter: @escaping (CleanupRule) -> Bool) async {
+    static func group(for result: RuleScanResult) -> Group {
+        Group(
+            id: result.rule.id,
+            name: String(localized: String.LocalizationValue(result.rule.name)),
+            detail: String(localized: String.LocalizationValue(result.rule.detail)),
+            tier: result.rule.tier,
+            bytes: result.totalBytes,
+            kind: .rule(result),
+            needsAccess: result.needsAccess
+        )
+    }
+
+    private func isCurrent(_ generation: Int) -> Bool {
+        generation == scanGeneration && !Task.isCancelled
+    }
+
+    private func scan(silent: Bool, filter: @escaping (CleanupRule) -> Bool, generation: Int) async {
         do {
             let rules = try CleanupRule.bundled().filter { (try? $0.validate()) != nil && filter($0) }
             let names = rules.map { String(localized: String.LocalizationValue($0.name)) }
@@ -298,6 +351,7 @@ final class ScanCoordinator {
 
             let results = try await Scanner().scan(rules) { event in
                 Task { @MainActor in
+                    guard self.scanGeneration == generation else { return }
                     if let result = event.completed {
                         self.steps[event.index].bytes = result.totalBytes
                         self.foundBytes += result.totalBytes
@@ -308,21 +362,13 @@ final class ScanCoordinator {
                     }
                 }
             }
-            var found = results.map { result in
-                Group(
-                    id: result.rule.id,
-                    name: String(localized: String.LocalizationValue(result.rule.name)),
-                    detail: String(localized: String.LocalizationValue(result.rule.detail)),
-                    tier: result.rule.tier,
-                    bytes: result.totalBytes,
-                    kind: .rule(result),
-                    needsAccess: result.needsAccess
-                )
-            }
+            guard isCurrent(generation) else { return }
+            var found = results.map(Self.group(for:))
 
             currentStepIndex = rules.count
             currentPath = "xcrun simctl"
             let simulators = await SimulatorInventory.measure()
+            guard isCurrent(generation) else { return }
             steps[rules.count].bytes = simulators?.bytes ?? 0
             if let simulators, simulators.bytes > 0 {
                 foundBytes += simulators.bytes
@@ -337,6 +383,7 @@ final class ScanCoordinator {
             currentStepIndex = rules.count + 1
             currentPath = "~/.Trash"
             let trashBytes = await (try? EmptyTrash.measure()) ?? 0
+            guard isCurrent(generation) else { return }
             steps[rules.count + 1].bytes = trashBytes
             if trashBytes > 0 {
                 foundBytes += trashBytes
@@ -363,6 +410,7 @@ final class ScanCoordinator {
         } catch is CancellationError {
             return
         } catch {
+            guard generation == scanGeneration else { return }
             errorMessage = error.localizedDescription
             if !silent {
                 phase = .idle
@@ -382,17 +430,7 @@ final class ScanCoordinator {
         /// Shows a finished Smart Scan report built from `DemoData` (README screenshots).
         func loadDemo() {
             task?.cancel()
-            var found = DemoData.scanResults().map { result in
-                Group(
-                    id: result.rule.id,
-                    name: String(localized: String.LocalizationValue(result.rule.name)),
-                    detail: String(localized: String.LocalizationValue(result.rule.detail)),
-                    tier: result.rule.tier,
-                    bytes: result.totalBytes,
-                    kind: .rule(result),
-                    needsAccess: false
-                )
-            }
+            var found = DemoData.scanResults().map(Self.group(for:))
             found.append(Group(
                 id: Self.simulatorsID,
                 name: String(localized: "Unavailable simulators"),

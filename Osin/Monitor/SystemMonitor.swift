@@ -29,6 +29,7 @@ final class SystemMonitor {
     @ObservationIgnored private let sampler = SystemSampler()
     @ObservationIgnored private let history: HistoryStore? = try? HistoryStore(url: HistoryStore.defaultURL())
     @ObservationIgnored private var lastCompaction = Date.distantPast
+    @ObservationIgnored private var lastPersisted: Date?
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var visibleSurfaces: Set<Surface> = []
     /// Debug-only: fixed demo data instead of sampling (README screenshots).
@@ -58,20 +59,24 @@ final class SystemMonitor {
         }
     }
 
-    /// Samples immediately (after a cleanup, for example) without waiting for the next tick.
+    /// Samples immediately and afresh (after a cleanup, for example) without waiting for the next tick.
     func refreshNow() {
-        restartLoop()
+        restartLoop(invalidating: true)
     }
 
-    private func restartLoop() {
+    private func restartLoop(invalidating: Bool = false) {
         guard !isDemo else { return }
         loop?.cancel()
-        loop = Task { [weak self] in
+        loop = Task { [weak self, sampler] in
+            if invalidating {
+                await sampler.invalidate()
+            }
             while !Task.isCancelled {
                 guard let self else { return }
                 await refresh()
                 let interval = isForeground ? Self.foregroundInterval : Self.backgroundInterval
-                try? await Task.sleep(for: interval)
+                // Tolerance lets macOS coalesce wake-ups with other timers.
+                try? await Task.sleep(for: interval, tolerance: isForeground ? .milliseconds(200) : .seconds(5))
             }
         }
     }
@@ -181,7 +186,16 @@ final class SystemMonitor {
 
     private func persist(_ snapshot: SystemSnapshot) async {
         guard let history else { return }
-        try? await history.record(HistoryPoint(snapshot: snapshot))
+        // The first sample after launch has no interval yet (zero CPU and rates), and a sample reused
+        // because it was requested too soon is already stored.
+        guard let previous = lastPersisted else {
+            lastPersisted = snapshot.date
+            return
+        }
+        let seconds = snapshot.date.timeIntervalSince(previous)
+        guard seconds > 0 else { return }
+        lastPersisted = snapshot.date
+        try? await history.record(HistoryPoint(snapshot: snapshot), seconds: min(seconds, Self.backgroundInterval / .seconds(1) * 2))
         if Date().timeIntervalSince(lastCompaction) > 600 {
             lastCompaction = Date()
             try? await history.compact()

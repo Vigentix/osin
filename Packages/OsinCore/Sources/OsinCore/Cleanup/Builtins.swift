@@ -75,16 +75,10 @@ public enum EmptyTrash {
     }
 
     public static func measure(home: URL = FileManager.default.homeDirectoryForCurrentUser) async throws -> UInt64 {
-        let contents = try FileManager.default.contentsOfDirectory(at: trashURL(home: home), includingPropertiesForKeys: nil)
-        return try contents.reduce(UInt64(0)) { try $0 + (DiskUsage.allocatedSize(of: $1)) }
-    }
-
-    /// Removes everything inside `~/.Trash` (not the folder itself). Symlinks are removed as links.
-    public static func perform(home: URL = FileManager.default.homeDirectoryForCurrentUser) async throws {
-        let contents = try FileManager.default.contentsOfDirectory(at: trashURL(home: home), includingPropertiesForKeys: nil)
-        for item in contents {
-            try FileManager.default.removeItem(at: item)
-        }
+        // One tree, so hard links shared between trashed items are counted once rather than not at all.
+        let trash = trashURL(home: home)
+        _ = try FileManager.default.contentsOfDirectory(at: trash, includingPropertiesForKeys: nil) // throws if unreadable
+        return try DiskUsage.allocatedSize(of: trash)
     }
 }
 

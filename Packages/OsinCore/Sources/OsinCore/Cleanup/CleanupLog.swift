@@ -14,14 +14,25 @@ public struct CleanupLog: Sendable {
         public let path: String
         public let bytes: UInt64
         public let trashPath: String?
+        /// The trashed item, so a restore from History can verify it is the same item.
+        public let identity: FileIdentity?
 
-        public init(date: Date = Date(), ruleID: String, action: String, path: String, bytes: UInt64, trashPath: String? = nil) {
+        public init(
+            date: Date = Date(),
+            ruleID: String,
+            action: String,
+            path: String,
+            bytes: UInt64,
+            trashPath: String? = nil,
+            identity: FileIdentity? = nil
+        ) {
             self.date = date
             self.ruleID = ruleID
             self.action = action
             self.path = path
             self.bytes = bytes
             self.trashPath = trashPath
+            self.identity = identity
         }
     }
 
@@ -42,6 +53,17 @@ public struct CleanupLog: Sendable {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.sortedKeys]
         return encoder
+    }
+
+    /// Whether entries can be written. Cleaning refuses to start otherwise: every action must be logged.
+    public func isWritable() -> Bool {
+        let manager = FileManager.default
+        let folder = url.deletingLastPathComponent()
+        try? manager.createDirectory(at: folder, withIntermediateDirectories: true)
+        if manager.fileExists(atPath: url.path) {
+            return manager.isWritableFile(atPath: url.path)
+        }
+        return manager.isWritableFile(atPath: folder.path)
     }
 
     public func append(_ entry: Entry) throws {

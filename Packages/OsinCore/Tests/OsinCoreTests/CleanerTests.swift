@@ -28,7 +28,8 @@ struct CleanerTests {
     }
 
     private func item(_ url: URL, bytes: UInt64 = 10000) -> ScanItem {
-        ScanItem(url: url.resolvingSymlinksInPath(), bytes: bytes, modified: nil)
+        let resolved = url.resolvingSymlinksInPath()
+        return ScanItem(url: resolved, bytes: bytes, modified: nil, identity: FileIdentity(path: resolved.path))
     }
 
     @Test func deleteRemovesItemAndCountsFreedBytes() async throws {
@@ -155,7 +156,10 @@ struct BuiltinCleanupTests {
         let keep = try fixture.file("Downloads/keep.zip")
         let measured = try await EmptyTrash.measure(home: fixture.home)
         #expect(measured >= 8000)
-        try await EmptyTrash.perform(home: fixture.home)
+        let cleaner = Cleaner(home: fixture.home, log: CleanupLog(url: fixture.root.appendingPathComponent("log.jsonl")))
+        let result = await cleaner.emptyTrash()
+        #expect(result.failures.isEmpty)
+        #expect(result.freedBytes >= 8000)
         let remaining = try FileManager.default.contentsOfDirectory(atPath: fixture.home.appendingPathComponent(".Trash").path)
         #expect(remaining.isEmpty)
         #expect(FileManager.default.fileExists(atPath: keep.path))

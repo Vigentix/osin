@@ -9,16 +9,16 @@ public struct ScanItem: Sendable, Identifiable, Hashable {
 
     public let url: URL
     public let bytes: UInt64
+    /// Newest modification date of the item or anything inside it.
     public let modified: Date?
+    /// The scanned file or folder itself, checked again before cleaning.
+    public let identity: FileIdentity?
 
-    public init(
-        url: URL,
-        bytes: UInt64,
-        modified: Date?
-    ) {
+    public init(url: URL, bytes: UInt64, modified: Date?, identity: FileIdentity? = nil) {
         self.url = url
         self.bytes = bytes
         self.modified = modified
+        self.identity = identity
     }
 }
 
@@ -95,8 +95,21 @@ public struct Scanner: Sendable {
                 if let cutoff, let modified = candidate.modified, modified > cutoff {
                     continue
                 }
-                let bytes = try DiskUsage.allocatedSize(of: candidate.url)
-                items.append(ScanItem(url: candidate.url, bytes: bytes, modified: candidate.modified))
+                // Identity before measuring, checked again after: the numbers must belong to this item.
+                guard let identity = FileIdentity(path: path) else { continue }
+                let usage = try DiskUsage.measure(candidate.url)
+                guard FileIdentity(path: path) == identity else { continue }
+                let newest = [candidate.modified, usage.newestModification].compactMap(\.self).max()
+                // A folder's own date only changes when entries are added or removed directly in it,
+                // so age is judged by the newest thing inside (an active node_modules stays put). If part
+                // of it could not be read, its age is unknown and it is not offered.
+                if let cutoff, !usage.isComplete || (newest.map { $0 > cutoff } ?? false) {
+                    if !usage.isComplete {
+                        collector.needsAccess = true // tell the user why something may be missing
+                    }
+                    continue
+                }
+                items.append(ScanItem(url: candidate.url, bytes: usage.bytes, modified: newest, identity: identity))
                 claimed.append(path)
             }
             let result = RuleScanResult(rule: rule, items: items, needsAccess: collector.needsAccess)
@@ -203,8 +216,10 @@ public struct Scanner: Sendable {
 
     // MARK: - Helpers
 
+    /// Shell-style matching where `*` never matches a leading dot, so `~/Downloads/*` skips
+    /// `.localized` and `.DS_Store`.
     static func matches(_ pattern: String, _ name: String) -> Bool {
-        fnmatch(pattern, name, 0) == 0
+        fnmatch(pattern, name, FNM_PERIOD) == 0
     }
 
     /// True when `path` equals, contains or sits inside an already claimed path.
@@ -228,36 +243,93 @@ public struct Scanner: Sendable {
     }
 }
 
-/// Disk usage measurement shared by the scanner and built-in cleanups.
+/// Disk usage measurement shared by the scanner, the cleaner and built-in cleanups.
 enum DiskUsage {
+    struct Usage {
+        var bytes: UInt64 = 0
+        var newestModification: Date?
+        /// False when some descendant could not be read, so the size and newest date are lower bounds.
+        var isComplete = true
+    }
+
+    /// Collects enumeration errors from FileManager's callback.
+    private final class ErrorFlag {
+        var failed = false
+    }
+
+    private static let keys: Set<URLResourceKey> = [
+        .totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .isDirectoryKey, .isSymbolicLinkKey,
+        .contentModificationDateKey, .linkCountKey
+    ]
+
     /// Allocated size on disk. Symlinks inside folders are counted as links, never followed.
     static func allocatedSize(of url: URL) throws -> UInt64 {
-        let sizeKeys: Set<URLResourceKey> = [.totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .isDirectoryKey, .isSymbolicLinkKey]
-        guard let values = try? url.resourceValues(forKeys: sizeKeys) else { return 0 }
-        if values.isDirectory != true || values.isSymbolicLink == true {
-            return UInt64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+        try measure(url).bytes
+    }
+
+    /// Allocated size and the newest modification date of `url` and everything inside it.
+    ///
+    /// A hard-linked file only counts when all of its links are inside `url`: removing one link of a
+    /// file that is still linked elsewhere (a pnpm store shared with projects) frees nothing.
+    static func measure(_ scannedURL: URL) throws -> Usage {
+        // A fresh URL, so no resource values cached when the item was listed are reused.
+        let url = URL(fileURLWithPath: scannedURL.path)
+        var usage = Usage()
+        var linked: [FileIdentity: (seen: Int, links: Int, bytes: UInt64)] = [:]
+
+        func add(_ child: URL, _ values: URLResourceValues) {
+            if let date = values.contentModificationDate, date > (usage.newestModification ?? .distantPast) {
+                usage.newestModification = date
+            }
+            guard values.isDirectory != true || values.isSymbolicLink == true else { return }
+            let bytes = UInt64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+            let links = values.linkCount ?? 1
+            if links > 1, values.isSymbolicLink != true, let identity = FileIdentity(path: child.path) {
+                let entry = linked[identity] ?? (0, links, bytes)
+                linked[identity] = (entry.seen + 1, entry.links, entry.bytes)
+            } else {
+                usage.bytes += bytes
+            }
         }
-        guard let enumerator = FileManager.default.enumerator(
-            at: url,
-            includingPropertiesForKeys: Array(sizeKeys),
-            errorHandler: { _, _ in true }
-        )
-        else { return 0 }
-        var total: UInt64 = 0
-        var counter = 0
-        for case let child as URL in enumerator {
-            counter += 1
-            if counter % 2000 == 0 {
-                try Task.checkCancellation()
-            }
-            guard let childValues = try? child.resourceValues(forKeys: sizeKeys) else { continue }
-            if childValues.isSymbolicLink == true {
-                enumerator.skipDescendants()
-            }
-            if childValues.isDirectory != true || childValues.isSymbolicLink == true {
-                total += UInt64(childValues.totalFileAllocatedSize ?? childValues.fileAllocatedSize ?? 0)
+
+        guard let values = try? url.resourceValues(forKeys: keys) else {
+            usage.isComplete = false
+            return usage
+        }
+        add(url, values)
+        let errors = ErrorFlag()
+        if values.isDirectory == true, values.isSymbolicLink != true,
+           let enumerator = FileManager.default.enumerator(
+               at: url,
+               includingPropertiesForKeys: Array(keys),
+               errorHandler: { _, _ in
+                   errors.failed = true
+                   return true
+               }
+           )
+        {
+            var counter = 0
+            for case let child as URL in enumerator {
+                counter += 1
+                if counter % 2000 == 0 {
+                    try Task.checkCancellation()
+                }
+                guard let childValues = try? child.resourceValues(forKeys: keys) else {
+                    usage.isComplete = false
+                    continue
+                }
+                if childValues.isSymbolicLink == true {
+                    enumerator.skipDescendants()
+                }
+                add(child, childValues)
             }
         }
-        return total
+        if errors.failed {
+            usage.isComplete = false
+        }
+        for entry in linked.values where entry.seen >= entry.links {
+            usage.bytes += entry.bytes
+        }
+        return usage
     }
 }
