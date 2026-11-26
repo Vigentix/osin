@@ -65,7 +65,7 @@ Each milestone ends with a working, demoable build.
 - [ ] Apple Developer ID + notarization (needs the $99/year account; workflow is ready; first-launch steps documented meanwhile)
 - [ ] Sparkle EdDSA keys + GitHub secrets
 - [ ] README screenshots (`make snapshots` renders them)
-- [ ] Final product name
+- [x] Final product name: Osin (kept)
 - [x] Tag and publish v0.1.0
 - [x] v0.1.1: safety and reliability fixes from three review rounds
 - [x] Homebrew tap `Vigentix/homebrew-tap`
