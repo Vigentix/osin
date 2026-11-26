@@ -33,8 +33,13 @@ struct SystemView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle(Text("System"))
-        .task(id: HistoryReloadKey(range: range, stamp: monitor.snapshot?.date)) {
-            points = await monitor.historyPoints(range)
+        // Charts span an hour to a week: reloading every 30 s (and on range change) is plenty,
+        // instead of a database query on every 2 s sample.
+        .task(id: range) {
+            while !Task.isCancelled {
+                points = await monitor.historyPoints(range)
+                try? await Task.sleep(for: .seconds(30), tolerance: .seconds(5))
+            }
         }
     }
 

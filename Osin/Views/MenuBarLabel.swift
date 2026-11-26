@@ -4,20 +4,26 @@ import SwiftUI
 
 /// Menu bar glyph with a health-coloured dot, plus optional live metrics chosen in Settings.
 struct MenuBarLabel: View {
-    let snapshot: SystemSnapshot?
-    var keepingAwake = false
+    /// Read here, not passed in: the App's body then does not depend on every sample, and the label
+    /// only reads `snapshot` when live metrics are shown (otherwise just the rarely changing level).
+    let monitor: SystemMonitor
+    let keepAwake: KeepAwakeController
     @AppStorage(Preferences.Key.menuBarCPU) private var showCPU = false
     @AppStorage(Preferences.Key.menuBarMemory) private var showMemory = false
     @AppStorage(Preferences.Key.menuBarNetwork) private var showNetwork = false
     @Environment(\.openWindow) private var openWindow
 
     private var level: HealthLevel? {
-        snapshot?.health.level
+        monitor.healthLevel
+    }
+
+    private var keepingAwake: Bool {
+        keepAwake.isActive
     }
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(nsImage: MenuBarIcon.image(dot: level.map { NSColor($0.color) }))
+            Image(nsImage: MenuBarIcon.image(for: level))
             if keepingAwake {
                 Image(systemName: "cup.and.saucer.fill")
             }
@@ -36,7 +42,7 @@ struct MenuBarLabel: View {
     }
 
     private var metricsText: String? {
-        guard let snapshot else { return nil }
+        guard showCPU || showMemory || showNetwork, let snapshot = monitor.snapshot else { return nil }
         var parts: [String] = []
         if showCPU {
             parts.append("CPU \(Format.percent(snapshot.cpu.total))")
@@ -62,6 +68,20 @@ enum MenuBarIcon {
     /// The Osin mark: a ring with a gap at the top right and the health dot inside the gap.
     /// Drawn with `labelColor` inside a drawing handler so it follows the menu bar appearance;
     /// not a template image because the dot keeps its colour.
+    /// One image per health level, drawn once.
+    @MainActor private static var cache: [String: NSImage] = [:]
+
+    @MainActor
+    static func image(for level: HealthLevel?) -> NSImage {
+        let key = level.map { "\($0)" } ?? "none"
+        if let cached = cache[key] {
+            return cached
+        }
+        let image = image(dot: level.map { NSColor($0.color) })
+        cache[key] = image
+        return image
+    }
+
     static func image(dot: NSColor?) -> NSImage {
         let image = NSImage(size: size, flipped: false) { rect in
             let center = NSPoint(x: rect.midX, y: rect.midY)

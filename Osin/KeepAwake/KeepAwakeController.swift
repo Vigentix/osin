@@ -138,14 +138,36 @@ final class KeepAwakeController {
         }
     }
 
+    /// Whether any Osin window or the popover is on screen (set by the app delegate).
+    @ObservationIgnored var isUIVisible: () -> Bool = { true }
+
+    /// Ticks every second while the countdown can be seen, every 5 s otherwise (the safety and
+    /// process checks run every 5 s anyway), and wakes exactly when a timer runs out.
     private func startTicker() {
         ticker?.cancel()
         ticker = Task { [weak self] in
             while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1), tolerance: .milliseconds(300))
-                self?.tick()
+                guard let self else { return }
+                var interval: TimeInterval = isUIVisible() ? 1 : 5
+                var tolerance: Duration = interval > 1 ? .seconds(1) : .milliseconds(300)
+                let elapsedNow = (clock.now - startInstant) / .seconds(1)
+                let toleranceSeconds = tolerance / .seconds(1)
+                if let session, let remaining = session.remaining(at: Date(), elapsed: elapsedNow),
+                   remaining <= interval + toleranceSeconds
+                {
+                    // The deadline comes first: wake right at it, without coalescing past it.
+                    interval = max(0.05, remaining)
+                    tolerance = .zero
+                }
+                try? await Task.sleep(for: .seconds(interval), tolerance: tolerance)
+                tick()
             }
         }
+    }
+
+    /// Brings the countdown up to date at once (when the popover or Overview appears).
+    func refreshNow() {
+        tick()
     }
 
     private func tick() {

@@ -15,7 +15,7 @@ struct OsinApp: App {
                 .environment(appDelegate.navigator)
                 .environment(appDelegate.keepAwake)
         } label: {
-            MenuBarLabel(snapshot: appDelegate.monitor.snapshot, keepingAwake: appDelegate.keepAwake.isActive)
+            MenuBarLabel(monitor: appDelegate.monitor, keepAwake: appDelegate.keepAwake)
         }
         .menuBarExtraStyle(.window)
 
@@ -101,6 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             guard let self else { return }
             monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
         }
+        keepAwake.isUIVisible = { [monitor] in monitor.isForeground }
         keepAwake.onEnded = { [notifier] reason, session, end in
             notifier.keepAwakeEnded(reason, session: session, at: end)
         }

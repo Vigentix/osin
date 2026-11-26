@@ -48,22 +48,54 @@ public enum RunningProcesses {
         "python", "python3", "node", "ruby", "perl", "bash", "sh", "zsh", "fish", "deno", "bun", "php", "java", "swift"
     ]
 
-    /// The current user's processes, apps first, excluding Osin itself.
+    /// The current user's processes, excluding Osin itself (a one-off read; the picker uses
+    /// `RunningProcessCatalog`, which reuses details between refreshes).
     public static func list() -> [RunningProcess] {
+        var cache: [Int32: CachedArguments] = [:]
+        return list(cache: &cache)
+    }
+
+    /// A process's arguments, valid while its PID, start time and executable stay the same
+    /// (`exec` keeps the PID and start time but changes the executable).
+    struct CachedArguments: Sendable {
+        let startTime: Date
+        let executablePath: String?
+        let arguments: [String]
+        /// Arguments are read again after this long: a process can `exec` itself with new arguments.
+        var readAt = Date()
+    }
+
+    static let argumentsMaxAge: TimeInterval = 30
+
+    /// Builds the list, reading each process's arguments only when it is new to `cache`.
+    static func list(cache: inout [Int32: CachedArguments]) -> [RunningProcess] {
         let currentUser = getuid()
         let ownPID = getpid()
-        return ProcessReader.readAll().compactMap { raw -> RunningProcess? in
+        var seen: Set<Int32> = []
+        let result = ProcessReader.readAll().compactMap { raw -> RunningProcess? in
             guard raw.pid > 1, raw.pid != ownPID, let info = kinfo(raw.pid), info.kp_eproc.e_ucred.cr_uid == currentUser else { return nil }
-            let arguments = arguments(of: raw.pid) ?? []
+            seen.insert(raw.pid)
+            let started = startTime(info)
+            let arguments: [String]
+            if let cached = cache[raw.pid], cached.startTime == started, cached.executablePath == raw.executablePath,
+               Date().timeIntervalSince(cached.readAt) < argumentsMaxAge
+            {
+                arguments = cached.arguments
+            } else {
+                arguments = self.arguments(of: raw.pid) ?? []
+                cache[raw.pid] = CachedArguments(startTime: started, executablePath: raw.executablePath, arguments: arguments)
+            }
             let bundle = mainAppBundle(forExecutable: raw.executablePath)
             let name = displayName(bundlePath: bundle, executablePath: raw.executablePath, arguments: arguments, fallback: raw.name)
             let commandLine = arguments.isEmpty ? name : arguments.map(shortened).joined(separator: " ")
             return RunningProcess(
-                pid: raw.pid, name: name, commandLine: commandLine, startTime: startTime(info),
+                pid: raw.pid, name: name, commandLine: commandLine, startTime: started,
                 bundlePath: bundle, executablePath: raw.executablePath, cpuNanoseconds: raw.cpuNanoseconds,
                 hasTerminal: info.kp_eproc.e_tdev != -1
             )
         }
+        cache = cache.filter { seen.contains($0.key) }
+        return result
     }
 
     /// The identity to watch for `pid`, or `nil` when no such process exists.
@@ -185,5 +217,17 @@ public enum RunningProcesses {
             index += 1
         }
         return arguments
+    }
+}
+
+/// Lists processes repeatedly (the picker refreshes every few seconds) and reads each process's
+/// command line only once, which is most of the cost of a refresh.
+public actor RunningProcessCatalog {
+    private var cache: [Int32: RunningProcesses.CachedArguments] = [:]
+
+    public init() {}
+
+    public func refresh() -> [RunningProcess] {
+        RunningProcesses.list(cache: &cache)
     }
 }

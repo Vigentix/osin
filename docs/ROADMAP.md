@@ -77,6 +77,7 @@ Each milestone ends with a working, demoable build.
 - [x] Popover row and options, menu bar indicator, Overview banner, Settings tab, optional global shortcut
 - [x] Warns about lid-close sleep and pending automatic macOS updates
 - [x] 0.2.1: App caches keep Osin's own cache and app updates still downloading; those updates are a review item
+- [x] 0.2.2: performance pass (Keep Awake ticks every 5 s when nothing shows it, cached process details, rotated cleanup log read off the main thread, coalesced storage measurement, fewer permission checks, menu bar label redrawn only on change, O(depth) scan overlap checks)
 - [ ] Lid-closed mode (needs root: `pmset disablesleep`; only with a crash-safe restore)
 
 ## v2 backlog

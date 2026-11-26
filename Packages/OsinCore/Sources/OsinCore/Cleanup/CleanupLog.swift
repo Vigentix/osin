@@ -37,9 +37,67 @@ public struct CleanupLog: Sendable {
     }
 
     public let url: URL
+    /// When the log would grow past this, it moves to `cleanup-log.1.jsonl` (replacing the previous
+    /// archive) and a new log starts. Keeps reading History cheap however long Osin is used.
+    public let maxBytes: Int
 
-    public init(url: URL) {
+    public init(url: URL, maxBytes: Int = 1_000_000) {
         self.url = url
+        self.maxBytes = maxBytes
+    }
+
+    var archiveURL: URL {
+        url.deletingPathExtension().appendingPathExtension("1").appendingPathExtension(url.pathExtension)
+    }
+
+    /// Bytes freed by entries that rotation has already dropped, so the lifetime total never shrinks.
+    var droppedTotalsURL: URL {
+        url.deletingLastPathComponent().appendingPathComponent("cleanup-totals.json")
+    }
+
+    private struct DroppedTotals: Codable {
+        var freedBytes: UInt64
+        /// The first line of the archive already added to `freedBytes`, so an interrupted rotation
+        /// (totals saved, archive not yet deleted) never counts it twice.
+        var countedArchive: String?
+    }
+
+    private func droppedTotals() -> DroppedTotals {
+        (try? JSONDecoder().decode(DroppedTotals.self, from: Data(contentsOf: droppedTotalsURL))) ?? DroppedTotals(freedBytes: 0)
+    }
+
+    private func lines(of file: URL) -> [Substring] {
+        ((try? String(contentsOf: file, encoding: .utf8)) ?? "").split(separator: "\n")
+    }
+
+    private func decode(_ lines: [Substring]) -> [Entry] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return lines.compactMap { try? decoder.decode(Entry.self, from: Data($0.utf8)) }
+    }
+
+    /// Adds the current archive's freed bytes to the dropped totals, once per archive.
+    func countArchiveIntoDroppedTotals() throws {
+        let archived = lines(of: archiveURL)
+        guard let identity = archived.first.map(String.init) else { return }
+        var totals = droppedTotals()
+        guard totals.countedArchive != identity else { return }
+        totals.freedBytes += Self.freed(decode(archived))
+        totals.countedArchive = identity
+        try JSONEncoder().encode(totals).write(to: droppedTotalsURL, options: .atomic)
+    }
+
+    static func freed(_ entries: [Entry]) -> UInt64 {
+        entries.filter { $0.action == "delete" || $0.action.hasPrefix("builtin:") }.reduce(0) { $0 + $1.bytes }
+    }
+
+    /// Everything Osin ever freed (deleted or emptied), including entries no longer kept.
+    private func unlockedFreedBytesTotal() throws -> UInt64 {
+        let totals = droppedTotals()
+        let archived = lines(of: archiveURL)
+        let archiveAlreadyCounted = archived.first.map(String.init) == totals.countedArchive
+        let archiveFreed = archiveAlreadyCounted ? 0 : Self.freed(decode(archived))
+        return totals.freedBytes + archiveFreed + Self.freed(decode(lines(of: url)))
     }
 
     /// `~/Library/Application Support/Osin/cleanup-log.jsonl`.
@@ -66,10 +124,19 @@ public struct CleanupLog: Sendable {
         return manager.isWritableFile(atPath: folder.path)
     }
 
-    public func append(_ entry: Entry) throws {
+    private func unlockedAppend(_ entry: Entry) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         var line = try Self.encoder().encode(entry)
         line.append(0x0A)
+        let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int) ?? 0
+        if size > 0, size + line.count > maxBytes {
+            if FileManager.default.fileExists(atPath: archiveURL.path) {
+                // The old archive is about to go: keep what it freed in the running total first.
+                try countArchiveIntoDroppedTotals()
+                try FileManager.default.removeItem(at: archiveURL)
+            }
+            try FileManager.default.moveItem(at: url, to: archiveURL)
+        }
         if !FileManager.default.fileExists(atPath: url.path) {
             try line.write(to: url)
             return
@@ -80,13 +147,44 @@ public struct CleanupLog: Sendable {
         try handle.write(contentsOf: line)
     }
 
-    /// All entries, oldest first. Malformed lines are skipped.
-    public func entries() throws -> [Entry] {
-        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
+    /// All kept entries (archive, then current log), oldest first. Malformed lines are skipped.
+    private func unlockedEntries() throws -> [Entry] {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try String(contentsOf: url, encoding: .utf8)
-            .split(separator: "\n")
-            .compactMap { try? decoder.decode(Entry.self, from: Data($0.utf8)) }
+        return try [archiveURL, url]
+            .filter { FileManager.default.fileExists(atPath: $0.path) }
+            .flatMap { file in
+                try String(contentsOf: file, encoding: .utf8)
+                    .split(separator: "\n")
+                    .compactMap { try? decoder.decode(Entry.self, from: Data($0.utf8)) }
+            }
+    }
+
+    /// Appends, reads and totals take one lock, so History never reads half a rotation.
+    private nonisolated(unsafe) static let lock = NSLock()
+
+    public func append(_ entry: Entry) throws {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        try unlockedAppend(entry)
+    }
+
+    /// All kept entries (archive, then current log), oldest first. Malformed lines are skipped.
+    public func entries() throws -> [Entry] {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        return try unlockedEntries()
+    }
+
+    /// Everything Osin ever freed (deleted or emptied), including entries no longer kept.
+    public func freedBytesTotal() throws -> UInt64 {
+        Self.lock.lock()
+        defer { Self.lock.unlock() }
+        return try unlockedFreedBytesTotal()
+    }
+
+    /// The newest `limit` entries, newest first (what History shows).
+    public func recentEntries(limit: Int) throws -> [Entry] {
+        try Array(entries().suffix(limit).reversed())
     }
 }

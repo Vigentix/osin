@@ -79,6 +79,14 @@ public struct AlertEvaluator: Sendable {
         self.lastAlerts = lastAlerts
     }
 
+    /// Undoes the cooldowns started at `firedAt` for alerts that could not be shown (notifications
+    /// off or not allowed), so they fire again later. A newer firing of the same kind is kept.
+    public mutating func restoreCooldowns(for kinds: [HealthAlert.Kind], firedAt: Date, previous: [HealthAlert.Kind: Date]) {
+        for kind in kinds where lastAlerts[kind] == firedAt {
+            lastAlerts[kind] = previous[kind]
+        }
+    }
+
     public mutating func evaluate(_ reading: AlertReading, at now: Date) -> [HealthAlert] {
         if reading.memoryPressure == .critical {
             criticalSince = criticalSince ?? now

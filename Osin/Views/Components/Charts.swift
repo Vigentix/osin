@@ -262,9 +262,3 @@ struct TimeSeriesChart: View {
         .background(Theme.control, in: RoundedRectangle(cornerRadius: 6))
     }
 }
-
-/// Reload key for history-driven views: the range and the latest sample time.
-struct HistoryReloadKey: Hashable {
-    let range: SystemMonitor.HistoryRange
-    let stamp: Date?
-}

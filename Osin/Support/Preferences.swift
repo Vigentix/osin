@@ -131,20 +131,29 @@ final class Notifier {
         await (try? UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
-    /// Alerts are only evaluated, and their cooldowns saved, when macOS will actually show them:
-    /// the permission is read fresh for every sample, right before deciding.
+    /// Evaluates alerts for a sample. The notification permission is only read when an alert would
+    /// actually fire (rarely), and cooldowns are only saved once macOS will show it.
     func handle(_ snapshot: SystemSnapshot) {
+        evaluator.settings = Preferences.alertSettings
+        // Every sample is evaluated, even with alerts off (nothing fires then), so memory-pressure
+        // tracking stays current. The permission is read only when an alert would fire.
+        let before = evaluator.lastAlerts
+        let firedAt = Date()
+        let alerts = evaluator.evaluate(AlertReading(snapshot: snapshot), at: firedAt)
+        guard !alerts.isEmpty else { return }
         Task {
             let status = await Self.authorizationStatus()
-            guard status == .authorized || status == .provisional else { return }
-            evaluator.settings = Preferences.alertSettings
-            let alerts = evaluator.evaluate(AlertReading(snapshot: snapshot), at: Date())
+            guard status == .authorized || status == .provisional,
+                  UserDefaults.standard.bool(forKey: Preferences.Key.alertsEnabled)
+            else {
+                // Not shown: undo the cooldown it started, so it can fire once notifications are allowed.
+                evaluator.restoreCooldowns(for: alerts.map(\.kind), firedAt: firedAt, previous: before)
+                return
+            }
             for alert in alerts {
                 post(alert, snapshot: snapshot)
             }
-            if !alerts.isEmpty {
-                saveHistory()
-            }
+            saveHistory()
         }
     }
 

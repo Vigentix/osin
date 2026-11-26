@@ -86,6 +86,7 @@ struct KeepAwakeRow: View {
             .padding(.vertical, 6)
         }
         .background(Theme.raised.opacity(0.6), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .onAppear { keepAwake.refreshNow() }
     }
 
     private var statusText: String {
@@ -326,6 +327,8 @@ struct KeepAwakeOptionsView: View {
 struct ProcessPicker: View {
     @Binding var selection: WatchedProcess?
     @State private var processes: [(process: RunningProcess, cpu: Double)] = []
+    /// Remembers each process's command line between refreshes (most of a refresh's cost).
+    @State private var catalog = RunningProcessCatalog()
     @State private var query = ""
     @State private var loading = true
 
@@ -407,9 +410,9 @@ struct ProcessPicker: View {
 
     /// Two readings half a second apart give each process's CPU share.
     private func load() async {
-        let first = await Task.detached { RunningProcesses.list() }.value
+        let first = await catalog.refresh()
         try? await Task.sleep(for: .milliseconds(500))
-        let second = await Task.detached { RunningProcesses.list() }.value
+        let second = await catalog.refresh()
         processes = Self.rank(second, previous: first, seconds: 0.5)
         loading = false
     }

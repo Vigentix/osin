@@ -96,7 +96,7 @@ final class ScanCoordinator {
     /// Bumped for every scan; a cancelled scan that is still finishing its last await checks it and
     /// stops instead of writing into the newer scan's state.
     @ObservationIgnored private var scanGeneration = 0
-    @ObservationIgnored private let log: CleanupLog? = (try? CleanupLog.defaultURL()).map(CleanupLog.init(url:))
+    @ObservationIgnored private let log: CleanupLog? = (try? CleanupLog.defaultURL()).map { CleanupLog(url: $0) }
     @ObservationIgnored private lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0) }
 
     // MARK: Derived
@@ -279,8 +279,14 @@ final class ScanCoordinator {
         }
     }
 
-    func historyEntries() -> [CleanupLog.Entry] {
-        ((try? log?.entries()) ?? []).reversed()
+    /// The newest 300 History entries and the total freed, read off the main thread.
+    func history() async -> (entries: [CleanupLog.Entry], totalFreed: UInt64) {
+        guard let log else { return ([], 0) }
+        return await Task.detached(priority: .userInitiated) {
+            let all = (try? log.entries()) ?? []
+            let freed = (try? log.freedBytesTotal()) ?? 0
+            return (Array(all.suffix(300).reversed()), freed)
+        }.value
     }
 
     /// Restores one History entry. Returns why it failed, or `nil` on success.

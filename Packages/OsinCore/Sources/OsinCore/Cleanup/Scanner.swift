@@ -73,7 +73,7 @@ public struct Scanner: Sendable {
     }
 
     public func scan(_ rules: [CleanupRule], progress: @Sendable (ScanProgress) -> Void = { _ in }) async throws -> [RuleScanResult] {
-        var claimed: [String] = []
+        var claimed = ClaimedPaths()
         var results: [RuleScanResult] = []
         for (index, rule) in rules.enumerated() {
             try Task.checkCancellation()
@@ -91,7 +91,7 @@ public struct Scanner: Sendable {
                 try Task.checkCancellation()
                 let path = candidate.url.path
                 let name = candidate.url.lastPathComponent
-                guard !rule.excludes.contains(where: { Self.matches($0, name) }), !Self.overlaps(path, claimed) else { continue }
+                guard !rule.excludes.contains(where: { Self.matches($0, name) }), !claimed.overlaps(path) else { continue }
                 if let cutoff, let modified = candidate.modified, modified > cutoff {
                     continue
                 }
@@ -110,7 +110,7 @@ public struct Scanner: Sendable {
                     continue
                 }
                 items.append(ScanItem(url: candidate.url, bytes: usage.bytes, modified: newest, identity: identity))
-                claimed.append(path)
+                claimed.insert(path)
             }
             let result = RuleScanResult(rule: rule, items: items, needsAccess: collector.needsAccess)
             results.append(result)
@@ -222,13 +222,6 @@ public struct Scanner: Sendable {
         fnmatch(pattern, name, FNM_PERIOD) == 0
     }
 
-    /// True when `path` equals, contains or sits inside an already claimed path.
-    static func overlaps(_ path: String, _ claimed: [String]) -> Bool {
-        claimed.contains { other in
-            path == other || path.hasPrefix(other + "/") || other.hasPrefix(path + "/")
-        }
-    }
-
     static func isPermissionError(_ error: Error) -> Bool {
         let nsError = error as NSError
         if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileReadNoPermissionError {
@@ -331,5 +324,37 @@ enum DiskUsage {
             usage.bytes += entry.bytes
         }
         return usage
+    }
+}
+
+/// Paths already claimed by a rule. `overlaps` is O(path depth) instead of O(claimed paths):
+/// a candidate overlaps when it equals, contains or sits inside a claimed path.
+struct ClaimedPaths {
+    private var claimed: Set<String> = []
+    /// Every proper ancestor of a claimed path.
+    private var ancestors: Set<String> = []
+
+    mutating func insert(_ path: String) {
+        claimed.insert(path)
+        var current = Substring(path)
+        while let slash = current.lastIndex(of: "/"), slash > current.startIndex {
+            current = current[..<slash]
+            // An ancestor already recorded means all of its own ancestors are too.
+            guard ancestors.insert(String(current)).inserted else { break }
+        }
+    }
+
+    func overlaps(_ path: String) -> Bool {
+        if claimed.contains(path) || ancestors.contains(path) {
+            return true
+        }
+        var current = Substring(path)
+        while let slash = current.lastIndex(of: "/"), slash > current.startIndex {
+            current = current[..<slash]
+            if claimed.contains(String(current)) {
+                return true
+            }
+        }
+        return false
     }
 }

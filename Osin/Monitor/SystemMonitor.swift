@@ -18,6 +18,8 @@ final class SystemMonitor {
     static let historyLength = 60
 
     private(set) var snapshot: SystemSnapshot?
+    /// Health level, updated only when it changes, so the menu bar label is not redrawn every sample.
+    private(set) var healthLevel: HealthLevel?
     private(set) var cpuHistory = RollingWindow<Double>(capacity: historyLength)
     private(set) var memoryHistory = RollingWindow<Double>(capacity: historyLength)
     private(set) var networkHistory = RollingWindow<Double>(capacity: historyLength)
@@ -30,6 +32,11 @@ final class SystemMonitor {
     @ObservationIgnored private let history: HistoryStore? = try? HistoryStore(url: HistoryStore.defaultURL())
     @ObservationIgnored private var lastCompaction = Date.distantPast
     @ObservationIgnored private var lastPersisted: Date?
+    /// A storage measurement in progress; later requests only update the reclaimable figure.
+    @ObservationIgnored private var storageTask: Task<Void, Never>?
+    @ObservationIgnored private var pendingReclaimable: UInt64?
+    /// A forced re-measure (after a cleanup) asked for while another measurement was running.
+    @ObservationIgnored private var pendingForce = false
     @ObservationIgnored private var loop: Task<Void, Never>?
     @ObservationIgnored private var visibleSurfaces: Set<Surface> = []
     /// Debug-only: fixed demo data instead of sampling (README screenshots).
@@ -85,6 +92,9 @@ final class SystemMonitor {
         let next = await sampler.sample()
         guard !Task.isCancelled else { return }
         snapshot = next
+        if healthLevel != next.health.level {
+            healthLevel = next.health.level
+        }
         onSnapshot?(next)
         cpuHistory.append(next.cpu.total)
         let memory = next.memory
@@ -118,6 +128,12 @@ final class SystemMonitor {
             }
         #endif
         guard let disk = snapshot?.disk else { return }
+        // A measurement is already walking the disk: don't start a second, overlapping one.
+        if storageTask != nil {
+            pendingReclaimable = reclaimable
+            pendingForce = pendingForce || force
+            return
+        }
         if !force, let storage, Date().timeIntervalSince(storage.measuredAt) < 86400 {
             self.storage = StorageBreakdown(
                 apps: storage.apps, developer: storage.developer, caches: storage.caches, reclaimable: reclaimable,
@@ -125,13 +141,31 @@ final class SystemMonitor {
             )
             return
         }
-        Task {
-            guard let measured = try? await StorageBreakdown.measure(
+        storageTask = Task {
+            let measured = try? await StorageBreakdown.measure(
                 totalBytes: disk.totalBytes, availableBytes: disk.availableBytes, reclaimableBytes: reclaimable
-            ) else { return }
-            storage = measured
-            if let data = try? JSONEncoder().encode(measured) {
-                UserDefaults.standard.set(data, forKey: Self.storageKey)
+            )
+            // Requests that arrived meanwhile: the newest reclaimable figure, and whether a cleanup
+            // finished (then measure again, with that newest figure).
+            let latest = pendingReclaimable
+            let rerun = pendingForce
+            pendingReclaimable = nil
+            pendingForce = false
+            storageTask = nil
+            if let measured {
+                let current = latest.map {
+                    StorageBreakdown(
+                        apps: measured.apps, developer: measured.developer, caches: measured.caches, reclaimable: $0,
+                        other: measured.other, free: measured.free, total: measured.total, measuredAt: measured.measuredAt
+                    )
+                } ?? measured
+                storage = current
+                if let data = try? JSONEncoder().encode(current) {
+                    UserDefaults.standard.set(data, forKey: Self.storageKey)
+                }
+            }
+            if rerun {
+                refreshStorage(reclaimable: latest ?? reclaimable, force: true)
             }
         }
     }

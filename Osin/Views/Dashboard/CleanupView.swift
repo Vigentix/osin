@@ -634,9 +634,7 @@ private struct CleanupHistoryView: View {
     /// Why a Restore from History did not work, per entry.
     @State private var restoreErrors: [String: String] = [:]
 
-    private var totalFreed: UInt64 {
-        entries.filter { $0.action == "delete" || $0.action.hasPrefix("builtin:") }.reduce(0) { $0 + $1.bytes }
-    }
+    @State private var totalFreed: UInt64 = 0
 
     var body: some View {
         ScrollView {
@@ -650,14 +648,20 @@ private struct CleanupHistoryView: View {
                 } else {
                     Card(padding: 8) {
                         VStack(spacing: 0) {
-                            ForEach(entries.prefix(300)) { entry in row(entry) }
+                            ForEach(entries) { entry in row(entry) }
                         }
                     }
                 }
             }
             .padding(28)
         }
-        .task { entries = scan.historyEntries() }
+        .task { await reload() }
+    }
+
+    private func reload() async {
+        let history = await scan.history()
+        entries = history.entries
+        totalFreed = history.totalFreed
     }
 
     private func row(_ entry: CleanupLog.Entry) -> some View {
@@ -683,7 +687,7 @@ private struct CleanupHistoryView: View {
                             } else {
                                 restoredIDs.insert(entry.id)
                                 restoreErrors[entry.id] = nil
-                                entries = scan.historyEntries()
+                                await reload()
                             }
                         }
                     }
