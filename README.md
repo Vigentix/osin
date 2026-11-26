@@ -105,7 +105,7 @@ Leave a build, a download, a backup or a long script running without the Mac fal
 
 ### Smart Scan you can read before you click
 
-Osin looks for Xcode DerivedData and device support files, app caches and logs, package-manager caches, old `node_modules`, installers in Downloads, unavailable simulators and the Trash. Results are split into **Safe to clean** (selected for you) and **Needs your review** (never selected unless you choose), with every item listed and sizes measured on disk.
+Osin looks for Xcode DerivedData and device support files, app caches and logs, package-manager caches, app updates that were downloaded but not installed, old `node_modules`, installers in Downloads, unavailable simulators and the Trash. Results are split into **Safe to clean** (selected for you) and **Needs your review** (never selected unless you choose), with every item listed and sizes measured on disk.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/cleanup-dark.png">

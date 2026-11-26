@@ -1396,6 +1396,16 @@
         }
       }
     },
+    "Downloaded app updates": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản cập nhật app đã tải"
+          }
+        }
+      }
+    },
     "Downloaded packages for npm, pnpm, Gradle and Cargo. Re-downloaded on the next install.": {
       "localizations": {
         "vi": {
@@ -4014,12 +4024,12 @@
         }
       }
     },
-    "Temporary data apps keep to speed things up. Apps recreate it when needed. Apple's own caches are left alone.": {
+    "Temporary data apps keep to speed things up. Apps recreate it when needed. Apple's own caches and app updates still downloading are left alone.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dữ liệu tạm ứng dụng giữ để chạy nhanh hơn. Ứng dụng sẽ tạo lại khi cần. Cache của chính Apple được giữ nguyên."
+            "value": "Dữ liệu tạm ứng dụng giữ để chạy nhanh hơn. Ứng dụng sẽ tạo lại khi cần. Cache của chính Apple và các bản cập nhật app đang tải dở được giữ nguyên."
           }
         }
       }
@@ -4326,6 +4336,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cập nhật"
+          }
+        }
+      }
+    },
+    "Updates that apps downloaded but have not installed yet. They go to the Trash; apps download them again when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản cập nhật app đã tải về nhưng chưa cài. Chúng được chuyển vào Thùng rác; app sẽ tải lại khi cần."
           }
         }
       }

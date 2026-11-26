@@ -26,7 +26,7 @@
   {
     "id": "user.caches",
     "name": "App caches",
-    "detail": "Temporary data apps keep to speed things up. Apps recreate it when needed. Apple's own caches are left alone.",
+    "detail": "Temporary data apps keep to speed things up. Apps recreate it when needed. Apple's own caches and app updates still downloading are left alone.",
     "tier": "safe",
     "action": "delete",
     "regenerable": true,
@@ -35,7 +35,10 @@
     ],
     "excludes": [
       "com.apple.*",
-      "JetBrains"
+      "JetBrains",
+      "com.vigentix.osin",
+      "*.ShipIt",
+      "*-updater"
     ]
   },
   {
@@ -62,6 +65,18 @@
       "~/Library/pnpm/store/*",
       "~/.gradle/caches/*",
       "~/.cargo/registry/cache/*"
+    ]
+  },
+  {
+    "id": "app.pending-updates",
+    "name": "Downloaded app updates",
+    "detail": "Updates that apps downloaded but have not installed yet. They go to the Trash; apps download them again when needed.",
+    "tier": "review",
+    "action": "trash",
+    "regenerable": true,
+    "paths": [
+      "~/Library/Caches/*.ShipIt",
+      "~/Library/Caches/*-updater"
     ]
   },
   {

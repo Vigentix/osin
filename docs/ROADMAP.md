@@ -76,6 +76,7 @@ Each milestone ends with a working, demoable build.
 - [x] Safety stops: low battery, hot, unplugged (optional); notification with the reason
 - [x] Popover row and options, menu bar indicator, Overview banner, Settings tab, optional global shortcut
 - [x] Warns about lid-close sleep and pending automatic macOS updates
+- [x] 0.2.1: App caches keep Osin's own cache and app updates still downloading; those updates are a review item
 - [ ] Lid-closed mode (needs root: `pmset disablesleep`; only with a crash-safe restore)
 
 ## v2 backlog
