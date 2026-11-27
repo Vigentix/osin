@@ -8,6 +8,8 @@ struct OverviewView: View {
     @Environment(ScanCoordinator.self) private var scan
     @Environment(Navigator.self) private var navigator
     @Environment(KeepAwakeController.self) private var keepAwake
+    @Environment(Housekeeper.self) private var housekeeper
+    @AppStorage(Preferences.Key.weeklyReportEnabled) private var weeklyReportEnabled = true
 
     /// The health ring draws in once per session; later visits show it settled.
     @MainActor private static var heroAnimated = false
@@ -39,6 +41,9 @@ struct OverviewView: View {
         }
         .motion(Motion.standard, value: showsCompactBar)
         .motion(Motion.standard, value: keepAwake.isActive)
+        .sheet(isPresented: Binding(get: { navigator.showsWeeklyReport }, set: { navigator.showsWeeklyReport = $0 })) {
+            WeeklyReportSheet()
+        }
         .navigationTitle(Text("Overview"))
     }
 
@@ -60,6 +65,10 @@ struct OverviewView: View {
                         Color.clear.preference(key: HeroBottomKey.self, value: proxy.frame(in: .named(space)).maxY)
                     }
                 }
+            if weeklyReportEnabled, let summary = housekeeper.reportToShow() {
+                WeeklyReportCard(summary: summary)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
             recommended
             rightNow
             HStack(alignment: .top, spacing: 14) {

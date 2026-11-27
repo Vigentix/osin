@@ -263,6 +263,29 @@
             }
         }
 
+        /// Eight weeks of reports, the newest being the week that just ended.
+        static func weeklySummaries() -> [WeeklySummary] {
+            let thisWeek = UsageTracker.weekStart(containing: now)
+            let scores = [71, 74, 69, 77, 80, 76, 79, 84]
+            return scores.enumerated().map { index, score in
+                let weeksAgo = scores.count - index
+                let start = Calendar.current.date(byAdding: .day, value: -7 * weeksAgo, to: thisWeek) ?? thisWeek
+                let latest = weeksAgo == 1
+                return WeeklySummary(
+                    weekStart: start, averageScore: score,
+                    freedBytes: latest ? 3_420_000_000 : UInt64(800_000_000 + index * 150_000_000),
+                    pressureMinutes: latest ? 75 : 30 + index * 5, lowDiskDays: latest ? 0 : index % 3,
+                    hotMinutes: latest ? 20 : 5, keepAwakeHours: latest ? 6.5 : 2, choreRuns: latest ? 1 : 0,
+                    topApps: latest ? [
+                        UsageTracker.AppShare(name: "Xcode", bundlePath: "/Applications/Xcode.app", cpuHours: 7.4),
+                        UsageTracker.AppShare(name: "Google Chrome", bundlePath: "/Applications/Google Chrome.app", cpuHours: 3.1),
+                        UsageTracker.AppShare(name: "Figma", bundlePath: "/Applications/Figma.app", cpuHours: 1.8),
+                        UsageTracker.AppShare(name: "Slack", bundlePath: "/Applications/Slack.app", cpuHours: 0.9)
+                    ] : []
+                )
+            }
+        }
+
         static let simulators = (count: 6, bytes: UInt64(4_310_000_000))
         static let trashBytes: UInt64 = 872_000_000
     }

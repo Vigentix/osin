@@ -86,5 +86,19 @@ Each milestone ends with a working, demoable build.
 - [x] Page transitions, sliding sidebar selection, rolling key numbers, chart draw-in on new data, staggered scan results, Keep Awake options push/pop
 - [x] No idle cost: nothing animates or observes while no Osin window is visible
 
+## v0.4 — Chores and watching the house
+- [x] Scheduled chores: Safe groups only, off by default, on power and idle, catch up within 24 h; notification + History
+- [x] Weekly report (Monday 9:00): freed, score trend, strained moments, top apps, Keep Awake hours, suggestions; "This week" card
+- [x] Watch: sustained CPU and memory growth per app, one alert per app per day, Quit / Ignore / Open Activity
+- [x] Record when each app was last seen running (for the uninstaller)
+
+## v0.5 — Clean uninstall (Developer ID recommended first)
+- [ ] Apps page: drag in or pick from a list (size, last seen); app + `~/Library` leftovers to the Trash via Finder; `/Library` leftovers listed
+- [ ] Smart Scan review group: leftovers of apps no longer installed (conservative matching)
+
+## v0.6 — Startup and tidying
+- [ ] Startup: user LaunchAgents (disable/enable), system agents and daemons (view; admin prompt to disable), approximate Login Items + System Settings link
+- [ ] Tidy Downloads and Desktop: sort or move to the Trash only, preview and Undo
+
 ## v2 backlog
 Docker prune · Time Machine snapshots · weekly nudge · CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · App uninstaller + leftovers · Duplicate finder · Disk treemap · Privileged helper daemon · Remote rule updates

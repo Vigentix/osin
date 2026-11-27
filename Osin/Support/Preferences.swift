@@ -22,6 +22,12 @@ enum Preferences {
         static let keepAwakeStopWhenHot = "keepAwakeStopWhenHot"
         static let keepAwakeStopWhenUnplugged = "keepAwakeStopWhenUnplugged"
         static let keepAwakeShortcut = "keepAwakeShortcut"
+        static let choresEnabled = "choresEnabled"
+        static let choreSchedule = "choreSchedule"
+        static let choreExcludedRules = "choreExcludedRules"
+        static let weeklyReportEnabled = "weeklyReportEnabled"
+        static let watchEnabled = "watchEnabled"
+        static let watchIgnoredApps = "watchIgnoredApps"
     }
 
     static func registerDefaults() {
@@ -40,7 +46,10 @@ enum Preferences {
             Key.keepAwakeLowBatteryThreshold: 0.20,
             Key.keepAwakeStopWhenHot: true,
             Key.keepAwakeStopWhenUnplugged: false,
-            Key.keepAwakeShortcut: KeepAwakeShortcut.none.rawValue
+            Key.keepAwakeShortcut: KeepAwakeShortcut.none.rawValue,
+            Key.choresEnabled: false,
+            Key.weeklyReportEnabled: true,
+            Key.watchEnabled: true
         ])
     }
 
@@ -62,6 +71,32 @@ enum Preferences {
             stopWhenHot: defaults.bool(forKey: Key.keepAwakeStopWhenHot),
             stopWhenUnplugged: defaults.bool(forKey: Key.keepAwakeStopWhenUnplugged)
         )
+    }
+
+    /// When scheduled chores run (Sunday 21:00 until changed).
+    static var choreSchedule: ChoreSchedule {
+        get {
+            UserDefaults.standard.data(forKey: Key.choreSchedule).flatMap { try? JSONDecoder().decode(ChoreSchedule.self, from: $0) }
+                ?? ChoreSchedule()
+        }
+        set {
+            UserDefaults.standard.set(try? JSONEncoder().encode(newValue), forKey: Key.choreSchedule)
+        }
+    }
+
+    /// Safe rules the user unticked for chores. Stored as exclusions, so new safe rules are included.
+    static var choreExcludedRules: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: Key.choreExcludedRules) ?? []) }
+        set { UserDefaults.standard.set(newValue.sorted(), forKey: Key.choreExcludedRules) }
+    }
+
+    static var watchIgnoredApps: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: Key.watchIgnoredApps) ?? []) }
+        set { UserDefaults.standard.set(newValue.sorted(), forKey: Key.watchIgnoredApps) }
+    }
+
+    static var watchdogSettings: WatchdogSettings {
+        WatchdogSettings(enabled: UserDefaults.standard.bool(forKey: Key.watchEnabled), ignoredApps: watchIgnoredApps)
     }
 
     @MainActor
@@ -179,12 +214,25 @@ final class Notifier {
     }
 
     /// Keep Awake notifications follow the same "Send notifications" switch as alerts.
-    private func deliver(_ request: UNNotificationRequest) {
-        guard UserDefaults.standard.bool(forKey: Preferences.Key.alertsEnabled) else { return }
-        Task {
-            let status = await Self.authorizationStatus()
-            guard status == .authorized || status == .provisional else { return }
-            UNUserNotificationCenter.current().add(request, withCompletionHandler: nil)
+    func deliver(_ request: sending UNNotificationRequest) {
+        Task { await deliverNow(request) }
+    }
+
+    /// Posts the request if notifications are on and allowed. Returns whether macOS accepted it.
+    @discardableResult
+    func deliverNow(_ request: sending UNNotificationRequest) async -> Bool {
+        guard UserDefaults.standard.bool(forKey: Preferences.Key.alertsEnabled) else { return false }
+        let status = await Self.authorizationStatus()
+        guard status == .authorized || status == .provisional else { return false }
+        return await Self.add(request)
+    }
+
+    /// Nonisolated with a `@Sendable` handler for the same reason as `authorizationStatus()`.
+    nonisolated static func add(_ request: sending UNNotificationRequest) async -> Bool {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            UNUserNotificationCenter.current().add(request) { @Sendable error in
+                continuation.resume(returning: error == nil)
+            }
         }
     }
 

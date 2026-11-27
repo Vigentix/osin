@@ -14,6 +14,7 @@ struct OsinApp: App {
                 .environment(appDelegate.scan)
                 .environment(appDelegate.navigator)
                 .environment(appDelegate.keepAwake)
+                .environment(appDelegate.housekeeper)
         } label: {
             MenuBarLabel(monitor: appDelegate.monitor, keepAwake: appDelegate.keepAwake)
         }
@@ -25,6 +26,7 @@ struct OsinApp: App {
                 .environment(appDelegate.scan)
                 .environment(appDelegate.navigator)
                 .environment(appDelegate.keepAwake)
+                .environment(appDelegate.housekeeper)
                 .onWindowVisibilityChange { appDelegate.monitor.setVisible(.dashboard, $0) }
                 .onDisappear { appDelegate.monitor.setVisible(.dashboard, false) }
         }
@@ -55,6 +57,7 @@ struct OsinApp: App {
             SettingsView()
                 .environment(appDelegate.updater)
                 .environment(appDelegate.keepAwake)
+                .environment(appDelegate.housekeeper)
         }
     }
 }
@@ -68,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     let navigator = Navigator()
     let keepAwake = KeepAwakeController()
     let updater: Updater
+    let housekeeper: Housekeeper
     private let notifier: Notifier
     private let onboarding = OnboardingWindowController()
 
@@ -76,15 +80,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         Preferences.registerDefaults()
         updater = Updater()
         notifier = Notifier()
+        housekeeper = Housekeeper(monitor: monitor, scan: scan, keepAwake: keepAwake, notifier: notifier)
         super.init()
     }
 
     func applicationDidFinishLaunching(_: Notification) {
         Preferences.applyDockIcon()
         UNUserNotificationCenter.current().delegate = self
+        Notifier.registerCategories()
         var measuredStorage = false
-        monitor.onSnapshot = { [notifier, weak self] snapshot in
+        monitor.onSnapshot = { [notifier, housekeeper, weak self] snapshot in
             notifier.handle(snapshot)
+            housekeeper.handle(snapshot)
             guard let self, !measuredStorage else { return }
             measuredStorage = true
             monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
@@ -97,6 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 self.monitor.refreshStorage(reclaimable: self.scan.safeReclaimableBytes ?? 0, force: true)
             }
         }
+        scan.onFreed = { [housekeeper] bytes in housekeeper.recordFreed(bytes) }
         scan.onScanFinished = { [weak self] in
             guard let self else { return }
             monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
@@ -127,7 +135,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 keepAwake.start(KeepAwakeOptions(mode: .awake, keepDisplayOn: false, duration: .process(watched)))
             }
             if let directory = SnapshotRenderer.outputDirectory {
-                Task { await SnapshotRenderer.run(monitor: monitor, scan: scan, keepAwake: keepAwake, into: directory) }
+                Task {
+                    await SnapshotRenderer.run(
+                        monitor: monitor,
+                        scan: scan,
+                        keepAwake: keepAwake,
+                        housekeeper: housekeeper,
+                        into: directory
+                    )
+                }
                 return
             }
         #endif
@@ -151,12 +167,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         [.banner, .list, .sound]
     }
 
-    /// Clicking an alert opens the page that helps with it.
+    func applicationWillTerminate(_: Notification) {
+        housekeeper.saveUsage()
+    }
+
+    /// Clicking an alert opens the page that helps with it; Watch buttons quit or ignore the app.
     nonisolated func userNotificationCenter(_: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let identifier = response.notification.request.identifier
+        let action = response.actionIdentifier
+        let bundlePath = response.notification.request.content.userInfo[Notifier.bundlePathKey] as? String
         await MainActor.run {
-            navigator.section = Notifier.section(forNotification: identifier)
-            navigator.cleanupTab = .smartScan
+            switch action {
+            case Notifier.Action.quit:
+                if let bundlePath {
+                    AppControl.quit(bundlePath: bundlePath)
+                }
+                return
+            case Notifier.Action.ignore:
+                if let bundlePath {
+                    housekeeper.ignore(appAt: bundlePath)
+                }
+                return
+            case UNNotificationDismissActionIdentifier:
+                return
+            default:
+                break
+            }
+            let destination = Notifier.destination(forNotification: identifier)
+            navigator.section = destination.section
+            navigator.cleanupTab = destination.cleanupTab
+            navigator.showsWeeklyReport = destination.showsWeeklyReport
             NotificationCenter.default.post(name: .osinOpenDashboard, object: nil)
         }
     }
@@ -174,6 +214,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 final class Navigator {
     var section: DashboardSection = .overview
     var cleanupTab: CleanupTab = .smartScan
+    /// Opens the weekly report sheet on the Overview (from the Monday notification).
+    var showsWeeklyReport = false
 }
 
 extension Notification.Name {

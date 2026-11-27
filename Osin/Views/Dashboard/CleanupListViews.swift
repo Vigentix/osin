@@ -94,7 +94,7 @@ struct CleanupHistoryView: View {
             }
             .padding(28)
         }
-        .task { await reload() }
+        .task(id: scan.historyRevision) { await reload() }
     }
 
     private func reload() async {

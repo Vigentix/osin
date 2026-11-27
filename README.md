@@ -72,7 +72,7 @@ xattr -dr com.apple.quarantine /Applications/Osin.app
       <h3>Health at a glance</h3>
       <p>Click the menu bar icon for a health score with the reason behind it ("Disk almost full"), CPU, memory pressure, disk, battery and network, plus the apps using the most memory. Clean in one click or jump to the dashboard.</p>
       <p>The icon's dot turns yellow or red when something needs attention. CPU, memory and network can also be shown as live text in the menu bar.</p>
-      <p>Optional notifications when the disk is almost full, memory pressure stays critical, or the battery is wearing out. Osin never cleans on its own.</p>
+      <p>Optional notifications when the disk is almost full, memory pressure stays critical, or the battery is wearing out. Osin never cleans on its own unless you schedule chores.</p>
     </td>
     <td width="42%" align="center">
       <picture>
@@ -98,6 +98,24 @@ Leave a build, a download, a backup or a long script running without the Mac fal
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/keepawake-dark.png">
         <img src="docs/images/keepawake-light.png" width="330" alt="Keep Awake options: keep the screen unlocked or lock it, keep the display on, and choose until you stop, a timer, a time of day or until a command finishes">
+      </picture>
+    </td>
+  </tr>
+</table>
+
+### Chores, a weekly report and a watchful eye
+
+<table>
+  <tr>
+    <td width="58%" valign="top">
+      <p><b>Scheduled chores</b> clear caches and logs every day, week or month (off until you turn it on in Settings › Chores). They run only while the Mac is plugged in and you have been away for five minutes, catch up within a day if the Mac was asleep, and never touch the Trash, simulators or Downloads. You get a notification with what was freed, and every item is in History.</p>
+      <p><b>A weekly report</b> arrives on Monday morning: average health and how it changed, what Osin cleaned, how long memory was strained or the disk ran low, the busiest apps, Keep Awake hours and what to do next.</p>
+      <p><b>Watch</b> tells you when an app stays above 80% CPU for five minutes or grows by 2 GB in half an hour, at most once a day per app, with buttons to quit it or ignore it from then on.</p>
+    </td>
+    <td width="42%" align="center">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/weekly-report-dark.png">
+        <img src="docs/images/weekly-report-light.png" width="330" alt="Weekly report: average health 84, up 5, with a trend of eight weeks, space freed, scheduled cleanups, Keep Awake hours, memory strain, the busiest apps and a suggestion">
       </picture>
     </td>
   </tr>
@@ -142,6 +160,7 @@ Osin removes files on your Mac, so these rules are enforced in code and covered 
 4. **Symlinks are never followed**, and every item is checked again right before it is removed.
 5. **Unavailable simulators and Empty Trash cannot be undone.** They are never preselected, and Osin warns you before running them.
 6. **Every action is logged** in `~/Library/Application Support/Osin/cleanup-log.jsonl`.
+7. **Scheduled chores only run Safe groups you ticked**, never irreversible ones, and only while you are away from the Mac.
 
 Osin runs in user space: no privileged helper, no kernel extension. Full Disk Access is optional and only lets the scan reach folders macOS protects, such as old device backups. The one admin action, `purge` in Settings › Advanced, asks for your password every time and explains why its effect is temporary.
 

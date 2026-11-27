@@ -23,13 +23,16 @@
             return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
         }
 
-        static func run(monitor: SystemMonitor, scan: ScanCoordinator, keepAwake: KeepAwakeController, into directory: URL) async {
+        static func run(
+            monitor: SystemMonitor, scan: ScanCoordinator, keepAwake: KeepAwakeController, housekeeper: Housekeeper, into directory: URL
+        ) async {
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             if DemoData.isActive {
                 monitor.loadDemo()
                 scan.loadDemo()
                 keepAwake.loadDemo(KeepAwakeOptions(mode: .awake, keepDisplayOn: true, duration: .minutes(120)), startedMinutesAgo: 18)
                 monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
+                housekeeper.loadDemo(DemoData.weeklySummaries())
             } else {
                 monitor.setVisible(.dashboard, true)
                 // Smart Scan is read-only; skip Downloads to avoid a permission prompt.
@@ -68,6 +71,8 @@
                     }
                     .padding(.vertical, 12)
                 )),
+                Screen(name: "weekly-report", section: nil, size: CGSize(width: 620, height: 760), view: AnyView(WeeklyReportSheet())),
+                Screen(name: "settings-chores", section: nil, size: CGSize(width: 520, height: 720), view: AnyView(ChoresSettings())),
                 Screen(name: "onboarding", section: nil, size: CGSize(width: 720, height: 520), view: AnyView(OnboardingView {})),
                 Screen(name: "settings", section: nil, size: CGSize(width: 520, height: 420), view: AnyView(SettingsView()))
             ]
@@ -82,6 +87,7 @@
                         .environment(scan)
                         .environment(navigator)
                         .environment(keepAwake)
+                        .environment(housekeeper)
                         .environment(Updater())
                         .environment(\.colorScheme, scheme)
                         .frame(width: screen.size.width, height: screen.size.height)

@@ -71,6 +71,16 @@ final class ScanCoordinator {
     /// Bytes put back from the Trash by Undo for the current outcome.
     private(set) var restoredBytes: UInt64 = 0
     private(set) var isUndoing = false
+    /// A scheduled cleanup is running in the background (see `ScanCoordinator+Chores`).
+    var isRunningChore = false
+    /// The quiet launch scan is running (it leaves `phase` alone, so `isBusy` does not show it).
+    private(set) var isScanningInBackground = false
+
+    /// Undoing or running a chore: scans, cleans and undos wait.
+    var isOccupied: Bool {
+        isUndoing || isRunningChore
+    }
+
     /// Items Undo could not put back yet; Undo retries exactly these.
     private(set) var pendingRestore: [TrashedItem] = []
     /// Why the last Undo left items behind, shown on the result screen.
@@ -88,6 +98,10 @@ final class ScanCoordinator {
 
     /// Called after a cleanup so metrics refresh right away.
     @ObservationIgnored var onCleaned: (() -> Void)?
+    /// Called with the space a cleanup freed immediately (deleted or emptied), for the weekly report.
+    @ObservationIgnored var onFreed: ((UInt64) -> Void)?
+    /// Bumped whenever the cleanup log gains entries, so an open History reloads.
+    var historyRevision = 0
     /// Called when any scan (background or user-started) completes.
     @ObservationIgnored var onScanFinished: (() -> Void)?
     /// Debug hook: limit which rules run (the snapshot renderer avoids permission prompts).
@@ -96,8 +110,8 @@ final class ScanCoordinator {
     /// Bumped for every scan; a cancelled scan that is still finishing its last await checks it and
     /// stops instead of writing into the newer scan's state.
     @ObservationIgnored private var scanGeneration = 0
-    @ObservationIgnored private let log: CleanupLog? = (try? CleanupLog.defaultURL()).map { CleanupLog(url: $0) }
-    @ObservationIgnored private lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0) }
+    @ObservationIgnored let log: CleanupLog? = (try? CleanupLog.defaultURL()).map { CleanupLog(url: $0) }
+    @ObservationIgnored lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0) }
 
     // MARK: Derived
 
@@ -155,24 +169,24 @@ final class ScanCoordinator {
 
     /// A user-started scan is allowed now.
     var canStartScan: Bool {
-        phase.canStartScan && !isUndoing
+        phase.canStartScan && !isOccupied
     }
 
     /// Scanning, cleaning or undoing: actions that would replace the current outcome must wait.
     var isBusy: Bool {
-        phase.isBusy || isUndoing
+        phase.isBusy || isOccupied
     }
 
     /// Full, user-started scan.
     func start() {
-        guard phase.canStartScan, !isUndoing else { return }
+        guard phase.canStartScan, !isOccupied else { return }
         runScan(silent: false, filter: ruleFilter)
     }
 
     /// Quiet scan at launch so the Overview can show what is reclaimable. Skips Downloads, which would
     /// trigger a macOS permission prompt without context, and never interrupts what the user is doing.
     func backgroundScan() {
-        guard phase.canStartBackgroundScan, !isUndoing else { return }
+        guard phase.canStartBackgroundScan, !isOccupied else { return }
         let filter = ruleFilter
         runScan(silent: true) { rule in filter(rule) && !rule.paths.contains { $0.hasPrefix("~/Downloads") } }
     }
@@ -181,11 +195,12 @@ final class ScanCoordinator {
         guard phase.canCancel else { return }
         task?.cancel()
         task = nil
+        isScanningInBackground = false
         phase = groups.isEmpty ? .idle : .report
     }
 
     func showReport() {
-        guard phase.canShowReport, !isUndoing else { return }
+        guard phase.canShowReport, !isOccupied else { return }
         phase = groups.isEmpty ? .idle : .report
         outcome = nil
     }
@@ -208,7 +223,7 @@ final class ScanCoordinator {
 
     /// One click from the Overview or popover: clean only the safe, regenerable groups from the last scan.
     func cleanSafeNow(score: Int?, free: UInt64?) {
-        guard phase.canCleanSafeNow, !isUndoing, !safeGroups.isEmpty else { return }
+        guard phase.canCleanSafeNow, !isOccupied, !safeGroups.isEmpty else { return }
         selectedGroups = Set(safeGroups.map(\.id))
         excludedItems = []
         phase = .report
@@ -216,7 +231,7 @@ final class ScanCoordinator {
     }
 
     func clean(score: Int?, free: UInt64?) {
-        guard let cleaner, phase == .report, !isUndoing else { return }
+        guard let cleaner, phase == .report, !isOccupied else { return }
         let chosen = groups.filter { selectedGroups.contains($0.id) }
         let excluded = excludedItems
         scoreBefore = score
@@ -250,21 +265,27 @@ final class ScanCoordinator {
                 guard case let .rule(rule) = group.kind else { return nil }
                 return CleanupSelection(rule: rule.rule, items: rule.items.filter { !excluded.contains($0.id) })
             }
-            let ruleOutcome = await cleaner.clean(selections)
-            result.freedBytes += ruleOutcome.freedBytes
-            result.trashedBytes += ruleOutcome.trashedBytes
-            result.trashed += ruleOutcome.trashed
-            result.failures += ruleOutcome.failures
+            onFreed?(result.freedBytes)
+            // One rule at a time, so the weekly total is credited as each finishes (even if Osin quits).
+            for selection in selections {
+                let ruleOutcome = await cleaner.clean([selection])
+                onFreed?(ruleOutcome.freedBytes)
+                result.freedBytes += ruleOutcome.freedBytes
+                result.trashedBytes += ruleOutcome.trashedBytes
+                result.trashed += ruleOutcome.trashed
+                result.failures += ruleOutcome.failures
+            }
             outcome = result
             pendingRestore = result.trashed
             removeCleaned(chosen.map(\.id))
             phase = .done
+            historyRevision += 1
             onCleaned?()
         }
     }
 
     func undo() {
-        guard let cleaner, !isUndoing, !pendingRestore.isEmpty else { return }
+        guard let cleaner, !isOccupied, !pendingRestore.isEmpty else { return }
         let items = pendingRestore
         isUndoing = true
         Task {
@@ -275,6 +296,7 @@ final class ScanCoordinator {
             pendingRestore = stillPending
             undoFailures = failures
             isUndoing = false
+            historyRevision += 1
             onCleaned?()
         }
     }
@@ -293,6 +315,12 @@ final class ScanCoordinator {
     func restore(_ entry: CleanupLog.Entry) async -> CleanupFailure? {
         let original = URL(fileURLWithPath: entry.path)
         guard let cleaner, let trashPath = entry.trashPath else { return CleanupFailure(url: original, kind: .notTheTrashedItem) }
+        // Not while anything scans or cleans: a scan could list it as missing, a chore could clean it again.
+        guard !isBusy, !isScanningInBackground else {
+            return CleanupFailure(url: original, reason: String(localized: "Osin is busy cleaning. Try again in a moment."))
+        }
+        isUndoing = true
+        defer { isUndoing = false }
         let item = TrashedItem(
             originalURL: URL(fileURLWithPath: entry.path),
             trashURL: URL(fileURLWithPath: trashPath),
@@ -306,6 +334,7 @@ final class ScanCoordinator {
             restoredBytes += pendingRestore.remove(at: index).bytes
             undoFailures.removeAll { $0.url.path == entry.path }
         }
+        historyRevision += 1
         onCleaned?()
         return failure
     }
@@ -314,6 +343,7 @@ final class ScanCoordinator {
 
     private func runScan(silent: Bool, filter: @escaping (CleanupRule) -> Bool) {
         task?.cancel()
+        isScanningInBackground = silent
         if !silent {
             phase = .scanning
             outcome = nil
@@ -326,7 +356,12 @@ final class ScanCoordinator {
         currentStepIndex = 0
         scanGeneration += 1
         let generation = scanGeneration
-        task = Task { await scan(silent: silent, filter: filter, generation: generation) }
+        task = Task {
+            await scan(silent: silent, filter: filter, generation: generation)
+            if generation == scanGeneration {
+                isScanningInBackground = false
+            }
+        }
     }
 
     static func group(for result: RuleScanResult) -> Group {
@@ -422,6 +457,16 @@ final class ScanCoordinator {
                 phase = .idle
             }
         }
+    }
+
+    /// Replaces the groups of these rules with newer results (after a chore), keeping their selection.
+    func replaceGroups(with results: [RuleScanResult]) {
+        // No scan yet: the first Smart Scan measures everything anyway.
+        guard lastScanDate != nil else { return }
+        let ids = Set(results.map(\.rule.id))
+        groups.removeAll { ids.contains($0.id) }
+        groups += results.filter { $0.totalBytes > 0 || $0.needsAccess }.map(Self.group(for:))
+        selectedGroups = selectedGroups.filter { id in !ids.contains(id) || groups.contains { $0.id == id } }
     }
 
     private func removeCleaned(_ ids: [String]) {

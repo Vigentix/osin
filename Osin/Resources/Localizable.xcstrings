@@ -74,6 +74,26 @@
         }
       }
     },
+    "%@ h CPU": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ giờ CPU"
+          }
+        }
+      }
+    },
+    "%@ has been busy for 5 minutes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đã bận suốt 5 phút"
+          }
+        }
+      }
+    },
     "%@ is using %@": {
       "localizations": {
         "vi": {
@@ -100,6 +120,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ đang chờ cài và macOS đang bật tự cài cập nhật, nên máy có thể tự khởi động lại trong đêm."
+          }
+        }
+      }
+    },
+    "%@ keeps using more memory": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ dùng bộ nhớ ngày càng nhiều"
           }
         }
       }
@@ -190,6 +220,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ dọn an toàn"
+          }
+        }
+      }
+    },
+    "%@ used %@ hours of CPU time.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ đã dùng %2$@ giờ CPU."
           }
         }
       }
@@ -286,6 +326,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld chu kỳ. Nên bảo hành khi dưới 80%%."
+          }
+        }
+      }
+    },
+    "%lld days": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ngày"
           }
         }
       }
@@ -390,6 +440,16 @@
         }
       }
     },
+    "%lld suggestions inside.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có %lld gợi ý."
+          }
+        }
+      }
+    },
     "/ 100": {
       "shouldTranslate": false
     },
@@ -442,6 +502,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "7 ngày"
+          }
+        }
+      }
+    },
+    "A short summary of last week: average health, what was cleaned, the busiest apps and what to do next.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tóm tắt ngắn tuần trước: sức khoẻ trung bình, những gì đã dọn, các app bận nhất và việc nên làm."
           }
         }
       }
@@ -556,6 +626,16 @@
         }
       }
     },
+    "An app using over 80% CPU for 5 minutes, or growing by 2 GB in 30 minutes. At most once a day per app. Apps you ignore from a notification are listed here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi một app dùng trên 80% CPU suốt 5 phút, hoặc tăng thêm 2 GB bộ nhớ trong 30 phút. Mỗi app tối đa một lần mỗi ngày. Các app bạn chọn bỏ qua từ thông báo sẽ hiện ở đây."
+          }
+        }
+      }
+    },
     "App": {
       "localizations": {
         "vi": {
@@ -626,12 +706,42 @@
         }
       }
     },
+    "At": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lúc"
+          }
+        }
+      }
+    },
     "Available space includes purgeable data macOS can free on its own.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Dung lượng trống gồm cả dữ liệu macOS có thể tự giải phóng."
+          }
+        }
+      }
+    },
+    "Average health": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ trung bình"
+          }
+        }
+      }
+    },
+    "Average health over the last %lld weeks": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ trung bình %lld tuần gần nhất"
           }
         }
       }
@@ -792,6 +902,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dọn dẹp tích hợp"
+          }
+        }
+      }
+    },
+    "Busiest apps": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App bận nhất"
           }
         }
       }
@@ -996,6 +1116,26 @@
         }
       }
     },
+    "Chores": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc nhà"
+          }
+        }
+      }
+    },
+    "Chores only run while Osin is open. Open it at login so they still run after a restart.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc nhà chỉ chạy khi Osin đang mở. Hãy mở Osin khi đăng nhập để việc vẫn chạy sau khi khởi động lại."
+          }
+        }
+      }
+    },
     "Clean": {
       "localizations": {
         "vi": {
@@ -1012,6 +1152,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dọn %@"
+          }
+        }
+      }
+    },
+    "Clean up on a schedule": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn dẹp theo lịch"
           }
         }
       }
@@ -1479,6 +1629,36 @@
         }
       }
     },
+    "Every day": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hằng ngày"
+          }
+        }
+      }
+    },
+    "Every month": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hằng tháng"
+          }
+        }
+      }
+    },
+    "Every week": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hằng tuần"
+          }
+        }
+      }
+    },
     "Everything Osin removes is listed here.": {
       "localizations": {
         "vi": {
@@ -1575,6 +1755,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dung lượng trống"
+          }
+        }
+      }
+    },
+    "Free space ran low on %lld days. Run Smart Scan or review large files.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dung lượng trống xuống thấp trong %lld ngày. Hãy chạy Smart Scan hoặc xem lại tệp lớn."
           }
         }
       }
@@ -1752,6 +1942,16 @@
         }
       }
     },
+    "Got it": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hiểu"
+          }
+        }
+      }
+    },
     "Granted": {
       "localizations": {
         "vi": {
@@ -1798,6 +1998,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sức khoẻ %1$@ · %2$lld chu kỳ"
+          }
+        }
+      }
+    },
+    "Health averaged %lld, down %lld.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ trung bình %1$lld, giảm %2$lld."
+          }
+        }
+      }
+    },
+    "Health averaged %lld, up %lld.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ trung bình %1$lld, tăng %2$lld."
+          }
+        }
+      }
+    },
+    "Health averaged %lld.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sức khoẻ trung bình %lld."
           }
         }
       }
@@ -1882,6 +2112,16 @@
         }
       }
     },
+    "Ignore This App": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ qua app này"
+          }
+        }
+      }
+    },
     "Includes items that can't be undone": {
       "localizations": {
         "vi": {
@@ -1902,12 +2142,32 @@
         }
       }
     },
+    "It grew by %@ in 30 minutes, which can mean a leak. Quitting and reopening it frees that memory.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tăng thêm %@ trong 30 phút, có thể bị rò rỉ bộ nhớ. Thoát và mở lại app sẽ giải phóng phần đó."
+          }
+        }
+      }
+    },
     "It holds less charge than when new.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Pin giữ được ít điện hơn lúc mới."
+          }
+        }
+      }
+    },
+    "It is using %@ CPU. Quit it if it is stuck, or ignore it if the work is expected.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang dùng %@ CPU. Thoát nếu app bị treo, hoặc bỏ qua nếu đó là việc bạn đang chờ."
           }
         }
       }
@@ -2042,6 +2302,26 @@
         }
       }
     },
+    "Last run": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần chạy gần nhất"
+          }
+        }
+      }
+    },
+    "Last week on your Mac": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuần trước trên máy bạn"
+          }
+        }
+      }
+    },
     "Let Osin see more of your disk": {
       "localizations": {
         "vi": {
@@ -2118,6 +2398,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang tìm dung lượng có thể giải phóng…"
+          }
+        }
+      }
+    },
+    "Low on space": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiếu dung lượng"
           }
         }
       }
@@ -2312,6 +2602,16 @@
         }
       }
     },
+    "Memory strained": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ căng"
+          }
+        }
+      }
+    },
     "Memory under pressure": {
       "localizations": {
         "vi": {
@@ -2328,6 +2628,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bộ nhớ đã dùng"
+          }
+        }
+      }
+    },
+    "Memory was strained for %@. Quitting apps you are not using helps.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bộ nhớ bị căng trong %@. Thoát các app không dùng sẽ đỡ hơn."
           }
         }
       }
@@ -2438,6 +2748,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mạng"
+          }
+        }
+      }
+    },
+    "Next: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần tới: %@"
           }
         }
       }
@@ -2592,12 +2912,42 @@
         }
       }
     },
+    "Nothing to change. Your Mac had a good week.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không cần thay đổi gì. Máy bạn đã có một tuần tốt."
+          }
+        }
+      }
+    },
+    "Nothing to clean": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không có gì để dọn"
+          }
+        }
+      }
+    },
     "Nothing vanishes by surprise": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Không xoá bất ngờ"
+          }
+        }
+      }
+    },
+    "Nothing was cleaned. Scheduled chores can clear caches for you (Settings › Chores).": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuần qua chưa dọn gì. Việc nhà theo lịch có thể dọn bộ nhớ đệm giúp bạn (Cài đặt › Việc nhà)."
           }
         }
       }
@@ -2692,12 +3042,32 @@
         }
       }
     },
+    "On": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vào"
+          }
+        }
+      }
+    },
     "On battery": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đang dùng pin"
+          }
+        }
+      }
+    },
+    "On day": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vào ngày"
           }
         }
       }
@@ -2738,6 +3108,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chỉ còn trống %@. Chạy Smart Scan để giải phóng dung lượng."
+          }
+        }
+      }
+    },
+    "Only caches and logs that apps rebuild. Emptying the Trash, removing simulators and anything in Downloads always wait for you.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ bộ nhớ đệm và log mà app tự tạo lại. Dọn Thùng rác, xoá simulator và mọi thứ trong Downloads luôn chờ bạn quyết định."
           }
         }
       }
@@ -2832,6 +3212,16 @@
         }
       }
     },
+    "Open at Login": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở khi đăng nhập"
+          }
+        }
+      }
+    },
     "Open at login": {
       "localizations": {
         "vi": {
@@ -2885,12 +3275,42 @@
         }
       }
     },
+    "Osin cleaned up %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin đã dọn %@"
+          }
+        }
+      }
+    },
     "Osin could not write its cleanup log, so nothing was removed.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Osin không ghi được nhật ký dọn dẹp nên không xoá gì cả."
+          }
+        }
+      }
+    },
+    "Osin freed %@.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin đã giải phóng %@."
+          }
+        }
+      }
+    },
+    "Osin is busy cleaning. Try again in a moment.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin đang dọn dẹp. Hãy thử lại sau giây lát."
           }
         }
       }
@@ -2921,6 +3341,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Osin không tự xoá những tệp này. Hãy xem lại trong Finder."
+          }
+        }
+      }
+    },
+    "Osin only cleans on its own if you schedule chores. Otherwise it just tells you when something needs attention.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Osin chỉ tự dọn khi bạn đặt lịch việc nhà. Ngoài ra Osin chỉ báo khi có gì cần bạn chú ý."
+          }
+        }
+      }
+    },
+    "Osin sums up each week: how healthy your Mac was, what it cleaned and which apps were busiest.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mỗi tuần Osin tóm tắt: máy khoẻ thế nào, đã dọn gì và app nào bận nhất."
           }
         }
       }
@@ -3188,6 +3628,16 @@
         }
       }
     },
+    "Quit App": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát app"
+          }
+        }
+      }
+    },
     "Quit Osin": {
       "localizations": {
         "vi": {
@@ -3338,6 +3788,16 @@
         }
       }
     },
+    "Repeat": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lặp lại"
+          }
+        }
+      }
+    },
     "Rescan": {
       "localizations": {
         "vi": {
@@ -3428,6 +3888,26 @@
         }
       }
     },
+    "Running hot": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy nóng"
+          }
+        }
+      }
+    },
+    "Runs only while your Mac is plugged in and you have been away for 5 minutes. A missed run is caught up within a day.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ chạy khi máy đang cắm sạc và bạn đã rời máy 5 phút. Lần bị lỡ sẽ được chạy bù trong vòng một ngày."
+          }
+        }
+      }
+    },
     "Runs until you turn it off or a safety rule stops it.": {
       "localizations": {
         "vi": {
@@ -3508,6 +3988,36 @@
         }
       }
     },
+    "Scheduled cleanup removed caches and logs that apps rebuild. Details are in History.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn theo lịch đã xoá bộ nhớ đệm và log mà app tự tạo lại. Chi tiết trong Lịch sử."
+          }
+        }
+      }
+    },
+    "Scheduled cleanup removed caches and logs. %lld items could not be removed; see History.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn theo lịch đã xoá bộ nhớ đệm và log. %lld mục không xoá được, xem trong Lịch sử."
+          }
+        }
+      }
+    },
+    "Scheduled cleanups": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần dọn theo lịch"
+          }
+        }
+      }
+    },
     "Screen": {
       "localizations": {
         "vi": {
@@ -3558,12 +4068,42 @@
         }
       }
     },
+    "See Report": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem báo cáo"
+          }
+        }
+      }
+    },
+    "See how your Mac did last week.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem máy bạn tuần trước thế nào."
+          }
+        }
+      }
+    },
     "See more of your disk": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Xem được nhiều hơn trên ổ đĩa"
+          }
+        }
+      }
+    },
+    "See report": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem báo cáo"
           }
         }
       }
@@ -3984,6 +4524,16 @@
         }
       }
     },
+    "Suggestions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gợi ý"
+          }
+        }
+      }
+    },
     "Swap used": {
       "localizations": {
         "vi": {
@@ -4020,6 +4570,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "VÀO THÙNG RÁC"
+          }
+        }
+      }
+    },
+    "Tell me when an app stays busy or keeps growing": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo khi một app bận lâu hoặc dùng bộ nhớ tăng mãi"
           }
         }
       }
@@ -4393,6 +4953,16 @@
         }
       }
     },
+    "View": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem"
+          }
+        }
+      }
+    },
     "View in History": {
       "localizations": {
         "vi": {
@@ -4423,6 +4993,36 @@
         }
       }
     },
+    "Watch Again": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theo dõi lại"
+          }
+        }
+      }
+    },
+    "Watch apps": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theo dõi app"
+          }
+        }
+      }
+    },
+    "Weekly report on Monday morning": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo tuần vào sáng thứ Hai"
+          }
+        }
+      }
+    },
     "Welcome": {
       "localizations": {
         "vi": {
@@ -4449,6 +5049,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Điều gì làm giảm điểm"
+          }
+        }
+      }
+    },
+    "What to clean": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn những gì"
           }
         }
       }
@@ -4613,6 +5223,16 @@
         }
       }
     },
+    "Your Mac ran hot for over an hour. Activity shows which apps were busy.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy nóng hơn một giờ. Mục Hoạt động cho biết app nào đã bận."
+          }
+        }
+      }
+    },
     "Your Mac slept during Keep Awake": {
       "localizations": {
         "vi": {
@@ -4643,6 +5263,26 @@
         }
       }
     },
+    "Your first report arrives on Monday": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Báo cáo đầu tiên sẽ có vào thứ Hai"
+          }
+        }
+      }
+    },
+    "Your week on this Mac": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tuần qua trên máy bạn"
+          }
+        }
+      }
+    },
     "and %lld more items": {
       "localizations": {
         "vi": {
@@ -4669,6 +5309,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "ổ đĩa"
+          }
+        }
+      }
+    },
+    "down %lld from the week before": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "giảm %lld so với tuần trước"
           }
         }
       }
@@ -4823,6 +5473,16 @@
         }
       }
     },
+    "up %lld from the week before": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tăng %lld so với tuần trước"
+          }
+        }
+      }
+    },
     "updates every 2 s": {
       "localizations": {
         "vi": {
@@ -4854,6 +5514,9 @@
       }
     },
     "–": {
+      "shouldTranslate": false
+    },
+    "—": {
       "shouldTranslate": false
     },
     "−%lld": {

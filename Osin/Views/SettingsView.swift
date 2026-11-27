@@ -9,6 +9,8 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             AlertSettingsView()
                 .tabItem { Label("Alerts", systemImage: "bell") }
+            ChoresSettings()
+                .tabItem { Label("Chores", systemImage: "calendar.badge.clock") }
             KeepAwakeSettings()
                 .tabItem { Label("Keep Awake", systemImage: "cup.and.saucer") }
             AdvancedSettings()
@@ -77,7 +79,7 @@ private struct AlertSettingsView: View {
                         }
                     }
             } footer: {
-                Text("Osin never cleans automatically. It only tells you when something needs attention.")
+                Text("Osin only cleans on its own if you schedule chores. Otherwise it just tells you when something needs attention.")
             }
             Section {
                 VStack(alignment: .leading) {
@@ -91,6 +93,8 @@ private struct AlertSettingsView: View {
                 Toggle("Battery health below 80%", isOn: $battery)
             }
             .disabled(!enabled)
+            WatchSettingsSection()
+                .disabled(!enabled)
         }
         .formStyle(.grouped)
     }
