@@ -7,6 +7,10 @@ import SwiftUI
 struct CleanupView: View {
     @Environment(Navigator.self) private var navigator
     @Environment(ScanCoordinator.self) private var scan
+    /// Bumped by the pinned Refresh button to reload Large files.
+    @State private var largeFilesReload = 0
+    @State private var largeFilesLoading = false
+    @State private var historyTotal: UInt64 = 0
 
     var body: some View {
         @Bindable var navigator = navigator
@@ -14,14 +18,7 @@ struct CleanupView: View {
             HStack(alignment: .center, spacing: 14) {
                 SegmentedPicker(options: CleanupTab.allCases.map { ($0, $0.title) }, selection: $navigator.cleanupTab)
                 Spacer()
-                if navigator.cleanupTab == .smartScan, scan.phase != .scanning, scan.phase != .cleaning {
-                    Button {
-                        scan.start()
-                    } label: {
-                        HStack(spacing: 8) { Text("Rescan"); KeyHint(keys: "⌘R") }
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                }
+                tabAccessory
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
@@ -29,13 +26,38 @@ struct CleanupView: View {
             Group {
                 switch navigator.cleanupTab {
                 case .smartScan: smartScan
-                case .largeFiles: LargeFilesView()
-                case .history: CleanupHistoryView()
+                case .largeFiles: LargeFilesView(reload: largeFilesReload, loading: $largeFilesLoading)
+                case .history: CleanupHistoryView(totalFreed: $historyTotal)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .navigationTitle(Text("Cleanup"))
+    }
+
+    /// Each tab's actions live in the pinned bar, so they stay in reach while the list scrolls.
+    @ViewBuilder private var tabAccessory: some View {
+        switch navigator.cleanupTab {
+        case .smartScan:
+            if scan.phase != .scanning, scan.phase != .cleaning {
+                Button {
+                    scan.start()
+                } label: {
+                    HStack(spacing: 8) { Text("Rescan"); KeyHint(keys: "⌘R") }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+        case .largeFiles:
+            Button("Refresh") { largeFilesReload += 1 }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(largeFilesLoading)
+        case .history:
+            Text("Freed \(Format.storage(historyTotal)) in total")
+                .font(.system(size: 12))
+                .monospacedDigit()
+                .foregroundStyle(Theme.text2)
+                .rollingNumber(Double(historyTotal))
+        }
     }
 
     @ViewBuilder private var smartScan: some View {
@@ -108,8 +130,7 @@ private struct ScanningView: View {
                         .font(.system(size: 38, weight: .bold))
                         .tracking(-1)
                         .monospacedDigit()
-                        .contentTransition(.numericText(value: Double(scan.foundBytes)))
-                        .animation(.easeOut(duration: 0.4), value: scan.foundBytes)
+                        .rollingNumber(Double(scan.foundBytes))
                     Text("found so far").font(.system(size: 12)).foregroundStyle(Theme.text3)
                 }
             }
@@ -132,6 +153,7 @@ private struct ScanningView: View {
                                 Group {
                                     if step.id < scan.currentStepIndex {
                                         Image(systemName: "checkmark").foregroundStyle(Theme.good).fontWeight(.bold)
+                                            .transition(.scale(scale: 0.4).combined(with: .opacity))
                                     } else if step.id == scan.currentStepIndex {
                                         ProgressView().controlSize(.small)
                                     } else {
@@ -151,6 +173,7 @@ private struct ScanningView: View {
                             .padding(.horizontal, 10)
                         }
                     }
+                    .motion(Motion.spring, value: scan.currentStepIndex)
                 }
                 Button {
                     scan.cancel()
@@ -182,7 +205,10 @@ private struct CleaningView: View {
 private struct ScanReportView: View {
     @Environment(ScanCoordinator.self) private var scan
     @Environment(SystemMonitor.self) private var monitor
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var confirmIrreversible = false
+    /// Groups rise into place one after another when a report first appears.
+    @State private var revealed = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -204,13 +230,17 @@ private struct ScanReportView: View {
                 Divider().overlay(Theme.border)
                 if let group = scan.focusedGroup {
                     GroupDetail(group: group)
+                        .id(group.id)
+                        .transition(.opacity.combined(with: .offset(x: reduceMotion ? 0 : 6)))
                 } else {
                     Spacer()
                 }
             }
+            .motion(Motion.standard, value: scan.focusedGroupID)
             Divider().overlay(Theme.border)
             footer
         }
+        .onAppear { revealed = true }
     }
 
     private func notice(_ text: LocalizedStringKey, icon: String) -> some View {
@@ -239,8 +269,11 @@ private struct ScanReportView: View {
             .padding(.top, 10)
             .padding(.bottom, 4)
             let largest = max(groups.map(\.bytes).max() ?? 1, 1)
-            ForEach(groups) { group in
+            ForEach(Array(groups.enumerated()), id: \.element.id) { index, group in
                 GroupRow(group: group, color: color, largest: largest)
+                    .opacity(revealed ? 1 : 0)
+                    .offset(y: revealed || reduceMotion ? 0 : 6)
+                    .animation(reduceMotion ? nil : Motion.standard.delay(min(Double(index) * 0.03, 0.3)), value: revealed)
             }
         }
     }
@@ -252,7 +285,7 @@ private struct ScanReportView: View {
                     Text(Format.storage(scan.selectedTotal))
                         .font(.system(size: 22, weight: .bold))
                         .monospacedDigit()
-                        .contentTransition(.numericText())
+                        .rollingNumber(Double(scan.selectedTotal))
                     Text("selected").foregroundStyle(Theme.text2)
                 }
                 Text("\(Format.storage(scan.selectedFreedNow)) freed now · \(Format.storage(scan.selectedToTrash)) to Trash (restorable)")
@@ -345,52 +378,59 @@ private struct GroupDetail: View {
     @State private var focusedItem: String?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(group.name).font(.system(size: 20, weight: .bold)).tracking(-0.3)
-                        Text(group.detail).foregroundStyle(Theme.text2).fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer()
-                    Text(Format.storage(group.bytes)).font(.system(size: 22, weight: .bold)).monospacedDigit()
+        VStack(alignment: .leading, spacing: 0) {
+            // The group's name and size stay pinned while its items scroll.
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(group.name).font(.system(size: 20, weight: .bold)).tracking(-0.3)
+                    Text(group.detail).foregroundStyle(Theme.text2).fixedSize(horizontal: false, vertical: true)
                 }
-                HStack(spacing: 10) {
-                    if group.isIrreversible {
-                        Badge(text: "CAN'T UNDO", color: Theme.poorText)
-                        Text("Removed permanently.").foregroundStyle(Theme.text2)
-                    } else if group.freesImmediately {
-                        Badge(text: "DELETES", color: Theme.text2, background: Theme.control)
-                        Text("Removed permanently. Regenerable: apps and tools rebuild it when needed.").foregroundStyle(Theme.text2)
-                    } else {
-                        Badge(text: "TO TRASH", color: Theme.blue)
-                        Text("Moved to the Trash. Undo from the result screen or History.").foregroundStyle(Theme.text2)
-                    }
-                }
-                .padding(12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.surface, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.border, lineWidth: 1))
-
-                if !group.items.isEmpty {
-                    HStack {
-                        Text("Largest items").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text2)
-                        Spacer()
-                        Text("Space to Quick Look").font(.system(size: 11)).foregroundStyle(Theme.text3)
-                    }
-                    VStack(spacing: 0) {
-                        ForEach(group.items.sorted { $0.bytes > $1.bytes }.prefix(100)) { item in
-                            itemRow(item)
+                Spacer()
+                Text(Format.storage(group.bytes)).font(.system(size: 22, weight: .bold)).monospacedDigit()
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 24)
+            .padding(.bottom, 14)
+            Divider().overlay(Theme.border)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    HStack(spacing: 10) {
+                        if group.isIrreversible {
+                            Badge(text: "CAN'T UNDO", color: Theme.poorText)
+                            Text("Removed permanently.").foregroundStyle(Theme.text2)
+                        } else if group.freesImmediately {
+                            Badge(text: "DELETES", color: Theme.text2, background: Theme.control)
+                            Text("Removed permanently. Regenerable: apps and tools rebuild it when needed.").foregroundStyle(Theme.text2)
+                        } else {
+                            Badge(text: "TO TRASH", color: Theme.blue)
+                            Text("Moved to the Trash. Undo from the result screen or History.").foregroundStyle(Theme.text2)
                         }
                     }
-                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.border, lineWidth: 1))
-                    if group.items.count > 100 {
-                        Text("and \(group.items.count - 100) more items").font(.system(size: 12)).foregroundStyle(Theme.text3)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.surface, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.border, lineWidth: 1))
+
+                    if !group.items.isEmpty {
+                        HStack {
+                            Text("Largest items").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text2)
+                            Spacer()
+                            Text("Space to Quick Look").font(.system(size: 11)).foregroundStyle(Theme.text3)
+                        }
+                        VStack(spacing: 0) {
+                            ForEach(group.items.sorted { $0.bytes > $1.bytes }.prefix(100)) { item in
+                                itemRow(item)
+                            }
+                        }
+                        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.border, lineWidth: 1))
+                        if group.items.count > 100 {
+                            Text("and \(group.items.count - 100) more items").font(.system(size: 12)).foregroundStyle(Theme.text3)
+                        }
                     }
                 }
+                .padding(24)
             }
-            .padding(24)
         }
         .quickLookPreview($preview)
         .focusable()
@@ -562,170 +602,6 @@ private struct ScanResultView: View {
     }
 }
 
-// MARK: - Large files
-
-private struct LargeFilesView: View {
-    @State private var files: [LargeFile] = []
-    @State private var loading = false
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                PageHeader(
-                    title: "Large files",
-                    subtitle: String(localized: "Over 1 GB in your home folder, found with Spotlight. Osin never removes these for you.")
-                ) {
-                    Button("Refresh") { Task { await load() } }.buttonStyle(SecondaryButtonStyle()).disabled(loading)
-                }
-                if loading {
-                    ProgressView().frame(maxWidth: .infinity, minHeight: 160)
-                } else if files.isEmpty {
-                    Card { Text("No files over 1 GB found by Spotlight.").foregroundStyle(Theme.text2) }
-                } else {
-                    let largest = Double(files.first?.bytes ?? 1)
-                    Card(padding: 8) {
-                        VStack(spacing: 0) {
-                            ForEach(files) { file in
-                                HoverRow { hovering in
-                                    HStack(spacing: 12) {
-                                        Image(nsImage: NSWorkspace.shared.icon(forFile: file.url.path))
-                                            .resizable().frame(width: 26, height: 26).accessibilityHidden(true)
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(file.url.lastPathComponent).lineLimit(1)
-                                            Text(file.url.deletingLastPathComponent().path.replacingOccurrences(
-                                                of: NSHomeDirectory(),
-                                                with: "~"
-                                            ))
-                                            .font(.system(size: 11)).foregroundStyle(Theme.text3).lineLimit(1).truncationMode(.middle)
-                                        }
-                                        Spacer()
-                                        UsageBar(fraction: Double(file.bytes) / largest, color: Theme.accent, height: 4).frame(width: 90)
-                                        Text(Format.storage(file.bytes)).monospacedDigit().frame(width: 80, alignment: .trailing)
-                                        Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([file.url]) }
-                                            .buttonStyle(SecondaryButtonStyle())
-                                            .opacity(hovering ? 1 : 0.55)
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .frame(height: 48)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .padding(28)
-        }
-        .task { await load() }
-    }
-
-    private func load() async {
-        loading = true
-        files = await (try? LargeFileFinder.find()) ?? []
-        loading = false
-    }
-}
-
-// MARK: - History
-
-private struct CleanupHistoryView: View {
-    @Environment(ScanCoordinator.self) private var scan
-    @State private var entries: [CleanupLog.Entry] = []
-    @State private var restoredIDs: Set<String> = []
-    /// Why a Restore from History did not work, per entry.
-    @State private var restoreErrors: [String: String] = [:]
-
-    @State private var totalFreed: UInt64 = 0
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                PageHeader(
-                    title: "History",
-                    subtitle: String(localized: "Freed \(Format.storage(totalFreed)) in total. Everything Osin removes is listed here.")
-                )
-                if entries.isEmpty {
-                    Card { Text("No cleanups yet").foregroundStyle(Theme.text2) }
-                } else {
-                    Card(padding: 8) {
-                        VStack(spacing: 0) {
-                            ForEach(entries) { entry in row(entry) }
-                        }
-                    }
-                }
-            }
-            .padding(28)
-        }
-        .task { await reload() }
-    }
-
-    private func reload() async {
-        let history = await scan.history()
-        entries = history.entries
-        totalFreed = history.totalFreed
-    }
-
-    private func row(_ entry: CleanupLog.Entry) -> some View {
-        HoverRow { _ in
-            HStack(spacing: 12) {
-                Image(systemName: icon(for: entry.action)).foregroundStyle(Theme.text2).frame(width: 20).accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(entry.path.isEmpty ? entry.ruleID : entry.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
-                        .font(.system(size: 12, design: .monospaced)).lineLimit(1).truncationMode(.middle)
-                    Text("\(label(for: entry.action)) · \(entry.date.formatted(date: .abbreviated, time: .shortened))")
-                        .font(.system(size: 11)).foregroundStyle(Theme.text3)
-                    if let error = restoreErrors[entry.id] {
-                        Text(verbatim: error).font(.system(size: 11)).foregroundStyle(Theme.fairText)
-                    }
-                }
-                Spacer()
-                Text(Format.storage(entry.bytes)).monospacedDigit().foregroundStyle(Theme.text2)
-                if entry.action == "trash", canRestore(entry) {
-                    Button("Restore") {
-                        Task {
-                            if let failure = await scan.restore(entry) {
-                                restoreErrors[entry.id] = failure.localizedReason
-                            } else {
-                                restoredIDs.insert(entry.id)
-                                restoreErrors[entry.id] = nil
-                                await reload()
-                            }
-                        }
-                    }
-                    .buttonStyle(SecondaryButtonStyle())
-                }
-            }
-            .padding(.horizontal, 10)
-            .frame(minHeight: 44)
-        }
-    }
-
-    private func canRestore(_ entry: CleanupLog.Entry) -> Bool {
-        // Only offered while the exact trashed item is still in the Trash. Entries without a recorded
-        // identity (before v0.1.1) cannot be verified, so they are not offered.
-        guard !restoredIDs.contains(entry.id), let identity = entry.identity, let trashPath = entry.trashPath else { return false }
-        return FileIdentity(path: trashPath) == identity && !FileManager.default.fileExists(atPath: entry.path)
-    }
-
-    private func icon(for action: String) -> String {
-        switch action {
-        case "delete": "trash.slash"
-        case "trash": "trash"
-        case "restore": "arrow.uturn.backward"
-        default: "gearshape.2"
-        }
-    }
-
-    private func label(for action: String) -> String {
-        switch action {
-        case "delete": String(localized: "Deleted")
-        case "trash": String(localized: "Moved to Trash")
-        case "restore": String(localized: "Restored")
-        default: String(localized: "Built-in cleanup")
-        }
-    }
-}
-
-/// One file or folder in the report, with Show in Finder revealed on hover.
 private struct ItemRow: View {
     @Environment(ScanCoordinator.self) private var scan
     let item: ScanItem

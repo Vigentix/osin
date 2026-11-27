@@ -7,25 +7,70 @@ struct OverviewView: View {
     @Environment(SystemMonitor.self) private var monitor
     @Environment(ScanCoordinator.self) private var scan
     @Environment(Navigator.self) private var navigator
+    @Environment(KeepAwakeController.self) private var keepAwake
+
+    /// The health ring draws in once per session; later visits show it settled.
+    @MainActor private static var heroAnimated = false
+    /// Updated only when it flips, so scrolling does not rebuild the page on every frame.
+    @State private var showsCompactBar = false
+    /// Latest scroll offset and hero bottom (in content coordinates). Kept outside observed state,
+    /// so scrolling only touches SwiftUI when the compact bar actually needs to flip.
+    @State private var scrollGeometry = ScrollGeometry()
+    private let space = "overview-content"
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
-                KeepAwakeBanner()
-                hero
-                recommended
-                rightNow
-                HStack(alignment: .top, spacing: 14) {
-                    heaviestApps
-                    storage
-                }
+        ZStack(alignment: .top) {
+            ScrollView {
+                content
+                    .coordinateSpace(name: space)
+                    .onPreferenceChange(HeroBottomKey.self) { bottom in
+                        scrollGeometry.heroBottom = bottom
+                        updateCompactBar()
+                    }
+                    .onScrollOffsetChange { offset in
+                        scrollGeometry.offset = offset
+                        updateCompactBar()
+                    }
             }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 28)
-            .frame(maxWidth: 1180)
-            .frame(maxWidth: .infinity)
+            if showsCompactBar {
+                compactBar
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
         }
+        .motion(Motion.standard, value: showsCompactBar)
+        .motion(Motion.standard, value: keepAwake.isActive)
         .navigationTitle(Text("Overview"))
+    }
+
+    /// The compact bar appears once the hero card has scrolled out of view, whether the page
+    /// scrolled or the hero moved (a banner disappearing, a resize re-wrapping its text).
+    private func updateCompactBar() {
+        let shows = scrollGeometry.offset > scrollGeometry.heroBottom - 8
+        if shows != showsCompactBar {
+            showsCompactBar = shows
+        }
+    }
+
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 28) {
+            KeepAwakeBanner()
+            hero
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(key: HeroBottomKey.self, value: proxy.frame(in: .named(space)).maxY)
+                    }
+                }
+            recommended
+            rightNow
+            HStack(alignment: .top, spacing: 14) {
+                heaviestApps
+                storage
+            }
+        }
+        .padding(.horizontal, 32)
+        .padding(.vertical, 28)
+        .frame(maxWidth: 1180)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: Hero
@@ -49,7 +94,8 @@ struct OverviewView: View {
         let report = snapshot?.health
         let message = HeroMessage(snapshot: snapshot, safeBytes: scan.safeReclaimableBytes)
         HStack(alignment: .center, spacing: 28) {
-            HealthRing(score: report?.score, level: report?.level, diameter: 120, lineWidth: 10)
+            HealthRing(score: report?.score, level: report?.level, diameter: 120, lineWidth: 10, animatesIn: !Self.heroAnimated)
+                .onAppear { Self.heroAnimated = true }
             VStack(alignment: .leading, spacing: 8) {
                 Text(greeting)
                     .font(.system(size: 12))
@@ -66,7 +112,7 @@ struct OverviewView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             VStack(spacing: 8) {
-                primaryAction
+                primaryAction(large: true)
                 Button("Review what's included") {
                     navigator.section = .cleanup
                     navigator.cleanupTab = .smartScan
@@ -91,23 +137,6 @@ struct OverviewView: View {
             RoundedRectangle(cornerRadius: Theme.heroRadius, style: .continuous)
                 .strokeBorder(report.map { $0.level == .good ? Theme.border : $0.level.color.opacity(0.3) } ?? Theme.border, lineWidth: 1)
         )
-    }
-
-    @ViewBuilder private var primaryAction: some View {
-        if let bytes = scan.safeReclaimableBytes, bytes >= Recommendations.minimumCleanBytes {
-            // No Return shortcut: Overview is the first page, and Return must not delete anything.
-            Button("Clean \(Format.storage(bytes))") { cleanSafe() }
-                .buttonStyle(PrimaryButtonStyle(large: true))
-                .disabled(scan.isBusy)
-        } else {
-            Button("Run Smart Scan") {
-                navigator.section = .cleanup
-                navigator.cleanupTab = .smartScan
-                scan.start()
-            }
-            .buttonStyle(PrimaryButtonStyle(large: true))
-            .disabled(!scan.canStartScan)
-        }
     }
 
     private func deductions(_ report: HealthReport) -> some View {
@@ -142,12 +171,6 @@ struct OverviewView: View {
         default: String(localized: "your Mac needs \(count) things")
         }
         return "\(hello) · \(state)"
-    }
-
-    private func cleanSafe() {
-        navigator.section = .cleanup
-        navigator.cleanupTab = .smartScan
-        scan.cleanSafeNow(score: monitor.snapshot?.health.score, free: monitor.snapshot?.disk.availableBytes)
     }
 
     // MARK: Recommended
@@ -186,7 +209,12 @@ struct OverviewView: View {
             }
             HStack(spacing: 0) {
                 if let snapshot = monitor.snapshot {
-                    metricCell(title: "CPU", value: Format.percent(snapshot.cpu.total), detail: cpuDetail(snapshot.cpu)) {
+                    metricCell(
+                        title: "CPU",
+                        value: Format.percent(snapshot.cpu.total),
+                        number: snapshot.cpu.total,
+                        detail: cpuDetail(snapshot.cpu)
+                    ) {
                         SparkChart(values: monitor.cpuHistory.values, color: Theme.accent)
                     }
                     divider
@@ -203,6 +231,7 @@ struct OverviewView: View {
                     metricCell(
                         title: "Disk",
                         value: Format.storage(snapshot.disk.availableBytes),
+                        number: Double(snapshot.disk.availableBytes),
                         valueColor: level.textColor,
                         detail: String(localized: "free · \(Format.percent(snapshot.disk.usedFraction)) used")
                     ) {
@@ -219,6 +248,7 @@ struct OverviewView: View {
                     metricCell(
                         title: "Network",
                         value: Format.rate(snapshot.network.receiveBytesPerSecond),
+                        number: snapshot.network.receiveBytesPerSecond,
                         detail: "↓ \(Format.rate(snapshot.network.receiveBytesPerSecond)) · ↑ \(Format.rate(snapshot.network.sendBytesPerSecond))"
                     ) {
                         SparkChart(values: monitor.networkHistory.values, color: Theme.teal, range: nil)
@@ -266,6 +296,7 @@ struct OverviewView: View {
     private func metricCell(
         title: LocalizedStringKey,
         value: String,
+        number: Double? = nil,
         valueColor: Color = Theme.text,
         detail: String,
         @ViewBuilder chart: () -> some View
@@ -292,7 +323,7 @@ struct OverviewView: View {
                     .foregroundStyle(valueColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    .contentTransition(.numericText())
+                    .rollingNumber(number ?? 0)
                 Text(detail)
                     .font(.system(size: 11))
                     .monospacedDigit()
@@ -564,4 +595,75 @@ private struct RecommendationCard: View {
                 .buttonStyle(SecondaryButtonStyle(large: true))
         }
     }
+}
+
+// MARK: - Hero actions and the compact bar
+
+extension OverviewView {
+    /// Pinned summary while the hero is out of view: the score, the main concern, the main action.
+    private var compactBar: some View {
+        let report = monitor.snapshot?.health
+        let message = HeroMessage(snapshot: monitor.snapshot, safeBytes: scan.safeReclaimableBytes)
+        return HStack(spacing: 12) {
+            HealthRing(score: report?.score, level: report?.level, diameter: 30, lineWidth: 3.5, showsLabel: false, animatesIn: false)
+            Text(message.title)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Theme.text)
+                .lineLimit(1)
+            Spacer(minLength: 12)
+            primaryAction(large: false)
+        }
+        .padding(.horizontal, 32)
+        .frame(height: 56)
+        .frame(maxWidth: 1180)
+        .frame(maxWidth: .infinity)
+        .background {
+            ZStack(alignment: .bottom) {
+                Rectangle().fill(.regularMaterial)
+                Theme.background.opacity(0.92)
+                Rectangle().fill(Theme.border).frame(height: 1)
+            }
+        }
+    }
+
+    @ViewBuilder private func primaryAction(large: Bool) -> some View {
+        if let bytes = scan.safeReclaimableBytes, bytes >= Recommendations.minimumCleanBytes {
+            // No Return shortcut: Overview is the first page, and Return must not delete anything.
+            Button {
+                cleanSafe()
+            } label: {
+                Text("Clean \(Format.storage(bytes))").rollingNumber(Double(bytes))
+            }
+            .buttonStyle(PrimaryButtonStyle(large: large))
+            .disabled(scan.isBusy)
+        } else {
+            Button("Run Smart Scan") {
+                navigator.section = .cleanup
+                navigator.cleanupTab = .smartScan
+                scan.start()
+            }
+            .buttonStyle(PrimaryButtonStyle(large: large))
+            .disabled(!scan.canStartScan)
+        }
+    }
+
+    private func cleanSafe() {
+        navigator.section = .cleanup
+        navigator.cleanupTab = .smartScan
+        scan.cleanSafeNow(score: monitor.snapshot?.health.score, free: monitor.snapshot?.disk.availableBytes)
+    }
+}
+
+/// Bottom edge of the hero card in the scroll view's coordinates (below 0 once scrolled away).
+private struct HeroBottomKey: PreferenceKey {
+    static let defaultValue: CGFloat = .infinity
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = min(value, nextValue())
+    }
+}
+
+/// Plain storage for scroll geometry: changing it does not invalidate the view.
+private final class ScrollGeometry {
+    var offset: CGFloat = 0
+    var heroBottom: CGFloat = .infinity
 }

@@ -17,22 +17,28 @@ struct PopoverView: View {
     static let height: CGFloat = 644
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        ZStack(alignment: .top) {
+            // Keep Awake options push in from the right, like a navigation step; Back pops them.
             if showingKeepAwake {
-                KeepAwakeOptionsView { showingKeepAwake = false }
+                KeepAwakeOptionsView { Motion.animate { showingKeepAwake = false } }
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
-                header
-                actions
-                KeepAwakeRow { showingKeepAwake = true }
-                tiles
-                network
-                apps
-                Spacer(minLength: 0)
-                footer
+                VStack(alignment: .leading, spacing: 14) {
+                    header
+                    actions
+                    KeepAwakeRow { Motion.animate { showingKeepAwake = true } }
+                    tiles
+                    network
+                    apps
+                    Spacer(minLength: 0)
+                    footer
+                }
+                .transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
         .padding(16)
         .frame(width: 376, height: Self.height, alignment: .top)
+        .clipped()
         .background(Theme.surface)
         .osinFocusStyle()
         .onAppear { monitor.setVisible(.popover, true) }
@@ -85,7 +91,7 @@ struct PopoverView: View {
                     navigator.cleanupTab = .smartScan
                     scan.cleanSafeNow(score: monitor.snapshot?.health.score, free: monitor.snapshot?.disk.availableBytes)
                 } label: {
-                    Text("Clean \(Format.storage(bytes))").frame(maxWidth: .infinity)
+                    Text("Clean \(Format.storage(bytes))").rollingNumber(Double(bytes)).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(PrimaryButtonStyle())
                 .disabled(scan.isBusy)
@@ -117,7 +123,7 @@ struct PopoverView: View {
         let snapshot = monitor.snapshot
         return Grid(horizontalSpacing: 8, verticalSpacing: 8) {
             GridRow {
-                tile("CPU", value: snapshot.map { Format.percent($0.cpu.total) } ?? "–") {
+                tile("CPU", value: snapshot.map { Format.percent($0.cpu.total) } ?? "–", number: snapshot?.cpu.total) {
                     SparkChart(values: monitor.cpuHistory.values, color: Theme.accent, filled: false)
                 }
                 tile(
@@ -137,6 +143,7 @@ struct PopoverView: View {
                 tile(
                     "Disk",
                     value: snapshot.map { Format.percent($0.disk.usedFraction) } ?? "–",
+                    number: snapshot?.disk.usedFraction,
                     color: level?.textColor ?? Theme.text,
                     highlight: level.flatMap { $0 == .ok ? nil : $0.color }
                 ) {
@@ -164,6 +171,7 @@ struct PopoverView: View {
     private func tile(
         _ title: LocalizedStringKey,
         value: String,
+        number: Double? = nil,
         color: Color = Theme.text,
         highlight: Color? = nil,
         @ViewBuilder detail: () -> some View
@@ -172,7 +180,7 @@ struct PopoverView: View {
         return HoverRowButton(radius: 12, restingFill: Theme.raised) {
             openDashboard(.system)
         } label: { hovering in
-            tileContent(title, value: value, color: color, hovering: hovering, detail: detailView)
+            tileContent(title, value: (value, number), color: color, hovering: hovering, detail: detailView)
         }
         .overlay {
             if let highlight {
@@ -183,7 +191,10 @@ struct PopoverView: View {
         .accessibilityHint(Text("Opens System"))
     }
 
-    private func tileContent(_ title: LocalizedStringKey, value: String, color: Color, hovering: Bool, detail: some View) -> some View {
+    /// `value` is the text shown and, for key figures, the number its digits roll to.
+    private func tileContent(
+        _ title: LocalizedStringKey, value: (text: String, number: Double?), color: Color, hovering: Bool, detail: some View
+    ) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack {
                 Text(title).font(.system(size: 11)).foregroundStyle(hovering ? Theme.text : Theme.text2)
@@ -194,13 +205,13 @@ struct PopoverView: View {
                     .opacity(hovering ? 1 : 0)
                     .accessibilityHidden(true)
             }
-            Text(value)
+            Text(value.text)
                 .font(.system(size: 22, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .contentTransition(.numericText())
+                .rollingNumber(value.number ?? 0)
             detail.frame(height: 22, alignment: .bottom)
         }
         .padding(.horizontal, 12)

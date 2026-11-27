@@ -9,6 +9,8 @@ struct HealthRing: View {
     var diameter: CGFloat = 120
     var lineWidth: CGFloat = 10
     var showsLabel = true
+    /// Draw in from empty when first shown (false: appear already filled).
+    var animatesIn = true
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var progress: Double = 0
@@ -29,7 +31,7 @@ struct HealthRing: View {
                     .font(.system(size: diameter * 0.35, weight: .bold, design: .rounded))
                     .tracking(-1)
                     .monospacedDigit()
-                    .contentTransition(.numericText(value: Double(score ?? 0)))
+                    .rollingNumber(Double(score ?? 0))
                     .foregroundStyle(Theme.text)
                 if showsLabel, let level {
                     Text(level.title)
@@ -42,7 +44,13 @@ struct HealthRing: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text("Health score"))
         .accessibilityValue(score.map { Text("\($0) out of 100") } ?? Text("Measuring"))
-        .onAppear { animate(to: target, delay: 0.12) }
+        .onAppear {
+            if animatesIn {
+                animate(to: target, delay: 0.12)
+            } else {
+                progress = target
+            }
+        }
         .onChange(of: target) { _, value in animate(to: value, delay: 0) }
     }
 
@@ -108,7 +116,7 @@ struct SparkChart: View {
             }
             Sparkline(values: values, range: range).stroke(color, style: StrokeStyle(lineWidth: 1.6, lineJoin: .round))
         }
-        .animation(.easeOut(duration: 0.4), value: values)
+        .motion(Motion.slow, value: values)
         .accessibilityHidden(true)
     }
 }
@@ -122,6 +130,9 @@ struct TimeSeriesChart: View {
     }
 
     let points: [HistoryPoint]
+    /// Changes when a new set of data arrives (e.g. another range): the lines then draw in from
+    /// the left. Regular reloads of the same range just update in place.
+    var revealKey: AnyHashable = 0
     let series: [Series]
     var domain: ClosedRange<Double>? = 0 ... 1
     var bands: [(ClosedRange<Double>, Color)] = []
@@ -130,6 +141,9 @@ struct TimeSeriesChart: View {
     var filled = true
 
     @State private var hovered: Date?
+    /// The data set last drawn in; a new value gives the mask a new identity, which draws in from zero.
+    @State private var revealedKey: AnyHashable?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// One plotted value. Flattened up front so the chart builder stays simple for the type checker.
     private struct Sample: Identifiable {
@@ -233,6 +247,11 @@ struct TimeSeriesChart: View {
                         }
                     }
             }
+            .chartPlotStyle { plot in
+                plot.mask(alignment: .leading) {
+                    RevealMask(animated: !reduceMotion).id(revealedKey)
+                }
+            }
             .frame(height: height)
             .overlay {
                 if points.count < 2 {
@@ -240,6 +259,15 @@ struct TimeSeriesChart: View {
                 }
             }
             .accessibilityLabel(Text("History chart"))
+            .onAppear(perform: revealIfNeeded)
+            .onChange(of: revealKey) { _, _ in revealIfNeeded() }
+            .onChange(of: points.count >= 2) { _, _ in revealIfNeeded() }
+    }
+
+    /// Draws the lines in once per data set, when there is something to draw.
+    private func revealIfNeeded() {
+        guard points.count >= 2, revealedKey != revealKey else { return }
+        revealedKey = revealKey
     }
 
     private func nearest(to date: Date) -> HistoryPoint? {
@@ -260,5 +288,24 @@ struct TimeSeriesChart: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Theme.control, in: RoundedRectangle(cornerRadius: 6))
+    }
+}
+
+/// A mask that grows from the left edge to full width when it appears (instantly with Reduce Motion).
+private struct RevealMask: View {
+    let animated: Bool
+    @State private var fraction: CGFloat = 0
+
+    var body: some View {
+        GeometryReader { proxy in
+            Rectangle().frame(width: proxy.size.width * fraction)
+        }
+        .onAppear {
+            guard animated else {
+                fraction = 1
+                return
+            }
+            withAnimation(.timingCurve(0.2, 0, 0, 1, duration: 0.6)) { fraction = 1 }
+        }
     }
 }

@@ -303,7 +303,7 @@ struct SegmentedPicker<Value: Hashable>: View {
                 let selected = option.0 == selection
                 let hovering = hovered == index && !selected
                 Button {
-                    withAnimation(.spring(duration: 0.22)) { selection = option.0 }
+                    Motion.animate(Motion.spring) { selection = option.0 }
                 } label: {
                     Text(option.1)
                         .font(.system(size: 12, weight: selected ? .semibold : .medium))
@@ -406,7 +406,7 @@ struct UsageBar: View {
             }
         }
         .frame(height: height)
-        .animation(.spring(duration: 0.5), value: fraction)
+        .motion(Motion.slow, value: fraction)
         .accessibilityElement()
         .accessibilityValue(Text(Format.percent(fraction)))
     }

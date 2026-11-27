@@ -13,6 +13,8 @@
             let section: DashboardSection?
             let size: CGSize
             let view: AnyView?
+            /// Scroll the page this far before capturing (checks pinned and condensing headers).
+            var scrollY: CGFloat = 0
         }
 
         static var outputDirectory: URL? {
@@ -46,11 +48,26 @@
                 Screen(name: "cleanup", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "activity", section: .activity, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 940), view: nil),
+                Screen(name: "system-scrolled", section: .system, size: CGSize(width: 1200, height: 700), view: nil, scrollY: 320),
+                Screen(name: "overview-scrolled", section: .overview, size: CGSize(width: 1200, height: 700), view: nil, scrollY: 520),
                 Screen(name: "popover", section: nil, size: CGSize(width: 376, height: PopoverView.height), view: AnyView(PopoverView())),
                 Screen(
                     name: "keepawake", section: nil, size: CGSize(width: 376, height: PopoverView.height),
                     view: AnyView(KeepAwakeOptionsView {}.padding(16).frame(width: 376, height: PopoverView.height, alignment: .top))
                 ),
+                Screen(name: "header-states", section: nil, size: CGSize(width: 900, height: 330), view: AnyView(
+                    VStack(spacing: 18) {
+                        ForEach([0.0, 0.5, 1.0], id: \.self) { progress in
+                            CondensingHeader(title: "System", subtitle: "Apple M1 · 8 cores · 16 GB · macOS 26.6", progress: progress) {
+                                SegmentedPicker(
+                                    options: SystemMonitor.HistoryRange.allCases.map { ($0, $0.title) },
+                                    selection: .constant(.hour)
+                                )
+                            }
+                        }
+                    }
+                    .padding(.vertical, 12)
+                )),
                 Screen(name: "onboarding", section: nil, size: CGSize(width: 720, height: 520), view: AnyView(OnboardingView {})),
                 Screen(name: "settings", section: nil, size: CGSize(width: 520, height: 420), view: AnyView(SettingsView()))
             ]
@@ -74,6 +91,7 @@
                         content,
                         size: screen.size,
                         appearance: scheme == .dark ? .darkAqua : .aqua,
+                        scrollY: screen.scrollY,
                         to: directory.appendingPathComponent("\(screen.name)-\(suffix).png")
                     )
                 }
@@ -81,7 +99,26 @@
             NSApp.terminate(nil)
         }
 
-        private static func render(_ view: some View, size: CGSize, appearance: NSAppearance.Name, to url: URL) async {
+        /// The page's main scroll view (the largest one, so side panes are skipped).
+        private static func firstScrollView(in view: NSView) -> NSScrollView? {
+            var found: [NSScrollView] = []
+            func walk(_ node: NSView) {
+                if let scroll = node as? NSScrollView {
+                    found.append(scroll)
+                }
+                node.subviews.forEach(walk)
+            }
+            walk(view)
+            return found.max { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }
+        }
+
+        private static func render(
+            _ view: some View,
+            size: CGSize,
+            appearance: NSAppearance.Name,
+            scrollY: CGFloat = 0,
+            to url: URL
+        ) async {
             let window = NSWindow(
                 contentRect: NSRect(origin: .zero, size: size),
                 styleMask: [.titled, .closable, .resizable],
@@ -97,6 +134,12 @@
             // Give SwiftUI a moment for tasks (history queries) and animations to settle.
             try? await Task.sleep(for: .seconds(2))
             host.layoutSubtreeIfNeeded()
+            if scrollY > 0, let scrollView = firstScrollView(in: host) {
+                scrollView.contentView.scroll(to: NSPoint(x: 0, y: scrollY))
+                scrollView.reflectScrolledClipView(scrollView.contentView)
+                try? await Task.sleep(for: .milliseconds(900))
+                host.layoutSubtreeIfNeeded()
+            }
             // Always 2x, whatever display is attached, so README images stay sharp on Retina screens.
             guard let bitmap = NSBitmapImageRep(
                 bitmapDataPlanes: nil,

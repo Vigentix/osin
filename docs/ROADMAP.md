@@ -80,5 +80,11 @@ Each milestone ends with a working, demoable build.
 - [x] 0.2.2: performance pass (Keep Awake ticks every 5 s when nothing shows it, cached process details, rotated cleanup log read off the main thread, coalesced storage measurement, fewer permission checks, menu bar label redrawn only on change, O(depth) scan overlap checks)
 - [ ] Lid-closed mode (needs root: `pmset disablesleep`; only with a crash-safe restore)
 
+## v0.3 — Motion and pinned headers
+- [x] Motion tokens (one curve, three durations, a light spring); everything respects Reduce Motion
+- [x] Condensing pinned headers (System), Overview compact bar, pinned Cleanup tab actions and report group header
+- [x] Page transitions, sliding sidebar selection, rolling key numbers, chart draw-in on new data, staggered scan results, Keep Awake options push/pop
+- [x] No idle cost: nothing animates or observes while no Osin window is visible
+
 ## v2 backlog
 Docker prune · Time Machine snapshots · weekly nudge · CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · App uninstaller + leftovers · Duplicate finder · Disk treemap · Privileged helper daemon · Remote rule updates

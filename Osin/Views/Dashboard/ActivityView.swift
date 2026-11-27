@@ -35,16 +35,22 @@ struct ActivityView: View {
             }
             HStack(alignment: .top, spacing: 16) {
                 table(rows, current: current)
+                    // Rows glide to their new places when you change the sort; ranking changes from
+                    // the 2 s samples just update in place.
+                    .motion(Motion.standard, value: sort)
                 if let current {
                     ActivityInspector(group: current, history: monitor.groupMemoryHistory[current.id]?.values ?? []) {
                         pendingForceQuit = current
                     }
+                    .id(current.id)
+                    .transition(.opacity.combined(with: .offset(x: 6)))
                     .frame(width: 300)
                 }
             }
         }
         .padding(.horizontal, 32)
         .padding(.vertical, 28)
+        .motion(Motion.standard, value: selection)
         .navigationTitle(Text("Activity"))
         .background {
             Button("") { searchFocused = true }.keyboardShortcut("f").opacity(0).accessibilityHidden(true)

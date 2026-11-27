@@ -6,13 +6,14 @@ struct SystemView: View {
     @Environment(SystemMonitor.self) private var monitor
     @State private var range: SystemMonitor.HistoryRange = .hour
     @State private var points: [HistoryPoint] = []
+    /// The range whose data is shown; charts draw in when it changes.
+    @State private var loadedRange: SystemMonitor.HistoryRange?
 
     var body: some View {
-        ScrollView {
+        CondensingPage(title: "System", subtitle: MachineInfo.summary) {
+            SegmentedPicker(options: SystemMonitor.HistoryRange.allCases.map { ($0, $0.title) }, selection: $range)
+        } content: {
             VStack(alignment: .leading, spacing: 18) {
-                PageHeader(title: "System", subtitle: MachineInfo.summary) {
-                    SegmentedPicker(options: SystemMonitor.HistoryRange.allCases.map { ($0, $0.title) }, selection: $range)
-                }
                 if let snapshot = monitor.snapshot {
                     cpu(snapshot)
                     memory(snapshot)
@@ -27,10 +28,6 @@ struct SystemView: View {
                     ProgressView().frame(maxWidth: .infinity, minHeight: 300)
                 }
             }
-            .padding(.horizontal, 32)
-            .padding(.vertical, 28)
-            .frame(maxWidth: 1180)
-            .frame(maxWidth: .infinity)
         }
         .navigationTitle(Text("System"))
         // Charts span an hour to a week: reloading every 30 s (and on range change) is plenty,
@@ -38,6 +35,7 @@ struct SystemView: View {
         .task(id: range) {
             while !Task.isCancelled {
                 points = await monitor.historyPoints(range)
+                loadedRange = range
                 try? await Task.sleep(for: .seconds(30), tolerance: .seconds(5))
             }
         }
@@ -67,7 +65,7 @@ struct SystemView: View {
                     value: Format.percent(snapshot.cpu.total),
                     detail: String(localized: "Load \(snapshot.cpu.loadAverage.formatted(.number.precision(.fractionLength(2))))")
                 )
-                TimeSeriesChart(points: points, series: [.init(name: "CPU", color: Theme.accent) { $0.cpu }])
+                TimeSeriesChart(points: points, revealKey: loadedRange, series: [.init(name: "CPU", color: Theme.accent) { $0.cpu }])
                     .frame(maxWidth: .infinity)
                 perCore(snapshot.cpu)
             }
@@ -85,7 +83,7 @@ struct SystemView: View {
                         .fill(efficiency ? Theme.teal : Theme.accent)
                         .frame(height: max(4, 110 * usage))
                         .frame(maxWidth: .infinity, maxHeight: 110, alignment: .bottom)
-                        .animation(.spring(duration: 0.5), value: usage)
+                        .motion(Motion.slow, value: usage)
                 }
             }
             .frame(height: 110)
@@ -116,7 +114,7 @@ struct SystemView: View {
                         : "Quitting apps you are not using will help.")
                 )
                 TimeSeriesChart(
-                    points: points,
+                    points: points, revealKey: loadedRange,
                     series: [.init(name: "Memory", color: memory.pressure.color) { $0.memoryUsed }],
                     bands: [(0.8 ... 1, Theme.poor), (0.65 ... 0.8, Theme.fair)]
                 )
@@ -154,7 +152,7 @@ struct SystemView: View {
             }
             UsageBar(fraction: disk.usedFraction, color: level.color, height: 10)
             TimeSeriesChart(
-                points: points,
+                points: points, revealKey: loadedRange,
                 series: [
                     .init(name: "Read", color: Theme.blue) { $0.diskRead },
                     .init(name: "Write", color: Theme.fair) { $0.diskWrite }
@@ -180,7 +178,7 @@ struct SystemView: View {
                     .font(.system(size: 22, weight: .bold)).monospacedDigit()
             }
             TimeSeriesChart(
-                points: points,
+                points: points, revealKey: loadedRange,
                 series: [
                     .init(name: "Download", color: Theme.accent) { $0.networkReceive },
                     .init(name: "Upload", color: Theme.teal) { $0.networkSend }
@@ -204,8 +202,13 @@ struct SystemView: View {
                     value: Format.percent(battery.chargeFraction),
                     detail: String(localized: battery.isCharging ? "Charging" : (battery.isOnACPower ? "On power adapter" : "On battery"))
                 )
-                TimeSeriesChart(points: points, series: [.init(name: "Charge", color: Theme.good) { $0.batteryCharge }], height: 110)
-                    .frame(maxWidth: .infinity)
+                TimeSeriesChart(
+                    points: points,
+                    revealKey: loadedRange,
+                    series: [.init(name: "Charge", color: Theme.good) { $0.batteryCharge }],
+                    height: 110
+                )
+                .frame(maxWidth: .infinity)
                 Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 8) {
                     GridRow {
                         Text("Health").foregroundStyle(Theme.text2)

@@ -470,6 +470,7 @@ struct KeepAwakeBanner: View {
             }
             .padding(14)
             .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+            .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
 }

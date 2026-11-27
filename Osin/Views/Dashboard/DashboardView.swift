@@ -7,17 +7,28 @@ struct DashboardView: View {
     @Environment(Navigator.self) private var navigator
     @Environment(ScanCoordinator.self) private var scan
     @Environment(SystemMonitor.self) private var monitor
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var sidebarSelection
 
     var body: some View {
         HStack(spacing: 0) {
             sidebar
+                .motion(Motion.spring, value: navigator.section)
             Rectangle().fill(Theme.border).frame(width: 1)
             ZStack {
                 Theme.background
+                // The new page fades in while rising 8 pt; the old one simply fades.
                 detail(for: navigator.section)
+                    .id(navigator.section)
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .offset(y: reduceMotion ? 0 : 8)),
+                        removal: .opacity
+                    ))
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
         }
+        .motion(Motion.page, value: navigator.section)
         .background(Theme.background)
         .ignoresSafeArea(edges: .top)
         .osinFocusStyle()
@@ -37,7 +48,7 @@ struct DashboardView: View {
             .padding(.bottom, 16)
 
             ForEach(DashboardSection.allCases) { section in
-                SidebarItem(section: section, selected: navigator.section == section) {
+                SidebarItem(section: section, selected: navigator.section == section, selectionNamespace: sidebarSelection) {
                     trailing(for: section)
                 } action: {
                     navigator.section = section
@@ -95,6 +106,8 @@ struct DashboardView: View {
 private struct SidebarItem<Trailing: View>: View {
     let section: DashboardSection
     let selected: Bool
+    /// The selection highlight slides between rows instead of jumping.
+    let selectionNamespace: Namespace.ID
     @ViewBuilder let trailing: Trailing
     let action: () -> Void
     @State private var hovering = false
@@ -114,10 +127,15 @@ private struct SidebarItem<Trailing: View>: View {
             }
             .padding(.horizontal, 10)
             .frame(height: 34)
-            .background(
-                selected ? Theme.accentSoft : (hovering ? Theme.hover : .clear),
-                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
-            )
+            .background {
+                if selected {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Theme.accentSoft)
+                        .matchedGeometryEffect(id: "sidebar-selection", in: selectionNamespace)
+                } else if hovering {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.hover)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(RowButtonStyle())
