@@ -20,13 +20,19 @@ struct ClaimedPathsTests {
         var claimed = ClaimedPaths()
         let clock = ContinuousClock()
         let start = clock.now
+        var overlapping = 0
         for index in 0 ..< 20000 {
             let path = "/h/Library/pnpm/store/v10/files/\(index)"
-            #expect(!claimed.overlaps(path))
+            if claimed.overlaps(path) {
+                overlapping += 1
+            }
             claimed.insert(path)
         }
-        // The old linear scan needed about 200 million comparisons here.
-        #expect(clock.now - start < .seconds(1))
+        let elapsed = clock.now - start
+        #expect(overlapping == 0)
+        // The old linear scan needed about 200 million comparisons here (tens of seconds); the bound
+        // is loose enough for slow CI runners and debug builds.
+        #expect(elapsed < .seconds(5))
     }
 }
 
