@@ -116,7 +116,8 @@ struct SparkChart: View {
             }
             Sparkline(values: values, range: range).stroke(color, style: StrokeStyle(lineWidth: 1.6, lineJoin: .round))
         }
-        .motion(Motion.slow, value: values)
+        // No animation: new samples arrive every 2 s, and animating each one kept SwiftUI re-laying out
+        // the whole page most of the time.
         .accessibilityHidden(true)
     }
 }

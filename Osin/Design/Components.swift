@@ -375,20 +375,81 @@ struct IconTile: View {
 }
 
 /// Pulsing dot that marks live data.
-struct LiveDot: View {
+///
+/// The pulse is a Core Animation animation on the dot's own layer, run by the render server. A
+/// SwiftUI `repeatForever` animation here re-laid out the whole Overview on every frame (about a
+/// fifth of a CPU core while the dashboard was open).
+struct LiveDot: NSViewRepresentable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var dim = false
 
-    var body: some View {
-        Circle()
-            .fill(Theme.good)
-            .frame(width: 6, height: 6)
-            .opacity(dim ? 0.35 : 1)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: 1).repeatForever(autoreverses: true)) { dim = true }
+    func makeNSView(context _: Context) -> PulsingDotView {
+        PulsingDotView()
+    }
+
+    func updateNSView(_ view: PulsingDotView, context _: Context) {
+        view.pulses = !reduceMotion
+    }
+
+    func sizeThatFits(_: ProposedViewSize, nsView _: PulsingDotView, context _: Context) -> CGSize? {
+        CGSize(width: 6, height: 6)
+    }
+}
+
+final class PulsingDotView: NSView {
+    private static let pulseKey = "pulse"
+
+    var pulses = true {
+        didSet {
+            if pulses != oldValue {
+                updatePulse()
             }
-            .accessibilityHidden(true)
+        }
+    }
+
+    init() {
+        super.init(frame: NSRect(x: 0, y: 0, width: 6, height: 6))
+        wantsLayer = true
+        layer?.cornerRadius = 3
+        setAccessibilityElement(false)
+    }
+
+    @available(*, unavailable)
+    required init?(coder _: NSCoder) {
+        nil
+    }
+
+    override var wantsUpdateLayer: Bool {
+        true
+    }
+
+    override var intrinsicContentSize: NSSize {
+        NSSize(width: 6, height: 6)
+    }
+
+    /// Resolves the colour for the current light or dark appearance.
+    override func updateLayer() {
+        effectiveAppearance.performAsCurrentDrawingAppearance {
+            layer?.backgroundColor = NSColor(Theme.good).cgColor
+        }
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        updatePulse()
+    }
+
+    private func updatePulse() {
+        guard let layer else { return }
+        layer.removeAnimation(forKey: Self.pulseKey)
+        guard pulses, window != nil else { return }
+        let animation = CABasicAnimation(keyPath: "opacity")
+        animation.fromValue = 1
+        animation.toValue = 0.35
+        animation.duration = 1
+        animation.autoreverses = true
+        animation.repeatCount = .infinity
+        animation.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        layer.add(animation, forKey: Self.pulseKey)
     }
 }
 
@@ -406,7 +467,6 @@ struct UsageBar: View {
             }
         }
         .frame(height: height)
-        .motion(Motion.slow, value: fraction)
         .accessibilityElement()
         .accessibilityValue(Text(Format.percent(fraction)))
     }

@@ -134,6 +134,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             {
                 keepAwake.start(KeepAwakeOptions(mode: .awake, keepDisplayOn: false, duration: .process(watched)))
             }
+            // `--open-dashboard`: open the dashboard at launch (performance measurements).
+            if arguments.contains("--open-dashboard") {
+                Task {
+                    try? await Task.sleep(for: .seconds(2))
+                    NotificationCenter.default.post(name: .osinOpenDashboard, object: nil)
+                }
+            }
             if let directory = SnapshotRenderer.outputDirectory {
                 Task {
                     await SnapshotRenderer.run(

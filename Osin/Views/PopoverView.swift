@@ -211,7 +211,6 @@ struct PopoverView: View {
                 .foregroundStyle(color)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-                .rollingNumber(value.number ?? 0)
             detail.frame(height: 22, alignment: .bottom)
         }
         .padding(.horizontal, 12)

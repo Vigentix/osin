@@ -83,7 +83,6 @@ struct SystemView: View {
                         .fill(efficiency ? Theme.teal : Theme.accent)
                         .frame(height: max(4, 110 * usage))
                         .frame(maxWidth: .infinity, maxHeight: 110, alignment: .bottom)
-                        .motion(Motion.slow, value: usage)
                 }
             }
             .frame(height: 110)

@@ -305,7 +305,7 @@ struct OverviewView: View {
     private func metricCell(
         title: LocalizedStringKey,
         value: String,
-        number: Double? = nil,
+        number _: Double? = nil,
         valueColor: Color = Theme.text,
         detail: String,
         @ViewBuilder chart: () -> some View
@@ -332,7 +332,6 @@ struct OverviewView: View {
                     .foregroundStyle(valueColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-                    .rollingNumber(number ?? 0)
                 Text(detail)
                     .font(.system(size: 11))
                     .monospacedDigit()

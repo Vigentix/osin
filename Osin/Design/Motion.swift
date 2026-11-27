@@ -62,7 +62,9 @@ extension View {
         modifier(MotionModifier(animation: animation, value: value))
     }
 
-    /// Digits roll to the new value (key figures only: score, CPU, free space, network, Clean).
+    /// Digits roll to the new value. Only for figures that change because of something the user did
+    /// or a rare event (score, Clean, scan totals), never for live metrics sampled every 2 s: each
+    /// animation frame re-lays out the page, which cost up to a fifth of a CPU core.
     func rollingNumber(_ value: Double) -> some View {
         modifier(RollingNumberModifier(value: value))
     }
