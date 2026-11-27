@@ -11,16 +11,17 @@ extension ScanCoordinator {
     }
 
     /// Scans and cleans the chosen rules in the background, without touching the Smart Scan screen.
-    /// `stillAllowed` is checked again before each item is cleaned (the user may have come back,
-    /// unplugged the Mac or turned chores off while it scanned); cleaning stops as soon as it fails.
+    /// `stillAllowed(ruleID)` is checked again right before each item is removed (the user may have
+    /// come back, unplugged the Mac, turned chores off, changed the schedule or unticked the rule);
+    /// cleaning stops as soon as it fails.
     /// Returns `nil` when nothing ran (Osin busy, nothing chosen, or not allowed any more).
-    func runChore(ruleIDs: Set<String>, at date: Date, stillAllowed: () -> Bool) async -> ChoreRun? {
+    func runChore(ruleIDs: Set<String>, at date: Date, stillAllowed: @escaping @Sendable (String) -> Bool) async -> ChoreRun? {
         guard !isBusy, !isScanningInBackground, let cleaner else { return nil }
         let rules = Self.choreRules().filter { ruleIDs.contains($0.id) }
         guard !rules.isEmpty else { return nil }
         isRunningChore = true
         defer { isRunningChore = false }
-        guard let results = try? await Scanner().scan(rules), stillAllowed() else { return nil }
+        guard let results = try? await Scanner().scan(rules), rules.contains(where: { stillAllowed($0.id) }) else { return nil }
         var outcome = CleanupOutcome()
         // What Smart Scan should show afterwards: the fresh scan, minus what was removed.
         var remaining = results
@@ -29,12 +30,19 @@ extension ScanCoordinator {
             var left: [ScanItem] = []
             // One item at a time, re-checked in between, so cleaning stops as soon as the user comes back.
             for item in result.items {
-                if stopped || !stillAllowed() {
+                let ruleID = result.rule.id
+                if stopped || !stillAllowed(ruleID) {
                     stopped = true
                     left.append(item)
                     continue
                 }
-                let part = await cleaner.clean([CleanupSelection(rule: result.rule, items: [item])])
+                // Asked again inside the cleaner, right before removal (checking a large folder takes time).
+                let part = await cleaner.clean([CleanupSelection(rule: result.rule, items: [item])]) { @Sendable in stillAllowed(ruleID) }
+                if part.stopped {
+                    stopped = true
+                    left.append(item)
+                    continue
+                }
                 onFreed?(part.freedBytes)
                 outcome.freedBytes += part.freedBytes
                 outcome.trashedBytes += part.trashedBytes

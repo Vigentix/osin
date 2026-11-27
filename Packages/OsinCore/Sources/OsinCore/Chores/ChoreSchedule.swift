@@ -44,6 +44,11 @@ public struct ChoreSchedule: Codable, Sendable, Equatable {
         return calendar.nextDate(after: date, matching: components, matchingPolicy: .nextTime, direction: .backward)
     }
 
+    private func sameLocalTime(_ first: Date, _ second: Date, calendar: Calendar) -> Bool {
+        let parts: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute]
+        return calendar.dateComponents(parts, from: first) == calendar.dateComponents(parts, from: second)
+    }
+
     /// The next scheduled time after `date`.
     public func next(after date: Date, calendar: Calendar = .current) -> Date? {
         calendar.nextDate(after: date, matching: components, matchingPolicy: .nextTime)
@@ -55,8 +60,15 @@ public struct ChoreSchedule: Codable, Sendable, Equatable {
         guard let latest = occurrence(onOrBefore: now, calendar: calendar),
               now.timeIntervalSince(latest) <= Self.catchUpWindow
         else { return nil }
-        if let lastRun, lastRun >= latest {
-            return nil
+        if let lastRun {
+            if lastRun >= latest {
+                return nil
+            }
+            // When clocks go back, the same local time happens twice: a run for the first one also
+            // covers the second.
+            if let covered = occurrence(onOrBefore: lastRun, calendar: calendar), sameLocalTime(covered, latest, calendar: calendar) {
+                return nil
+            }
         }
         return latest
     }

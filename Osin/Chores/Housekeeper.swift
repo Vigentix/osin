@@ -40,7 +40,6 @@ final class Housekeeper {
     /// A week that could not be saved is retried, but not on every sample.
     @ObservationIgnored private var lastCloseAttempt = Date.distantPast
     @ObservationIgnored private var isPostingReport = false
-    @ObservationIgnored private var isSaveScheduled = false
     /// Notifications were off or not allowed: Watch keeps tracking but skips the permission check until then.
     @ObservationIgnored private var watchQuietUntil = Date.distantPast
 
@@ -70,7 +69,8 @@ final class Housekeeper {
         if !usage.closedWeeks.isEmpty {
             closeWeek()
         }
-        if snapshot.date.timeIntervalSince(lastUsageSave) > 600 {
+        // Checkpoint about once a minute, so a crash loses little.
+        if snapshot.date.timeIntervalSince(lastUsageSave) >= 60 {
             saveUsage()
         }
         watch(snapshot)
@@ -130,12 +130,14 @@ final class Housekeeper {
         guard Preferences.choreSchedule.dueOccurrence(now: now, lastRun: lastChoreReference) != nil,
               ChoreConditions.met(onACPower: onACPower, idleSeconds: IdleTime.seconds())
         else { return }
+        let schedule = Preferences.choreSchedule
         let ruleIDs = Set(ScanCoordinator.choreRules().map(\.id)).subtracting(Preferences.choreExcludedRules)
         guard !ruleIDs.isEmpty else { return }
         isRunningChore = true
         Task {
             defer { isRunningChore = false }
-            guard let run = await scan.runChore(ruleIDs: ruleIDs, at: now, stillAllowed: Self.choreStillAllowed) else { return }
+            let allowed: @Sendable (String) -> Bool = { Self.choreStillAllowed(schedule: schedule, ruleID: $0) }
+            guard let run = await scan.runChore(ruleIDs: ruleIDs, at: now, stillAllowed: allowed) else { return }
             record(run)
             usage.addChoreRun(at: now)
             saveUsage()
@@ -145,9 +147,12 @@ final class Housekeeper {
         }
     }
 
-    /// Re-checked before each group is cleaned: chores still on, still plugged in, user still away.
-    private static func choreStillAllowed() -> Bool {
+    /// Re-checked right before each item is removed: chores still on, same schedule, rule still ticked,
+    /// still plugged in, user still away. Runs on the cleaner's actor, so it only reads thread-safe state.
+    nonisolated static func choreStillAllowed(schedule: ChoreSchedule, ruleID: String) -> Bool {
         UserDefaults.standard.bool(forKey: Preferences.Key.choresEnabled)
+            && Preferences.choreSchedule == schedule
+            && !Preferences.choreExcludedRules.contains(ruleID)
             && ChoreConditions.met(onACPower: BatteryReader.read()?.isOnACPower ?? true, idleSeconds: IdleTime.seconds())
     }
 
@@ -204,18 +209,7 @@ final class Housekeeper {
     func recordFreed(_ bytes: UInt64) {
         guard bytes > 0 else { return }
         usage.addFreed(bytes, at: Date())
-        // Saved within a minute (a chore credits every item, so not on each call), and at quit.
-        let since = Date().timeIntervalSince(lastUsageSave)
-        if since > 60 {
-            saveUsage()
-        } else if !isSaveScheduled {
-            isSaveScheduled = true
-            Task {
-                try? await Task.sleep(for: .seconds(60 - since))
-                isSaveScheduled = false
-                saveUsage()
-            }
-        }
+        // Saved with the next checkpoint (about a minute) and at quit.
     }
 
     /// Monday from 9:00: one notification about last week (skipped once the card is dismissed).

@@ -111,6 +111,8 @@ public struct CleanupOutcome: Sendable {
     public var trashedBytes: UInt64 = 0
     public var trashed: [TrashedItem] = []
     public var failures: [CleanupFailure] = []
+    /// `proceed` said no: this item and the ones after it were left untouched.
+    public var stopped = false
 
     public init() {}
 }
@@ -134,7 +136,9 @@ public actor Cleaner {
         self.log = log
     }
 
-    public func clean(_ selections: [CleanupSelection]) -> CleanupOutcome {
+    /// `proceed` is asked right before each removal, after the item's checks (which can take a while
+    /// for large folders); when it returns false, cleaning stops and `stopped` is set.
+    public func clean(_ selections: [CleanupSelection], proceed: @Sendable () -> Bool = { true }) -> CleanupOutcome {
         var outcome = CleanupOutcome()
         guard log.isWritable() else {
             outcome.failures = selections.flatMap { $0.items.map { CleanupFailure(url: $0.url, kind: .logUnavailable) } }
@@ -156,6 +160,10 @@ public actor Cleaner {
                     continue
                 case .ok:
                     break
+                }
+                guard proceed() else {
+                    outcome.stopped = true
+                    return outcome
                 }
                 do {
                     switch rule.action {

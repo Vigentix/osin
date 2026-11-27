@@ -40,6 +40,16 @@ struct ChoreScheduleTests {
         #expect(weekly.dueOccurrence(now: date(2026, 12, 1, 9), lastRun: date(2026, 11, 22, 21), calendar: calendar) == nil)
     }
 
+    @Test func runsOnceWhenClocksGoBack() throws {
+        // Los Angeles, Sunday 1 November 2026: 01:00–02:00 happens twice.
+        var losAngeles = Calendar(identifier: .gregorian)
+        losAngeles.timeZone = try #require(TimeZone(identifier: "America/Los_Angeles"))
+        let schedule = ChoreSchedule(frequency: .weekly, weekday: 1, hour: 1, minute: 30)
+        let firstRun = try #require(ISO8601DateFormatter().date(from: "2026-11-01T08:35:00Z")) // 01:35 PDT
+        let secondPass = try #require(ISO8601DateFormatter().date(from: "2026-11-01T09:35:00Z")) // 01:35 PST
+        #expect(schedule.dueOccurrence(now: secondPass, lastRun: firstRun, calendar: losAngeles) == nil)
+    }
+
     @Test func runsOnlyOnPowerAndWhenIdle() {
         #expect(ChoreConditions.met(onACPower: true, idleSeconds: 600))
         #expect(!ChoreConditions.met(onACPower: false, idleSeconds: 600))

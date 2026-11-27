@@ -43,6 +43,18 @@ struct CleanerTests {
         #expect(outcome.failures.isEmpty)
     }
 
+    @Test func stopsBeforeRemovingWhenToldTo() async throws {
+        let (fixture, cleaner, _) = try setup()
+        let first = try fixture.file("Library/Caches/one/blob").deletingLastPathComponent()
+        let second = try fixture.file("Library/Caches/two/blob").deletingLastPathComponent()
+        let selection = CleanupSelection(rule: rule("caches", tier: .safe, action: .delete), items: [item(first), item(second)])
+        let outcome = await cleaner.clean([selection]) { false }
+        #expect(outcome.stopped)
+        #expect(outcome.freedBytes == 0)
+        #expect(FileManager.default.fileExists(atPath: first.path))
+        #expect(FileManager.default.fileExists(atPath: second.path))
+    }
+
     @Test func trashMovesItemAndCanBeUndone() async throws {
         let (fixture, cleaner, _) = try setup()
         let file = try fixture.file("Downloads/setup.dmg")
