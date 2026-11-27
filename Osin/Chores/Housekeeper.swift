@@ -131,12 +131,13 @@ final class Housekeeper {
               ChoreConditions.met(onACPower: onACPower, idleSeconds: IdleTime.seconds())
         else { return }
         let schedule = Preferences.choreSchedule
+        let armedAt = UserDefaults.standard.double(forKey: Key.choresArmedAt)
         let ruleIDs = Set(ScanCoordinator.choreRules().map(\.id)).subtracting(Preferences.choreExcludedRules)
         guard !ruleIDs.isEmpty else { return }
         isRunningChore = true
         Task {
             defer { isRunningChore = false }
-            let allowed: @Sendable (String) -> Bool = { Self.choreStillAllowed(schedule: schedule, ruleID: $0) }
+            let allowed: @Sendable (String) -> Bool = { Self.choreStillAllowed(schedule: schedule, armedAt: armedAt, ruleID: $0) }
             guard let run = await scan.runChore(ruleIDs: ruleIDs, at: now, stillAllowed: allowed) else { return }
             record(run)
             usage.addChoreRun(at: now)
@@ -149,8 +150,10 @@ final class Housekeeper {
 
     /// Re-checked right before each item is removed: chores still on, same schedule, rule still ticked,
     /// still plugged in, user still away. Runs on the cleaner's actor, so it only reads thread-safe state.
-    nonisolated static func choreStillAllowed(schedule: ChoreSchedule, ruleID: String) -> Bool {
+    /// `armedAt` changes whenever chores are turned on or rescheduled, which ends a run already under way.
+    nonisolated static func choreStillAllowed(schedule: ChoreSchedule, armedAt: Double, ruleID: String) -> Bool {
         UserDefaults.standard.bool(forKey: Preferences.Key.choresEnabled)
+            && UserDefaults.standard.double(forKey: Key.choresArmedAt) == armedAt
             && Preferences.choreSchedule == schedule
             && !Preferences.choreExcludedRules.contains(ruleID)
             && ChoreConditions.met(onACPower: BatteryReader.read()?.isOnACPower ?? true, idleSeconds: IdleTime.seconds())
