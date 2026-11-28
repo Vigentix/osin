@@ -7,6 +7,9 @@ import Foundation
 public struct ProtectedPaths: Sendable {
     public let home: URL
     public let roots: [String]
+    /// APFS is usually case-insensitive: `~/documents` is `~/Documents`, so comparisons ignore case.
+    private let foldedRoots: [String]
+    private let foldedHome: String
 
     static let homeRelative = [
         "Documents", "Desktop", "Pictures", "Movies", "Music", "Public",
@@ -22,15 +25,17 @@ public struct ProtectedPaths: Sendable {
         self.home = home
         let homePath = home.standardizedFileURL.path
         roots = Self.homeRelative.map { homePath + "/" + $0 } + Self.system
+        foldedRoots = roots.map { $0.lowercased() }
+        foldedHome = homePath.lowercased()
     }
 
     public func denies(_ url: URL) -> Bool {
-        let path = url.standardizedFileURL.path
-        if path == home.standardizedFileURL.path {
+        let path = url.standardizedFileURL.path.lowercased()
+        if path == foldedHome {
             return true
         }
         let ancestorPrefix = path == "/" ? "/" : path + "/"
-        return roots.contains { root in
+        return foldedRoots.contains { root in
             path == root || path.hasPrefix(root + "/") || root.hasPrefix(ancestorPrefix)
         }
     }

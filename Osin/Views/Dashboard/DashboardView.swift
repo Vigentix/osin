@@ -197,6 +197,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
 enum CleanupTab: String, CaseIterable, Identifiable {
     case smartScan
     case spaceLens
+    case cleanWithAI
     case largeFiles
     case history
 
@@ -208,6 +209,7 @@ enum CleanupTab: String, CaseIterable, Identifiable {
         switch self {
         case .smartScan: "Smart Scan"
         case .spaceLens: "Space Lens"
+        case .cleanWithAI: "Clean with AI"
         case .largeFiles: "Large files"
         case .history: "History"
         }

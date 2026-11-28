@@ -173,7 +173,7 @@ public struct Scanner: Sendable {
                     }
                     continue
                 }
-                let blocker = rule.closedApp(for: candidate.url, home: home).flatMap { running.contains($0.app) ? $0.displayName : nil }
+                let blocker = rule.closedApps(for: candidate.url, home: home).first { running.contains($0.app) }?.displayName
                 items.append(ScanItem(url: candidate.url, bytes: usage.bytes, modified: newest, identity: identity, blockedBy: blocker))
                 claimed.insert(path)
             }

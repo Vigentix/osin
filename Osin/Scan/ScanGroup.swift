@@ -174,3 +174,21 @@ extension ScanCoordinator {
         return outcome.failures.first
     }
 }
+
+extension ScanCoordinator {
+    /// Moves several picked items (an AI proposal) to the Trash in one go, like `trashSelected`.
+    func trashSelectedItems(_ items: [ScanItem]) async -> CleanupOutcome {
+        guard !isBusy, !isScanningInBackground, let cleaner else {
+            let reason = String(localized: "Osin is busy cleaning. Try again in a moment.")
+            var outcome = CleanupOutcome()
+            outcome.failures = items.map { CleanupFailure(url: $0.url, reason: reason) }
+            return outcome
+        }
+        isTrashingSelection = true
+        defer { isTrashingSelection = false }
+        let outcome = await cleaner.clean([CleanupSelection(rule: SpaceLensModel.rule, items: items)])
+        historyRevision += 1
+        onCleaned?()
+        return outcome
+    }
+}

@@ -44,6 +44,9 @@ extension Notifier {
         if identifier == "osin.chore" {
             return NotificationDestination(section: .cleanup, cleanupTab: .history)
         }
+        if identifier == "osin.ai" {
+            return NotificationDestination(section: .cleanup, cleanupTab: .cleanWithAI)
+        }
         if identifier == "osin.weekly" {
             return NotificationDestination(section: .overview, showsWeeklyReport: true)
         }
@@ -119,5 +122,15 @@ extension AppControl {
         {
             app.terminate()
         }
+    }
+}
+
+extension Notifier {
+    /// Your own Claude Code or Codex session proposed a cleanup through Osin's tools.
+    func aiProposal(_ proposal: CleanupProposal) {
+        let content = UNMutableNotificationContent()
+        content.title = String(localized: "Your AI proposed freeing \(Format.storage(proposal.totalBytes))")
+        content.body = String(localized: "Review the \(proposal.items.count) items in Osin before anything is moved to the Trash.")
+        deliver(UNNotificationRequest(identifier: "osin.ai", content: content, trigger: nil))
     }
 }

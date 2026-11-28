@@ -293,6 +293,64 @@
             ]
         )
 
+        /// What an AI might propose (Clean with AI screenshots).
+        static func aiProposal() -> CleanupProposal {
+            let home = FileManager.default.homeDirectoryForCurrentUser.path
+            func item(_ path: String, _ gigabytes: Double, _ category: String, _ reason: String, _ advice: String?) -> CleanupProposal
+                .Item
+            {
+                CleanupProposal.Item(
+                    path: home + "/" + path, bytes: UInt64(gigabytes * 1e9), reason: reason, category: category, advice: advice,
+                    identity: nil
+                )
+            }
+            return CleanupProposal(
+                id: "demo", source: "claude", createdAt: now, updatedAt: now,
+                summary: "About 9.4 GB can go safely: Chrome's on-device AI model, package caches, app caches and the virtual environments "
+                    + "of three projects you haven't touched in months. Everything here is downloaded or rebuilt when needed.",
+                items: [
+                    item(
+                        "Library/Application Support/Google/Chrome/OptGuideOnDeviceModel/2025",
+                        4.27,
+                        "Browser",
+                        "Chrome's built-in AI model. Chrome downloads it again if you use its AI features.",
+                        "review"
+                    ),
+                    item(
+                        ".terraform.d/plugin-cache",
+                        1.54,
+                        "Developer caches",
+                        "Terraform providers; terraform init downloads them again.",
+                        nil
+                    ),
+                    item(".npm/_cacache", 1.04, "Developer caches", "npm's package cache, refilled on the next install.", "safe"),
+                    item(
+                        "Library/Application Support/Slack/Cache/Cache_Data",
+                        0.82,
+                        "App caches",
+                        "Slack's page cache. Messages stay on Slack's servers.",
+                        nil
+                    ),
+                    item("Library/Caches/orca-updater", 0.61, "App caches", "An update that was downloaded but never installed.", "safe"),
+                    item(
+                        "Developer/weather-api/.venv",
+                        0.62,
+                        "Old projects",
+                        "Python environment of a project untouched since August; uv sync recreates it.",
+                        nil
+                    ),
+                    item("Developer/recipes/.venv", 0.31, "Old projects", "Python environment of a project untouched since July.", nil),
+                    item(
+                        "Developer/portfolio/node_modules",
+                        0.19,
+                        "Old projects",
+                        "Dependencies of a site not changed in four months; npm install restores them.",
+                        nil
+                    )
+                ]
+            )
+        }
+
         /// A home folder for Space Lens screenshots.
         static func spaceTree() -> SpaceNode {
             let home = FileManager.default.homeDirectoryForCurrentUser.resolvingSymlinksInPath().path

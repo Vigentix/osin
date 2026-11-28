@@ -11,6 +11,8 @@ struct SettingsView: View {
                 .tabItem { Label("Alerts", systemImage: "bell") }
             ChoresSettings()
                 .tabItem { Label("Chores", systemImage: "calendar.badge.clock") }
+            AISettings()
+                .tabItem { Label("AI", systemImage: "sparkles") }
             KeepAwakeSettings()
                 .tabItem { Label("Keep Awake", systemImage: "cup.and.saucer") }
             AdvancedSettings()

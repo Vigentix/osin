@@ -521,3 +521,37 @@ struct SizeCacheExpiryTests {
         #expect(SizeCache(url: url).lookup(item.path, identity: identity, maxAge: 30 * 86400) == nil)
     }
 }
+
+struct HandPickedClosedAppTests {
+    @Test func handPickedItemsInAnOpenAppsFolderWait() async throws {
+        let fixture = try FixtureHome()
+        let cache = try fixture.file("Library/Application Support/Slack/Cache/Cache_Data/blob").deletingLastPathComponent()
+            .resolvingSymlinksInPath()
+        let rule = CleanupRule(
+            id: "space-lens", name: "s", detail: "", tier: .review, action: .trash, regenerable: false, paths: ["~/*"],
+            special: .userSelected
+        )
+        let cleaner = Cleaner(
+            home: fixture.home, trash: FixtureTrash(directory: fixture.root.appendingPathComponent("trash")),
+            log: CleanupLog(url: fixture.root.appendingPathComponent("log.jsonl")), runningApps: { ["Slack.app"] }
+        )
+        let item = ScanItem(url: cache, bytes: 1, modified: nil, identity: FileIdentity(path: cache.path))
+        let outcome = await cleaner.clean([CleanupSelection(rule: rule, items: [item])])
+        #expect(outcome.failures.map(\.kind) == [.appRunning("Slack")])
+    }
+
+    /// The app's whole folder, or a folder containing it, waits for the app too; case does not matter.
+    @Test func handPickedFoldersAroundAnAppWaitForIt() {
+        let home = URL(fileURLWithPath: "/Users/someone")
+        let support = home.appendingPathComponent("Library/Application Support")
+        let quit = { (path: String, running: Set<String>) in
+            CleanupRule.runningAppToQuit(for: support.appendingPathComponent(path), home: home, running: running)
+        }
+        #expect(quit("Slack", ["Slack.app"]) == "Slack")
+        #expect(quit("slack/Cache", ["Slack.app"]) == "Slack")
+        #expect(quit("Google", ["Google Chrome.app"]) != nil)
+        #expect(quit("Google", []) == nil)
+        #expect(quit("Unrelated", ["Slack.app"]) == nil)
+        #expect(CleanupRule.runningAppToQuit(for: support, home: home, running: ["Slack.app"]) == "Slack")
+    }
+}

@@ -30,6 +30,8 @@ enum Preferences {
         static let watchIgnoredApps = "watchIgnoredApps"
         static let choreKnownRules = "choreKnownRules"
         static let projectRoots = "projectRoots"
+        static let aiEnabled = "aiEnabled"
+        static let aiProvider = "aiProvider"
     }
 
     static func registerDefaults() {
@@ -51,7 +53,8 @@ enum Preferences {
             Key.keepAwakeShortcut: KeepAwakeShortcut.none.rawValue,
             Key.choresEnabled: false,
             Key.weeklyReportEnabled: true,
-            Key.watchEnabled: true
+            Key.watchEnabled: true,
+            Key.aiEnabled: false
         ])
     }
 

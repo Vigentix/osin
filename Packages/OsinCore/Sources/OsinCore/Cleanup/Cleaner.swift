@@ -340,7 +340,7 @@ public actor Cleaner {
     /// The last checks before removing: the owning app is closed (fresh process list), and the path
     /// is still the scanned item with no links, inside home and not protected.
     private func finalCheck(_ item: ScanItem, rule: CleanupRule, apps: RunningApps) -> Check {
-        if let app = rule.closedApp(for: item.url, home: home), apps.isRunning(app.app) {
+        if let app = rule.closedApps(for: item.url, home: home).first(where: { apps.isRunning($0.app) }) {
             return .refused(.appRunning(app.displayName))
         }
         return check(item, cutoff: nil)

@@ -34,6 +34,16 @@
         }
       }
     },
+    "%@ could not be started: %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không khởi động được %@: %@"
+          }
+        }
+      }
+    },
     "%@ finished after %@. Your Mac can sleep again.": {
       "localizations": {
         "vi": {
@@ -100,6 +110,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ đã bận suốt 5 phút"
+          }
+        }
+      }
+    },
+    "%@ is looking around · started %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đang xem xét · bắt đầu %@"
           }
         }
       }
@@ -430,6 +450,16 @@
         }
       }
     },
+    "%lld items to the Trash (restorable)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mục vào Thùng rác (khôi phục được)"
+          }
+        }
+      }
+    },
     "%lld items were skipped": {
       "localizations": {
         "vi": {
@@ -606,6 +636,16 @@
         }
       }
     },
+    "AI": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI"
+          }
+        }
+      }
+    },
     "ALL GOOD": {
       "localizations": {
         "vi": {
@@ -672,6 +712,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thêm thư mục…"
+          }
+        }
+      }
+    },
+    "Add Osin's Tools": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm công cụ của Osin"
+          }
+        }
+      }
+    },
+    "Added": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã thêm"
+          }
+        }
+      }
+    },
+    "Adds Osin as a tool server, so you can ask Claude Code or Codex to clean up your Mac. Whatever it proposes appears in Cleanup › Clean with AI for you to review.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm Osin làm máy chủ công cụ để bạn nhờ Claude Code hoặc Codex dọn Mac. Mọi đề xuất sẽ hiện ở Dọn dẹp › Dọn bằng AI để bạn duyệt."
           }
         }
       }
@@ -752,6 +822,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Khi một app dùng trên 80% CPU suốt 5 phút, hoặc tăng thêm 2 GB bộ nhớ trong 30 phút. Mỗi app tối đa một lần mỗi ngày. Các app bạn chọn bỏ qua từ thông báo sẽ hiện ở đây."
+          }
+        }
+      }
+    },
+    "Anything to keep or focus on? (optional)": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có gì cần giữ hoặc cần chú ý không? (không bắt buộc)"
           }
         }
       }
@@ -1316,6 +1396,26 @@
         }
       }
     },
+    "Checking %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kiểm tra %@"
+          }
+        }
+      }
+    },
+    "Checking Docker": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang kiểm tra Docker"
+          }
+        }
+      }
+    },
     "Checking your Mac…": {
       "localizations": {
         "vi": {
@@ -1416,6 +1516,16 @@
         }
       }
     },
+    "Claude Code or Codex is needed": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần có Claude Code hoặc Codex"
+          }
+        }
+      }
+    },
     "Claude Code sessions": {
       "localizations": {
         "vi": {
@@ -1462,6 +1572,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dọn dẹp theo lịch"
+          }
+        }
+      }
+    },
+    "Clean with AI": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dọn bằng AI"
           }
         }
       }
@@ -1642,6 +1762,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Lịch sử hội thoại. Smart Scan liệt kê phiên không đụng tới trong 90 ngày."
+          }
+        }
+      }
+    },
+    "Could not add": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thêm được"
           }
         }
       }
@@ -1832,6 +1962,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Log chẩn đoán. Smart Scan xoá log cũ hơn một tuần."
+          }
+        }
+      }
+    },
+    "Discard": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ đề xuất"
           }
         }
       }
@@ -2269,6 +2409,26 @@
         }
       }
     },
+    "Folder names and sizes are sent to Anthropic or OpenAI through your own Claude Code or Codex, and count toward your plan's usage. Osin never signs in or keeps a token.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên thư mục và dung lượng được gửi tới Anthropic hoặc OpenAI qua chính Claude Code hoặc Codex của bạn, và tính vào hạn mức gói của bạn. Osin không bao giờ đăng nhập hay giữ token."
+          }
+        }
+      }
+    },
+    "Folder names and sizes are sent to Anthropic or OpenAI through your own Claude Code or Codex, with the CLI's usual instruction files (CLAUDE.md, AGENTS.md), and count toward your plan's usage. Osin never signs in or keeps a token.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tên thư mục và dung lượng được gửi tới Anthropic hoặc OpenAI qua chính Claude Code hoặc Codex của bạn, kèm các tệp hướng dẫn thường dùng của CLI (CLAUDE.md, AGENTS.md), và tính vào hạn mức gói của bạn. Osin không bao giờ đăng nhập hay giữ token."
+          }
+        }
+      }
+    },
     "Fonts": {
       "localizations": {
         "vi": {
@@ -2285,6 +2445,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phông chữ bạn đã cài."
+          }
+        }
+      }
+    },
+    "For example: don't touch the weather-api project; I don't use Docker any more": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ví dụ: đừng đụng vào dự án weather-api; tôi không dùng Docker nữa"
           }
         }
       }
@@ -2702,6 +2872,16 @@
         }
       }
     },
+    "Here is what the AI suggests removing.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đây là những gì AI đề xuất xoá."
+          }
+        }
+      }
+    },
     "Hide items": {
       "localizations": {
         "vi": {
@@ -2792,6 +2972,16 @@
         }
       }
     },
+    "Install one of them and sign in from Terminal (claude or codex), then check again. Osin uses your own sign-in.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài một trong hai và đăng nhập trong Terminal (claude hoặc codex), rồi kiểm tra lại. Osin dùng chính phiên đăng nhập của bạn."
+          }
+        }
+      }
+    },
     "Installed extensions. Old versions may linger after updates.": {
       "localizations": {
         "vi": {
@@ -2818,6 +3008,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tài khoản Internet thiết lập trong Cài đặt hệ thống."
+          }
+        }
+      }
+    },
+    "It can only propose. You review every item, and what you choose goes to the Trash, restorable from History.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI chỉ đề xuất. Bạn duyệt từng mục, và những gì bạn chọn sẽ vào Thùng rác, khôi phục được từ Lịch sử."
           }
         }
       }
@@ -3082,6 +3282,16 @@
         }
       }
     },
+    "Let your AI find what to clean": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để AI của bạn tìm thứ cần dọn"
+          }
+        }
+      }
+    },
     "Load": {
       "localizations": {
         "vi": {
@@ -3182,12 +3392,42 @@
         }
       }
     },
+    "Looking at the whole disk": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang xem toàn bộ ổ đĩa"
+          }
+        }
+      }
+    },
+    "Looking for Claude Code and Codex…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tìm Claude Code và Codex…"
+          }
+        }
+      }
+    },
     "Looking for space you can reclaim…": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đang tìm dung lượng có thể giải phóng…"
+          }
+        }
+      }
+    },
+    "Looking in %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang xem trong %@"
           }
         }
       }
@@ -3512,6 +3752,16 @@
         }
       }
     },
+    "Moved %@ to the Trash. Empty the Trash to free the space.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã chuyển %@ vào Thùng rác. Dọn sạch Thùng rác để giải phóng dung lượng."
+          }
+        }
+      }
+    },
     "Moved to Trash": {
       "localizations": {
         "vi": {
@@ -3768,6 +4018,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bình thường"
+          }
+        }
+      }
+    },
+    "Not found": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không tìm thấy"
           }
         }
       }
@@ -4205,6 +4465,16 @@
     "Osin": {
       "shouldTranslate": false
     },
+    "Osin can run Claude Code or Codex, if you use one, to look through your home folder like you would ask it in a chat, and propose what to remove.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nếu bạn dùng Claude Code hoặc Codex, Osin có thể chạy nó để xem thư mục nhà của bạn, như khi bạn hỏi nó trong cuộc trò chuyện, rồi đề xuất thứ nên xoá."
+          }
+        }
+      }
+    },
     "Osin checks every 30 seconds using about 0.1% CPU, and never cleans on its own.": {
       "localizations": {
         "vi": {
@@ -4341,6 +4611,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Osin, sức khoẻ %@"
+          }
+        }
+      }
+    },
+    "Other": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khác"
           }
         }
       }
@@ -4588,6 +4868,16 @@
         }
       }
     },
+    "Proposed by %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đề xuất bởi %@"
+          }
+        }
+      }
+    },
     "Puppeteer browsers": {
       "localizations": {
         "vi": {
@@ -4684,6 +4974,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thoát %@"
+          }
+        }
+      }
+    },
+    "Quit %@ first, or it stays": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy thoát %@ trước, nếu không mục này được giữ lại"
           }
         }
       }
@@ -4928,6 +5228,16 @@
         }
       }
     },
+    "Review the %lld items in Osin before anything is moved to the Trash.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duyệt %lld mục trong Osin trước khi có gì bị chuyển vào Thùng rác."
+          }
+        }
+      }
+    },
     "Review what's included": {
       "localizations": {
         "vi": {
@@ -4968,6 +5278,16 @@
         }
       }
     },
+    "Running Smart Scan": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chạy Smart Scan"
+          }
+        }
+      }
+    },
     "Running hot": {
       "localizations": {
         "vi": {
@@ -4994,6 +5314,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Chạy cho đến khi bạn tắt hoặc một quy tắc an toàn dừng nó."
+          }
+        }
+      }
+    },
+    "Runs your own Claude Code or Codex with only Osin's tools: folder names and sizes, never file contents, no terminal. It proposes; you choose what goes to the Trash. Folder names and sizes are sent to Anthropic or OpenAI and count toward your plan.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạy chính Claude Code hoặc Codex của bạn, chỉ với công cụ của Osin: tên thư mục và dung lượng, không bao giờ có nội dung tệp, không có terminal. AI đề xuất; bạn chọn thứ vào Thùng rác. Tên thư mục và dung lượng được gửi tới Anthropic hoặc OpenAI và tính vào gói của bạn."
+          }
+        }
+      }
+    },
+    "Runs your own Claude Code or Codex with only Osin's tools: folder names and sizes, never file contents, no terminal. It proposes; you choose what goes to the Trash. Folder names and sizes are sent to Anthropic or OpenAI, with the CLI's usual instruction files (CLAUDE.md, AGENTS.md), and count toward your plan.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạy chính Claude Code hoặc Codex của bạn, chỉ với công cụ của Osin: tên thư mục và dung lượng, không bao giờ có nội dung tệp, không có terminal. AI đề xuất; bạn chọn thứ vào Thùng rác. Tên thư mục và dung lượng được gửi tới Anthropic hoặc OpenAI, kèm các tệp hướng dẫn thường dùng của CLI (CLAUDE.md, AGENTS.md), và tính vào gói của bạn."
           }
         }
       }
@@ -5514,6 +5854,16 @@
         }
       }
     },
+    "Some items stayed. They are still listed below, so you can try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một số mục vẫn còn. Chúng vẫn nằm trong danh sách bên dưới để bạn thử lại."
+          }
+        }
+      }
+    },
     "Some locations could not be read.": {
       "localizations": {
         "vi": {
@@ -5744,6 +6094,16 @@
         }
       }
     },
+    "Stopped after 15 minutes.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã dừng sau 15 phút."
+          }
+        }
+      }
+    },
     "Storage": {
       "localizations": {
         "vi": {
@@ -5814,6 +6174,16 @@
         }
       }
     },
+    "Takes a few minutes. You can keep working meanwhile.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mất vài phút. Bạn vẫn làm việc bình thường trong lúc đó."
+          }
+        }
+      }
+    },
     "Tell me when an app stays busy or keeps growing": {
       "localizations": {
         "vi": {
@@ -5850,6 +6220,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dữ liệu tạm app này tự tạo lại khi cần."
+          }
+        }
+      }
+    },
+    "The AI finished without proposing anything.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI đã xong mà không đề xuất gì."
+          }
+        }
+      }
+    },
+    "The AI gets only Osin's tools: folder names and sizes, and what Osin knows about them. No file contents, no terminal, no web.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI chỉ có công cụ của Osin: tên thư mục, dung lượng và những gì Osin biết về chúng. Không có nội dung tệp, không terminal, không web."
           }
         }
       }
@@ -5960,6 +6350,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đường dẫn đi qua một liên kết tượng trưng (symlink)."
+          }
+        }
+      }
+    },
+    "The run ended without a proposal. %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần chạy kết thúc mà không có đề xuất. %@"
           }
         }
       }
@@ -6140,6 +6540,16 @@
         }
       }
     },
+    "Turn On Clean with AI": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bật Dọn bằng AI"
+          }
+        }
+      }
+    },
     "Turns Keep Awake on with your last choice, or off.": {
       "localizations": {
         "vi": {
@@ -6280,12 +6690,32 @@
         }
       }
     },
+    "Use Osin in your own sessions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng Osin trong phiên làm việc của bạn"
+          }
+        }
+      }
+    },
     "Used %@ · Swap %@": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Đã dùng %1$@ · Swap %2$@"
+          }
+        }
+      }
+    },
+    "Uses %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng %@"
           }
         }
       }
@@ -6523,6 +6953,16 @@
         }
       }
     },
+    "Writing the proposal": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang viết đề xuất"
+          }
+        }
+      }
+    },
     "Xcode DerivedData": {
       "localizations": {
         "vi": {
@@ -6549,6 +6989,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bạn có thể đổi bất cứ lúc nào trong Cài đặt."
+          }
+        }
+      }
+    },
+    "Your AI proposed freeing %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI của bạn đề xuất giải phóng %@"
           }
         }
       }
@@ -7029,6 +7479,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Cache uv"
+          }
+        }
+      }
+    },
+    "your AI session": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "phiên AI của bạn"
           }
         }
       }

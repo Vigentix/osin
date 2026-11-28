@@ -3,7 +3,6 @@ import OsinCore
 import SwiftUI
 import UserNotifications
 
-@main
 struct OsinApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
@@ -28,6 +27,8 @@ struct OsinApp: App {
                 .environment(appDelegate.keepAwake)
                 .environment(appDelegate.housekeeper)
                 .environment(appDelegate.spaceLens)
+                .environment(appDelegate.agent)
+                .environment(appDelegate.aiProposals)
                 .onWindowVisibilityChange { appDelegate.monitor.setVisible(.dashboard, $0) }
                 .onDisappear { appDelegate.monitor.setVisible(.dashboard, false) }
         }
@@ -59,6 +60,7 @@ struct OsinApp: App {
                 .environment(appDelegate.updater)
                 .environment(appDelegate.keepAwake)
                 .environment(appDelegate.housekeeper)
+                .environment(appDelegate.agent)
         }
     }
 }
@@ -72,6 +74,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     let navigator = Navigator()
     let keepAwake = KeepAwakeController()
     let spaceLens = SpaceLensModel()
+    let agent = AgentRunner()
+    let aiProposals = AIProposalsModel()
     let updater: Updater
     let housekeeper: Housekeeper
     private let notifier: Notifier
@@ -108,6 +112,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         }
         scan.onFreed = { [housekeeper] bytes in housekeeper.recordFreed(bytes) }
         spaceLens.trasher = { [scan] item in await scan.trashSelected(item) }
+        aiProposals.trasher = { [scan] items in await scan.trashSelectedItems(items) }
+        aiProposals.startListening { [notifier] proposal in notifier.aiProposal(proposal) }
         scan.onScanFinished = { [weak self] in
             guard let self else { return }
             monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
@@ -152,6 +158,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                         keepAwake: keepAwake,
                         housekeeper: housekeeper,
                         spaceLens: spaceLens,
+                        agent: agent,
+                        aiProposals: aiProposals,
                         into: directory
                     )
                 }
@@ -180,6 +188,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     func applicationWillTerminate(_: Notification) {
         housekeeper.saveUsage()
+        agent.stopNow()
     }
 
     /// Clicking an alert opens the page that helps with it; Watch buttons quit or ignore the app.

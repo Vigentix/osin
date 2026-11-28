@@ -197,11 +197,34 @@ public struct CleanupRule: Codable, Sendable, Identifiable, Equatable {
         special = try container.decodeIfPresent(Special.self, forKey: .special)
     }
 
-    /// The app that must be closed before `url` is cleaned, if any.
-    func closedApp(for url: URL, home: URL) -> ClosedApp? {
-        closedApps.first { entry in
-            let folder = home.appendingPathComponent(String(entry.folder.dropFirst(2))).standardizedFileURL.path
-            return url.standardizedFileURL.path.hasPrefix(folder + "/")
+    /// Apps whose folders the bundled rules know: items picked by hand (Space Lens, AI proposals) in
+    /// those folders wait for the app to be closed too.
+    static let bundledClosedApps: [ClosedApp] = ((try? bundled()) ?? []).flatMap(\.closedApps)
+
+    /// The app (display name) that must be quit before a hand-picked item can go, if it is running.
+    public static func runningAppToQuit(for url: URL, home: URL, running: Set<String>) -> String? {
+        let rule = CleanupRule(
+            id: "",
+            name: "",
+            detail: "",
+            tier: .review,
+            action: .trash,
+            regenerable: false,
+            paths: [],
+            special: .userSelected
+        )
+        return rule.closedApps(for: url, home: home.resolvingSymlinksInPath().standardizedFileURL)
+            .first { running.contains($0.app) }?.displayName
+    }
+
+    /// The apps that must be closed before `url` is cleaned: `url` is one of their folders, inside one,
+    /// or contains one (trashing `…/Google` takes Chrome's profile with it). Case is ignored, as on APFS.
+    func closedApps(for url: URL, home: URL) -> [ClosedApp] {
+        let apps = special == .userSelected ? Self.bundledClosedApps : closedApps
+        let path = url.standardizedFileURL.path.lowercased()
+        return apps.filter { entry in
+            let folder = home.appendingPathComponent(String(entry.folder.dropFirst(2))).standardizedFileURL.path.lowercased()
+            return path == folder || path.hasPrefix(folder + "/") || folder.hasPrefix(path + "/")
         }
     }
 

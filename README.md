@@ -146,6 +146,21 @@ For everything no rule knows about, Space Lens measures your home folder (about 
   <img src="docs/images/space-lens-light.png" alt="Space Lens: a treemap of the home folder with Developer, Library and .colima as the largest blocks, and a list with sizes and explanations">
 </picture>
 
+### Clean with AI, using your own Claude Code or Codex
+
+If you already use [Claude Code](https://claude.com/claude-code) or [Codex](https://developers.openai.com/codex), Osin can run it to look through your home folder the way you would ask it in a chat, and propose what to remove. It is off until you turn it on in Settings › AI.
+
+- **The AI gets only Osin's tools:** disk overview, folder sizes, what Osin knows about a folder, Smart Scan results and Docker usage. It never sees file contents and has no terminal, no file access and no web: Osin starts the CLI with every built-in tool switched off.
+- **It can only propose.** You review every item with its reason, and what you choose goes to the Trash through the same checks as Space Lens. Protected places are refused, and an app's cache waits until that app is closed.
+- **Osin never signs in.** It uses the CLI you are already signed in to, so usage counts toward your own plan. Folder names and sizes are sent to Anthropic or OpenAI by that CLI, together with its usual instruction files (your `CLAUDE.md` or `AGENTS.md`), as in any session.
+
+You can also add Osin's tools to your own sessions (Settings › AI › Add Osin's Tools) and ask "clean up my Mac" from Claude Code or Codex; the proposal shows up in Osin for review.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/ai-review-dark.png">
+  <img src="docs/images/ai-review-light.png" alt="Clean with AI: Claude Code's proposal of 9.4 GB grouped into browser, developer caches, app caches and old projects, each item with a reason, Slack's cache waiting for Slack to quit, and Discard or Move to Trash">
+</picture>
+
 ### Activity that groups apps with their helpers
 
 Browser tabs, language servers and build services are counted with the app they belong to, so the numbers match what you can actually quit. Sort by memory or CPU, inspect the largest processes of an app, and quit it from the same place. System processes are listed but never offered for quitting.
@@ -178,12 +193,13 @@ Osin removes files on your Mac, so these rules are enforced in code and covered 
 6. **Every action is logged** in `~/Library/Application Support/Osin/cleanup-log.jsonl`.
 7. **Scheduled chores only run Safe groups you ticked**, never irreversible ones, and only while you are away from the Mac. New groups stay off until you turn them on.
 8. **Apps are never cleaned while open:** browser and app caches wait until the app is closed, and cold projects are checked again right before cleaning.
+9. **AI can only propose.** Clean with AI has no tool that removes anything; what you approve goes to the Trash through the same checks as everything else.
 
 Osin runs in user space: no privileged helper, no kernel extension. Full Disk Access is optional and only lets the scan reach folders macOS protects, such as old device backups. The one admin action, `purge` in Settings › Advanced, asks for your password every time and explains why its effect is temporary.
 
 ## Privacy
 
-No accounts, no analytics, no crash reporting. Metrics history and the cleanup log stay on your Mac. The only network request is the update check, which you can turn off in Settings.
+No accounts, no analytics, no crash reporting. Metrics history and the cleanup log stay on your Mac. Osin's only network request is the update check, which you can turn off in Settings. Clean with AI is off by default; when you run it, your own Claude Code or Codex sends Osin's folder names and sizes (never file contents), plus its own usual instruction files, to Anthropic or OpenAI.
 
 ## Build from source
 

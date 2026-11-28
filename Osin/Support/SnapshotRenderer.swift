@@ -24,12 +24,12 @@
             return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
         }
 
+        // Demo data, or a real Smart Scan when rendering live screens.
         // swiftlint:disable:next function_parameter_count
-        static func run(
+        private static func prepare(
             monitor: SystemMonitor, scan: ScanCoordinator, keepAwake: KeepAwakeController, housekeeper: Housekeeper,
-            spaceLens: SpaceLensModel, into directory: URL
+            spaceLens: SpaceLensModel, aiProposals: AIProposalsModel
         ) async {
-            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             if DemoData.isActive {
                 monitor.loadDemo()
                 scan.loadDemo()
@@ -37,6 +37,7 @@
                 monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
                 housekeeper.loadDemo(DemoData.weeklySummaries())
                 spaceLens.loadDemo(DemoData.spaceTree())
+                aiProposals.loadDemo(DemoData.aiProposal())
             } else {
                 monitor.setVisible(.dashboard, true)
                 // Smart Scan is read-only; skip Downloads to avoid a permission prompt.
@@ -48,12 +49,25 @@
                 monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
                 try? await Task.sleep(for: .seconds(6))
             }
+        }
+
+        // swiftlint:disable:next function_parameter_count
+        static func run(
+            monitor: SystemMonitor, scan: ScanCoordinator, keepAwake: KeepAwakeController, housekeeper: Housekeeper,
+            spaceLens: SpaceLensModel, agent: AgentRunner, aiProposals: AIProposalsModel, into directory: URL
+        ) async {
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            await prepare(
+                monitor: monitor, scan: scan, keepAwake: keepAwake, housekeeper: housekeeper,
+                spaceLens: spaceLens, aiProposals: aiProposals
+            )
 
             let navigator = Navigator()
             let screens = [
                 Screen(name: "overview", section: .overview, size: CGSize(width: 1200, height: 1200), view: nil),
                 Screen(name: "cleanup", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "space-lens", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil, cleanupTab: .spaceLens),
+                Screen(name: "ai-review", section: .cleanup, size: CGSize(width: 1200, height: 900), view: nil, cleanupTab: .cleanWithAI),
                 Screen(name: "activity", section: .activity, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 940), view: nil),
                 Screen(name: "system-scrolled", section: .system, size: CGSize(width: 1200, height: 700), view: nil, scrollY: 320),
@@ -95,6 +109,8 @@
                         .environment(keepAwake)
                         .environment(housekeeper)
                         .environment(spaceLens)
+                        .environment(agent)
+                        .environment(aiProposals)
                         .environment(Updater())
                         .environment(\.colorScheme, scheme)
                         .frame(width: screen.size.width, height: screen.size.height)

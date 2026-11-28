@@ -108,9 +108,9 @@ Each milestone ends with a working, demoable build.
 - [x] Launch scan reuses sizes measured in the last 24 h; project activity checks git first and stops at the first recent file (launch: ~17 s CPU to 2–6 s, peak 173 MB to ~50 MB)
 
 ## v0.6 — Clean with AI
-- [ ] Runs the user's own Claude Code or Codex (no Osin login, no tokens) with Osin's MCP tools only: no shell, no file contents
-- [ ] The AI proposes, the user approves in Osin; everything goes to the Trash and History
-- [ ] Live progress, notes for the AI, "Add Osin to Claude Code / Codex"; off by default with a clear privacy notice
+- [x] Runs the user's own Claude Code or Codex (no Osin login, no tokens) with Osin's MCP tools only: no shell, no file contents
+- [x] The AI proposes, the user approves in Osin; everything goes to the Trash and History
+- [x] Live progress, notes for the AI, "Add Osin to Claude Code / Codex"; off by default with a clear privacy notice
 
 ## v0.7 — Clean uninstall (Developer ID recommended first)
 - [ ] Apps page: drag in or pick from a list (size, last seen); app + `~/Library` leftovers to the Trash via Finder; `/Library` leftovers listed

@@ -28,6 +28,7 @@ struct CleanupView: View {
                 switch navigator.cleanupTab {
                 case .smartScan: smartScan
                 case .spaceLens: SpaceLensView()
+                case .cleanWithAI: AICleanView()
                 case .largeFiles: LargeFilesView(reload: largeFilesReload, loading: $largeFilesLoading)
                 case .history: CleanupHistoryView(totalFreed: $historyTotal)
                 }
@@ -60,6 +61,8 @@ struct CleanupView: View {
                 Button("Rescan") { lens.scan() }
                     .buttonStyle(SecondaryButtonStyle())
             }
+        case .cleanWithAI:
+            EmptyView()
         case .largeFiles:
             Button("Refresh") { largeFilesReload += 1 }
                 .buttonStyle(SecondaryButtonStyle())
