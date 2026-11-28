@@ -85,6 +85,9 @@ public struct Scanner: Sendable {
     public let projectRoots: [URL]
     private let protected: ProtectedPaths
     private let runningApps: @Sendable () -> Set<String>
+    /// Recent measurements to reuse (the quiet launch scan); `maxCacheAge` 0 measures everything.
+    private let sizeCache: SizeCache?
+    private let maxCacheAge: TimeInterval
 
     /// Project folders searched by default (cold projects, toolchain pins).
     public static let defaultProjectRoots = [
@@ -94,8 +97,12 @@ public struct Scanner: Sendable {
     public init(
         home: URL = FileManager.default.homeDirectoryForCurrentUser,
         projectRoots: [URL] = [],
-        runningApps: @escaping @Sendable () -> Set<String> = AppActivity.runningAppNames
+        runningApps: @escaping @Sendable () -> Set<String> = AppActivity.runningAppNames,
+        sizeCache: SizeCache? = nil,
+        maxCacheAge: TimeInterval = 0
     ) {
+        self.sizeCache = sizeCache
+        self.maxCacheAge = maxCacheAge
         let resolved = home.resolvingSymlinksInPath().standardizedFileURL
         self.home = resolved
         protected = ProtectedPaths(home: resolved)
@@ -115,6 +122,8 @@ public struct Scanner: Sendable {
         var claimed = ClaimedPaths()
         var results: [RuleScanResult] = []
         let running = rules.contains { !$0.closedApps.isEmpty } ? runningApps() : []
+        // Several targets in one project (node_modules and .venv) share one activity check.
+        var activity: [String: Bool] = [:]
         for (index, rule) in rules.enumerated() {
             try Task.checkCancellation()
             progress(ScanProgress(ruleID: rule.id, index: index, count: rules.count, completed: nil))
@@ -137,23 +146,28 @@ public struct Scanner: Sendable {
                 if rule.special == .unusedToolchains, kept.contains(path) {
                     continue
                 }
-                if let coldCutoff, let project = candidate.project,
-                   ProjectActivity.isActive(
-                       project: project,
-                       target: candidate.url,
-                       within: candidate.searchRoot ?? project,
-                       since: coldCutoff
-                   )
-                {
-                    continue
+                if let coldCutoff, let project = candidate.project {
+                    let active = activity[project.path] ?? ProjectActivity.isActive(
+                        project: project, target: candidate.url, within: candidate.searchRoot ?? project, since: coldCutoff
+                    )
+                    activity[project.path] = active
+                    if active {
+                        continue
+                    }
                 }
                 if let cutoff, let modified = candidate.modified, modified > cutoff {
                     continue
                 }
                 // Identity before measuring, checked again after: the numbers must belong to this item.
                 guard let identity = FileIdentity(path: path) else { continue }
-                let usage = try DiskUsage.measure(candidate.url)
-                guard FileIdentity(path: path) == identity else { continue }
+                let usage: DiskUsage.Usage
+                if let cached = sizeCache?.lookup(path, identity: identity, maxAge: maxCacheAge) {
+                    usage = cached
+                } else {
+                    usage = try DiskUsage.measure(candidate.url)
+                    guard FileIdentity(path: path) == identity else { continue }
+                    sizeCache?.store(path, identity: identity, usage: usage)
+                }
                 let newest = [candidate.modified, usage.newestModification].compactMap(\.self).max()
                 // A folder's own date only changes when entries are added or removed directly in it,
                 // so age is judged by the newest thing inside (an active node_modules stays put). If part

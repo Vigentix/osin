@@ -69,6 +69,8 @@ final class ScanCoordinator {
     /// Bumped for every scan; a cancelled scan that is still finishing its last await checks it and
     /// stops instead of writing into the newer scan's state.
     @ObservationIgnored private var scanGeneration = 0
+    /// Recent sizes, reused by the quiet launch scan (a user-started scan measures afresh and updates it).
+    @ObservationIgnored lazy var sizeCache = SizeCache(url: SizeCache.defaultURL())
     @ObservationIgnored let log: CleanupLog? = (try? CleanupLog.defaultURL()).map { CleanupLog(url: $0) }
     @ObservationIgnored lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0, projectRoots: { Preferences.projectRoots }) }
 
@@ -366,7 +368,8 @@ final class ScanCoordinator {
             ) }
             let paths = rules.map { $0.paths.first ?? $0.find?.roots.first ?? "" }
 
-            let results = try await Scanner(projectRoots: Preferences.projectRoots).scan(rules) { event in
+            let scanner = Scanner(projectRoots: Preferences.projectRoots, sizeCache: sizeCache, maxCacheAge: silent ? 86400 : 0)
+            let results = try await scanner.scan(rules) { event in
                 Task { @MainActor in
                     guard self.scanGeneration == generation else { return }
                     if let result = event.completed {
@@ -396,6 +399,8 @@ final class ScanCoordinator {
             if !silent {
                 phase = .report
             }
+            let cache = sizeCache
+            Task.detached(priority: .utility) { cache.save() }
             onScanFinished?()
         } catch is CancellationError {
             return

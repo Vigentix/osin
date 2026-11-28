@@ -466,3 +466,44 @@ struct DeepCleanSafetyRoundSevenTests {
         #expect(pins.incomplete)
     }
 }
+
+struct SizeCacheTests {
+    private let rule = CleanupRule(
+        id: "caches", name: "c", detail: "", tier: .safe, action: .delete, regenerable: true, paths: ["~/Library/Caches/*"]
+    )
+
+    @Test func aRecentMeasurementIsReusedForTheSameItem() async throws {
+        let fixture = try FixtureHome()
+        let blob = try fixture.file("Library/Caches/app/blob", bytes: 100_000)
+        let cache = SizeCache(url: fixture.root.appendingPathComponent("sizes.json"))
+        let first = try #require(try await Scanner(home: fixture.home, sizeCache: cache, maxCacheAge: 86400).scan([rule]).first)
+        try Data(repeating: 1, count: 900_000).write(to: blob) // grows; same folder
+        let cached = try #require(try await Scanner(home: fixture.home, sizeCache: cache, maxCacheAge: 86400).scan([rule]).first)
+        #expect(cached.totalBytes == first.totalBytes)
+        let fresh = try #require(try await Scanner(home: fixture.home, sizeCache: cache, maxCacheAge: 0).scan([rule]).first)
+        #expect(fresh.totalBytes > first.totalBytes)
+    }
+
+    @Test func aReplacedItemIsMeasuredAgain() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Library/Caches/app/blob", bytes: 100_000)
+        let cache = SizeCache(url: nil)
+        _ = try await Scanner(home: fixture.home, sizeCache: cache, maxCacheAge: 86400).scan([rule])
+        try FileManager.default.removeItem(at: fixture.home.appendingPathComponent("Library/Caches/app"))
+        try fixture.file("Library/Caches/app/other", bytes: 800_000)
+        let result = try #require(try await Scanner(home: fixture.home, sizeCache: cache, maxCacheAge: 86400).scan([rule]).first)
+        #expect(result.totalBytes >= 800_000)
+    }
+
+    @Test func savedEntriesLoadBack() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Library/Caches/app/blob", bytes: 100_000)
+        let url = fixture.root.appendingPathComponent("sizes.json")
+        let cache = SizeCache(url: url)
+        _ = try await Scanner(home: fixture.home, sizeCache: cache, maxCacheAge: 86400).scan([rule])
+        cache.save()
+        let path = fixture.home.resolvingSymlinksInPath().appendingPathComponent("Library/Caches/app").path
+        let reloaded = SizeCache(url: url)
+        #expect(try reloaded.lookup(path, identity: #require(FileIdentity(path: path)), maxAge: 86400) != nil)
+    }
+}

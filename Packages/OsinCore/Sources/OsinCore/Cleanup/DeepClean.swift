@@ -48,32 +48,93 @@ enum ProjectActivity {
     /// Files looked at per project before giving up (and keeping it).
     static let fileBudget = 25000
 
+    /// Git first (a few `lstat`s), then the sources, stopping at the first recent file.
     static func isActive(project: URL, target: URL, within root: URL, since cutoff: Date) -> Bool {
-        var budget = fileBudget
-        switch newestFile(in: project, skipping: target.standardizedFileURL.path, budget: &budget) {
-        case .unknown: return true
-        case let .newest(date): if date.map({ $0 > cutoff }) ?? false {
-                return true
-            }
+        switch gitActivity(project: project, within: root, since: cutoff) {
+        case .active: return true
+        case .quiet, .noRepository: break
         }
-        // The repository may start above the project (a package in a monorepo).
+        return recentFile(in: project, skipping: target.standardizedFileURL.path, since: cutoff)
+    }
+
+    private enum GitActivity {
+        case active
+        case quiet
+        case noRepository
+    }
+
+    /// The repository may start above the project (a package in a monorepo). A `.git` that can't be
+    /// followed, or markers that can't be read, count as active.
+    private static func gitActivity(project: URL, within root: URL, since cutoff: Date) -> GitActivity {
         var directory = project
         while directory.path.hasPrefix(root.path) {
             let git = directory.appendingPathComponent(".git")
             if let metadata = gitDirectory(git, in: directory) {
-                // A marker that exists but can't be read means we can't tell: keep the project.
-                return gitMarkers.contains { marker in
+                let active = gitMarkers.contains { marker in
                     switch markerDate(metadata.appendingPathComponent(marker)) {
                     case .missing: false
                     case .unreadable: true
                     case let .modified(date): date > cutoff
                     }
                 }
+                return active ? .active : .quiet
             } else if FileManager.default.fileExists(atPath: git.path) {
-                return true // a .git we cannot follow: keep the project
+                return .active
             }
             guard directory.path != root.path else { break }
             directory.deleteLastPathComponent()
+        }
+        return .noRepository
+    }
+
+    /// A folder the activity walk and pin search skip: a dependency or build folder confirmed by its
+    /// marker (a `target` only next to `Cargo.toml`), so a source folder that shares the name still counts.
+    static func isDependencyFolder(_ name: String, at url: URL) -> Bool {
+        let parent = url.deletingLastPathComponent()
+        func exists(_ path: String, in folder: URL) -> Bool {
+            FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path)
+        }
+        switch name {
+        case "node_modules", ".git", ".gradle", "DerivedData": return true
+        case ".venv", "venv": return exists("pyvenv.cfg", in: url)
+        case "target": return exists("Cargo.toml", in: parent)
+        case "Pods": return exists("Podfile", in: parent)
+        case ".build": return exists("Package.swift", in: parent)
+        default: return false
+        }
+    }
+
+    /// Whether any file in the project's sources changed since `cutoff` (dependency folders and the
+    /// target skipped). Stops at the first one; anything unreadable, or too many files, counts as recent.
+    static func recentFile(in project: URL, skipping skipped: String, since cutoff: Date) -> Bool {
+        guard let cPath = strdup(project.path) else { return true }
+        defer { free(cPath) }
+        var paths: [UnsafeMutablePointer<CChar>?] = [cPath, nil]
+        guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_NOCHDIR | FTS_XDEV, nil) else { return true }
+        defer { fts_close(fts) }
+        let cutoffSeconds = Int(cutoff.timeIntervalSince1970)
+        var budget = fileBudget
+        while let entry = fts_read(fts) {
+            budget -= 1
+            guard budget > 0 else { return true }
+            let info = entry.pointee
+            switch Int32(info.fts_info) {
+            case FTS_D:
+                guard info.fts_level > 0 else { continue }
+                let url = URL(fileURLWithPath: String(cString: info.fts_path))
+                // Only folders are skipped by name (and only when their marker confirms it).
+                if url.path == skipped || isDependencyFolder(url.lastPathComponent, at: url) {
+                    fts_set(fts, entry, FTS_SKIP)
+                }
+            case FTS_F:
+                if let stat = info.fts_statp?.pointee, stat.st_mtimespec.tv_sec > cutoffSeconds {
+                    return true
+                }
+            case FTS_DNR, FTS_ERR, FTS_NS:
+                return true // can't see it: can't call the project cold
+            default:
+                break
+            }
         }
         return false
     }
@@ -105,59 +166,6 @@ enum ProjectActivity {
         var info = stat()
         guard lstat(url.path, &info) == 0 else { return errno == ENOENT ? .missing : .unreadable }
         return .modified(Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec)))
-    }
-
-    enum Newest {
-        case newest(Date?)
-        case unknown
-    }
-
-    /// Newest file (not folder: a folder's date moves when anything is added) in the project's sources.
-    /// A folder the activity walk and pin search skip: a dependency or build folder confirmed by its
-    /// marker (a `target` only next to `Cargo.toml`), so a source folder that shares the name still counts.
-    static func isDependencyFolder(_ name: String, at url: URL) -> Bool {
-        let parent = url.deletingLastPathComponent()
-        func exists(_ path: String, in folder: URL) -> Bool {
-            FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path)
-        }
-        switch name {
-        case "node_modules", ".git", ".gradle", "DerivedData": return true
-        case ".venv", "venv": return exists("pyvenv.cfg", in: url)
-        case "target": return exists("Cargo.toml", in: parent)
-        case "Pods": return exists("Podfile", in: parent)
-        case ".build": return exists("Package.swift", in: parent)
-        default: return false
-        }
-    }
-
-    private static func newestFile(in directory: URL, skipping skipped: String, budget: inout Int) -> Newest {
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return .unknown }
-        var newest: Date?
-        for name in names {
-            budget -= 1
-            guard budget > 0 else { return .unknown }
-            let url = directory.appendingPathComponent(name)
-            guard url.standardizedFileURL.path != skipped else { continue }
-            var info = stat()
-            guard lstat(url.path, &info) == 0 else { return .unknown } // can't see it: can't call the project cold
-            let type = info.st_mode & S_IFMT
-            if type == S_IFDIR {
-                // Only folders are skipped by name: a source file called `build` still counts.
-                if isDependencyFolder(name, at: url) {
-                    continue
-                }
-                switch newestFile(in: url, skipping: skipped, budget: &budget) {
-                case .unknown: return .unknown
-                case let .newest(inner): if let inner {
-                        newest = max(newest ?? inner, inner)
-                    }
-                }
-            } else if type == S_IFREG {
-                let date = Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec))
-                newest = max(newest ?? date, date)
-            }
-        }
-        return .newest(newest)
     }
 }
 
