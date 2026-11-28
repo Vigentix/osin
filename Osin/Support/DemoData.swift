@@ -275,7 +275,7 @@
                     modified: now
                 ),
                 ScanItem(
-                    url: home.appendingPathComponent("Library/Application Support/Google/Chrome/Default/Service Worker/CacheStorage"),
+                    url: home.appendingPathComponent("Library/Application Support/Google/Chrome/Default/Code Cache"),
                     bytes: 1_840_000_000, modified: now, blockedBy: "Google Chrome"
                 )
             ]

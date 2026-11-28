@@ -213,9 +213,16 @@ public struct Scanner: Sendable {
               fixed.count < components.count else { return } // validation requires a glob; refuse otherwise
 
         var level = [resolvedRoot]
-        for component in components.dropFirst(fixed.count) {
+        let globbed = Array(components.dropFirst(fixed.count))
+        for (index, component) in globbed.enumerated() {
             var next: [URL] = []
             for directory in level {
+                // Folders on the way are entered only if they are real (not links) and not protected:
+                // listing a linked ~/Documents would show a macOS privacy prompt.
+                if index > 0 {
+                    let values = try? directory.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
+                    guard values?.isSymbolicLink != true, values?.isDirectory == true, !protected.denies(directory) else { continue }
+                }
                 let entries: [URL]
                 do {
                     entries = try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: Self.keys)
@@ -225,7 +232,6 @@ public struct Scanner: Sendable {
                     }
                     continue
                 }
-                // A symlinked folder on the way is caught below: its matches' real paths differ.
                 for entry in entries where Self.matches(component, entry.lastPathComponent) {
                     next.append(entry)
                 }

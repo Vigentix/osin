@@ -61,8 +61,13 @@ enum ProjectActivity {
         while directory.path.hasPrefix(root.path) {
             let git = directory.appendingPathComponent(".git")
             if let metadata = gitDirectory(git, in: directory) {
+                // A marker that exists but can't be read means we can't tell: keep the project.
                 return gitMarkers.contains { marker in
-                    modified(metadata.appendingPathComponent(marker)).map { $0 > cutoff } ?? false
+                    switch markerDate(metadata.appendingPathComponent(marker)) {
+                    case .missing: false
+                    case .unreadable: true
+                    case let .modified(date): date > cutoff
+                    }
                 }
             } else if FileManager.default.fileExists(atPath: git.path) {
                 return true // a .git we cannot follow: keep the project
@@ -90,10 +95,16 @@ enum ProjectActivity {
         return target.standardizedFileURL
     }
 
-    private static func modified(_ url: URL) -> Date? {
+    private enum MarkerDate {
+        case missing
+        case unreadable
+        case modified(Date)
+    }
+
+    private static func markerDate(_ url: URL) -> MarkerDate {
         var info = stat()
-        guard lstat(url.path, &info) == 0 else { return nil }
-        return Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec))
+        guard lstat(url.path, &info) == 0 else { return errno == ENOENT ? .missing : .unreadable }
+        return .modified(Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec)))
     }
 
     enum Newest {
@@ -289,8 +300,11 @@ enum ToolchainUsage {
     static func tomlString(_ line: String) -> String? {
         guard let equals = line.firstIndex(of: "=") else { return nil }
         let value = line[line.index(after: equals)...].trimmingCharacters(in: .whitespaces)
-        guard value.count >= 2, value.hasPrefix("\""), value.hasSuffix("\"") else { return nil }
-        return String(value.dropFirst().dropLast())
+        // The first quoted string; anything after it must be a comment.
+        guard value.hasPrefix("\""), let close = value.dropFirst().firstIndex(of: "\"") else { return nil }
+        let rest = value[value.index(after: close)...].trimmingCharacters(in: .whitespaces)
+        guard rest.isEmpty || rest.hasPrefix("#") else { return nil }
+        return String(value[value.index(after: value.startIndex) ..< close])
     }
 }
 
@@ -323,12 +337,16 @@ enum ProjectPins {
             if record(name, at: url, into: &pins) {
                 continue
             }
-            var info = stat()
             // Real folders only (no symlinks), not hidden or generated ones.
-            guard depth > 1, !name.hasPrefix("."), !ProjectActivity.generated.contains(name),
-                  lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFDIR
-            else { continue }
-            visit(url, depth: depth - 1, into: &pins)
+            guard depth > 1, !name.hasPrefix("."), !ProjectActivity.generated.contains(name) else { continue }
+            var info = stat()
+            guard lstat(url.path, &info) == 0 else {
+                pins.incomplete = true // something we can't even look at
+                continue
+            }
+            if info.st_mode & S_IFMT == S_IFDIR {
+                visit(url, depth: depth - 1, into: &pins)
+            }
         }
     }
 
@@ -346,11 +364,14 @@ enum ProjectPins {
             pins.python += lines
         default:
             // rust-toolchain may be TOML too (`[toolchain]` then `channel = "…"`), or just the channel.
-            let channels = lines.filter { $0.hasPrefix("channel") }.compactMap(ToolchainUsage.tomlString)
+            let meaningful = lines.filter { !$0.hasPrefix("#") }
+            let channels = meaningful.filter { $0.hasPrefix("channel") }.compactMap(ToolchainUsage.tomlString)
             if !channels.isEmpty {
                 pins.rust += channels
-            } else if name == "rust-toolchain", let first = lines.first, !first.hasPrefix("[") {
-                pins.rust.append(first)
+            } else if name == "rust-toolchain", meaningful.count == 1, let only = meaningful.first,
+                      !only.contains("="), !only.hasPrefix("[")
+            {
+                pins.rust.append(only) // the legacy form: just the channel
             } else {
                 pins.incomplete = true // a file we don't understand
             }

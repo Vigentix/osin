@@ -114,8 +114,7 @@ public enum DockerInventory {
     static func danglingIDs(docker: String, host: String) async -> [String]? {
         guard let data = try? await ProcessRunner.run(
             docker, ["-H", host, "image", "ls", "--filter", "dangling=true", "--no-trunc", "--format", "{{.ID}}"], timeout: 30
-        ) else { return nil }
-        guard let text = String(bytes: data, encoding: .utf8) else { return nil }
+        ), let text = String(bytes: data, encoding: .utf8) else { return nil }
         return text.split(whereSeparator: \.isNewline).map(String.init)
     }
 

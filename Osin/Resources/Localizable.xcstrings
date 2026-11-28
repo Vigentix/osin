@@ -1686,6 +1686,16 @@
         }
       }
     },
+    "Data websites and web apps keep for offline use. Most of it is downloaded again, but some web apps keep things only there. Moved to the Trash, skipped while the app is open.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu trang web và web app giữ để dùng khi không có mạng. Phần lớn sẽ được tải lại, nhưng có web app chỉ lưu dữ liệu ở đây. Được đưa vào Thùng rác, bỏ qua khi app đang mở."
+          }
+        }
+      }
+    },
     "Debug symbols copied from connected devices. Xcode copies them again when a device is connected.": {
       "localizations": {
         "vi": {
@@ -4408,6 +4418,16 @@
         }
       }
     },
+    "Page, script and graphics caches of browsers and desktop apps such as Chrome, Edge, Slack and VS Code. Cookies, history, passwords, messages and website storage are not touched. Skipped while the app is open.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache trang, script và đồ hoạ của trình duyệt và app như Chrome, Edge, Slack, VS Code. Không đụng cookie, lịch sử, mật khẩu, tin nhắn hay dữ liệu lưu của trang web. Bỏ qua khi app đang mở."
+          }
+        }
+      }
+    },
     "Part of the item could not be read, so Osin could not confirm it is old. It was kept.": {
       "localizations": {
         "vi": {
@@ -6359,6 +6379,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Theo dõi app"
+          }
+        }
+      }
+    },
+    "Website offline storage": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu ngoại tuyến của trang web"
           }
         }
       }

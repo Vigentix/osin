@@ -87,70 +87,59 @@
   {
     "id": "browser.caches",
     "name": "Browser and app caches",
-    "detail": "Page, script and graphics caches of browsers and desktop apps such as Chrome, Edge, Slack and VS Code. Cookies, history, passwords and messages are not touched. Skipped while the app is open.",
+    "detail": "Page, script and graphics caches of browsers and desktop apps such as Chrome, Edge, Slack and VS Code. Cookies, history, passwords, messages and website storage are not touched. Skipped while the app is open.",
     "tier": "safe",
     "action": "delete",
     "regenerable": true,
     "paths": [
-      "~/Library/Application Support/Google/Chrome/*/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Google/Chrome/*/Code Cache/*",
       "~/Library/Application Support/Google/Chrome/*/GPUCache/*",
       "~/Library/Application Support/Google/Chrome/*/DawnGraphiteCache/*",
       "~/Library/Application Support/Google/Chrome/*/DawnWebGPUCache/*",
-      "~/Library/Application Support/Microsoft Edge/*/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Microsoft Edge/*/Code Cache/*",
       "~/Library/Application Support/Microsoft Edge/*/GPUCache/*",
       "~/Library/Application Support/Microsoft Edge/*/DawnGraphiteCache/*",
       "~/Library/Application Support/Microsoft Edge/*/DawnWebGPUCache/*",
-      "~/Library/Application Support/BraveSoftware/Brave-Browser/*/Service Worker/CacheStorage/*",
       "~/Library/Application Support/BraveSoftware/Brave-Browser/*/Code Cache/*",
       "~/Library/Application Support/BraveSoftware/Brave-Browser/*/GPUCache/*",
       "~/Library/Application Support/BraveSoftware/Brave-Browser/*/DawnGraphiteCache/*",
       "~/Library/Application Support/BraveSoftware/Brave-Browser/*/DawnWebGPUCache/*",
-      "~/Library/Application Support/Arc/User Data/*/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Arc/User Data/*/Code Cache/*",
       "~/Library/Application Support/Arc/User Data/*/GPUCache/*",
       "~/Library/Application Support/Arc/User Data/*/DawnGraphiteCache/*",
       "~/Library/Application Support/Arc/User Data/*/DawnWebGPUCache/*",
-      "~/Library/Application Support/Vivaldi/*/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Vivaldi/*/Code Cache/*",
       "~/Library/Application Support/Vivaldi/*/GPUCache/*",
       "~/Library/Application Support/Vivaldi/*/DawnGraphiteCache/*",
       "~/Library/Application Support/Vivaldi/*/DawnWebGPUCache/*",
       "~/Library/Application Support/Slack/Cache/*",
-      "~/Library/Application Support/Slack/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Slack/Code Cache/*",
       "~/Library/Application Support/Slack/GPUCache/*",
       "~/Library/Application Support/Slack/DawnGraphiteCache/*",
       "~/Library/Application Support/Slack/DawnWebGPUCache/*",
       "~/Library/Application Support/discord/Cache/*",
-      "~/Library/Application Support/discord/Service Worker/CacheStorage/*",
       "~/Library/Application Support/discord/Code Cache/*",
       "~/Library/Application Support/discord/GPUCache/*",
       "~/Library/Application Support/discord/DawnGraphiteCache/*",
       "~/Library/Application Support/discord/DawnWebGPUCache/*",
       "~/Library/Application Support/Code/Cache/*",
-      "~/Library/Application Support/Code/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Code/Code Cache/*",
       "~/Library/Application Support/Code/GPUCache/*",
       "~/Library/Application Support/Code/DawnGraphiteCache/*",
       "~/Library/Application Support/Code/DawnWebGPUCache/*",
       "~/Library/Application Support/Code/CachedData/*",
       "~/Library/Application Support/Cursor/Cache/*",
-      "~/Library/Application Support/Cursor/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Cursor/Code Cache/*",
       "~/Library/Application Support/Cursor/GPUCache/*",
       "~/Library/Application Support/Cursor/DawnGraphiteCache/*",
       "~/Library/Application Support/Cursor/DawnWebGPUCache/*",
       "~/Library/Application Support/Cursor/CachedData/*",
       "~/Library/Application Support/Claude/Cache/*",
-      "~/Library/Application Support/Claude/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Claude/Code Cache/*",
       "~/Library/Application Support/Claude/GPUCache/*",
       "~/Library/Application Support/Claude/DawnGraphiteCache/*",
       "~/Library/Application Support/Claude/DawnWebGPUCache/*",
       "~/Library/Application Support/Notion/Cache/*",
-      "~/Library/Application Support/Notion/Service Worker/CacheStorage/*",
       "~/Library/Application Support/Notion/Code Cache/*",
       "~/Library/Application Support/Notion/GPUCache/*",
       "~/Library/Application Support/Notion/DawnGraphiteCache/*",
@@ -229,6 +218,73 @@
       {
         "app": "Google Chrome.app",
         "folder": "~/Library/Application Support/Google/Chrome"
+      }
+    ]
+  },
+  {
+    "id": "browser.site-storage",
+    "name": "Website offline storage",
+    "detail": "Data websites and web apps keep for offline use. Most of it is downloaded again, but some web apps keep things only there. Moved to the Trash, skipped while the app is open.",
+    "tier": "review",
+    "action": "trash",
+    "regenerable": false,
+    "paths": [
+      "~/Library/Application Support/Google/Chrome/*/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Microsoft Edge/*/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/BraveSoftware/Brave-Browser/*/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Arc/User Data/*/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Vivaldi/*/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Slack/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/discord/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Code/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Cursor/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Claude/Service Worker/CacheStorage/*",
+      "~/Library/Application Support/Notion/Service Worker/CacheStorage/*"
+    ],
+    "closedApps": [
+      {
+        "app": "Google Chrome.app",
+        "folder": "~/Library/Application Support/Google/Chrome"
+      },
+      {
+        "app": "Microsoft Edge.app",
+        "folder": "~/Library/Application Support/Microsoft Edge"
+      },
+      {
+        "app": "Brave Browser.app",
+        "folder": "~/Library/Application Support/BraveSoftware/Brave-Browser"
+      },
+      {
+        "app": "Arc.app",
+        "folder": "~/Library/Application Support/Arc/User Data"
+      },
+      {
+        "app": "Vivaldi.app",
+        "folder": "~/Library/Application Support/Vivaldi"
+      },
+      {
+        "app": "Slack.app",
+        "folder": "~/Library/Application Support/Slack"
+      },
+      {
+        "app": "Discord.app",
+        "folder": "~/Library/Application Support/discord"
+      },
+      {
+        "app": "Visual Studio Code.app",
+        "folder": "~/Library/Application Support/Code"
+      },
+      {
+        "app": "Cursor.app",
+        "folder": "~/Library/Application Support/Cursor"
+      },
+      {
+        "app": "Claude.app",
+        "folder": "~/Library/Application Support/Claude"
+      },
+      {
+        "app": "Notion.app",
+        "folder": "~/Library/Application Support/Notion"
       }
     ]
   },

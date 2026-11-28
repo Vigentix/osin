@@ -660,3 +660,73 @@ struct ToolchainSafetyRoundTwoTests {
         #expect(result.items.isEmpty)
     }
 }
+
+// MARK: - Review fixes (round 3)
+
+struct DeepCleanSafetyRoundThreeTests {
+    @Test func websiteOfflineStorageIsNeverDeletedAutomatically() throws {
+        let rules = try CleanupRule.bundled()
+        let safe = rules.filter { $0.tier == .safe }
+        #expect(!safe.contains { $0.paths.contains { $0.contains("CacheStorage") } })
+        let offline = try #require(rules.first { $0.id == "browser.site-storage" })
+        #expect(offline.tier == .review && offline.action == .trash)
+    }
+
+    @Test func aSymlinkedFolderOnTheWayIsNotEvenListed() async throws {
+        let fixture = try FixtureHome()
+        // Chrome/Default points into Documents: listing it would trigger a privacy prompt.
+        try fixture.directory("Documents/Code Cache")
+        try fixture.directory("Library/Application Support/Google/Chrome")
+        try FileManager.default.createSymbolicLink(
+            at: fixture.home.appendingPathComponent("Library/Application Support/Google/Chrome/Default"),
+            withDestinationURL: fixture.home.appendingPathComponent("Documents")
+        )
+        try FileManager.default.setAttributes(
+            [.posixPermissions: 0o000],
+            ofItemAtPath: fixture.home.appendingPathComponent("Documents").path
+        )
+        let rule = CleanupRule(
+            id: "b", name: "b", detail: "", tier: .safe, action: .delete, regenerable: true,
+            paths: ["~/Library/Application Support/Google/Chrome/*/Code Cache/*"]
+        )
+        let result = try #require(try await Scanner(home: fixture.home, runningApps: { [] }).scan([rule]).first)
+        // Had the link been followed, the unreadable Documents would have flagged "needs access".
+        #expect(!result.needsAccess)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func tomlWithCommentsIsReadCorrectly() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc")
+        try fixture.file(".rustup/toolchains/1.75.0-aarch64-apple-darwin/bin/rustc")
+        try fixture.file(".rustup/settings.toml").write("default_toolchain = \"stable-aarch64-apple-darwin\"\n")
+        try fixture.file("Projects/legacy/rust-toolchain").write("# Project toolchain\n[toolchain]\nchannel = \"1.75.0\" # Required\n")
+        let rule = CleanupRule(
+            id: "dev.toolchains", name: "t", detail: "", tier: .review, action: .trash, regenerable: true,
+            paths: ["~/.rustup/toolchains/*"], special: .unusedToolchains
+        )
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+        #expect(ToolchainUsage.tomlString(#"channel = "1.75.0" # Required"#) == "1.75.0")
+    }
+
+    @Test func anUnreadableGitFolderKeepsTheProject() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Projects/app/package.json", age: 60)
+        try fixture.file("Projects/app/node_modules/x.js", age: 60)
+        try fixture.file("Projects/app/.git/logs/HEAD", age: 0)
+        let git = fixture.home.appendingPathComponent("Projects/app/.git")
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: git.path)
+        let rule = CleanupRule(
+            id: "c", name: "c", detail: "", tier: .review, action: .trash, regenerable: true, paths: [],
+            find: CleanupRule.Find(
+                roots: ["~/Projects"],
+                targets: [CleanupRule.Find.Target(name: "node_modules")],
+                maxDepth: 4,
+                coldDays: 30
+            )
+        )
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+}
