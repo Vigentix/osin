@@ -399,6 +399,7 @@ enum ProjectPins {
             return
         }
         defer { fts_close(fts) }
+        var rootDevice: dev_t?
         while let entry = fts_read(fts) {
             let info = entry.pointee
             let url = URL(fileURLWithPath: String(cString: info.fts_path))
@@ -409,6 +410,16 @@ enum ProjectPins {
                 guard budget > 0 else {
                     pins.incomplete = true
                     return
+                }
+                // fts stays on one disk; a mounted folder inside the projects is not searched, so we can't
+                // be sure nothing pins a version there.
+                let device = info.fts_statp?.pointee.st_dev
+                if rootDevice == nil {
+                    rootDevice = device
+                } else if device != rootDevice {
+                    pins.incomplete = true
+                    fts_set(fts, entry, FTS_SKIP)
+                    continue
                 }
                 if info.fts_level > 0, hiddenSkipped.contains(name) || ProjectActivity.isDependencyFolder(name, at: url) {
                     fts_set(fts, entry, FTS_SKIP)
