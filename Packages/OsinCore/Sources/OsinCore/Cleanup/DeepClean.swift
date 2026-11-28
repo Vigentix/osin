@@ -15,7 +15,27 @@ public enum AppActivity {
     }
 }
 
-/// Whether a project is still in use: a recent commit or checkout, or a recently edited file.
+/// Project folders: the usual places plus the user's own, only real folders inside home that are not
+/// protected (a `~/Projects` linked into `~/Documents` is ignored, so no privacy prompt appears).
+public enum ProjectRoots {
+    public static func all(home: URL, extra: [URL]) -> [URL] {
+        let protected = ProtectedPaths(home: home)
+        let defaults = Scanner.defaultProjectRoots.map { home.appendingPathComponent($0) }
+        var seen = Set<String>()
+        return (defaults + extra).compactMap { url -> URL? in
+            let resolved = url.resolvingSymlinksInPath().standardizedFileURL
+            var isDirectory: ObjCBool = false
+            guard resolved.path.hasPrefix(home.path + "/"), !protected.denies(resolved),
+                  FileManager.default.fileExists(atPath: resolved.path, isDirectory: &isDirectory), isDirectory.boolValue,
+                  seen.insert(resolved.path).inserted
+            else { return nil }
+            return resolved
+        }
+    }
+}
+
+/// Whether a project is still in use: a recent commit, checkout or staging, or a recently edited file
+/// anywhere in its sources. When that cannot be told for sure, the project counts as in use.
 enum ProjectActivity {
     /// Folders tools regenerate; their dates say nothing about whether the project is worked on.
     static let generated: Set<String> = [
@@ -25,24 +45,49 @@ enum ProjectActivity {
 
     /// Git files that change when someone commits, checks out or stages (not on a background fetch).
     private static let gitMarkers = ["logs/HEAD", "index", "HEAD", "ORIG_HEAD"]
+    /// Files looked at per project before giving up (and keeping it).
+    static let fileBudget = 25000
 
     static func isActive(project: URL, target: URL, within root: URL, since cutoff: Date) -> Bool {
-        if newestFile(in: project, depth: 2, skipping: target.lastPathComponent).map({ $0 > cutoff }) ?? false {
-            return true
+        var budget = fileBudget
+        switch newestFile(in: project, skipping: target.lastPathComponent, budget: &budget) {
+        case .unknown: return true
+        case let .newest(date): if date.map({ $0 > cutoff }) ?? false {
+                return true
+            }
         }
         // The repository may start above the project (a package in a monorepo).
         var directory = project
         while directory.path.hasPrefix(root.path) {
             let git = directory.appendingPathComponent(".git")
-            if FileManager.default.fileExists(atPath: git.path) {
+            if let metadata = gitDirectory(git, in: directory) {
                 return gitMarkers.contains { marker in
-                    modified(git.appendingPathComponent(marker)).map { $0 > cutoff } ?? false
+                    modified(metadata.appendingPathComponent(marker)).map { $0 > cutoff } ?? false
                 }
+            } else if FileManager.default.fileExists(atPath: git.path) {
+                return true // a .git we cannot follow: keep the project
             }
             guard directory.path != root.path else { break }
             directory.deleteLastPathComponent()
         }
         return false
+    }
+
+    /// The repository's metadata folder: `.git` itself, or where a `.git` file (worktree, submodule) points.
+    static func gitDirectory(_ git: URL, in directory: URL) -> URL? {
+        var info = stat()
+        guard lstat(git.path, &info) == 0 else { return nil }
+        if info.st_mode & S_IFMT == S_IFDIR {
+            return git
+        }
+        guard info.st_mode & S_IFMT == S_IFREG, let text = try? String(contentsOf: git, encoding: .utf8),
+              let line = text.split(whereSeparator: \.isNewline).first, line.hasPrefix("gitdir:")
+        else { return nil }
+        let path = line.dropFirst("gitdir:".count).trimmingCharacters(in: .whitespaces)
+        let target = path.hasPrefix("/") ? URL(fileURLWithPath: path) : directory.appendingPathComponent(path)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: target.path, isDirectory: &isDirectory), isDirectory.boolValue else { return nil }
+        return target.standardizedFileURL
     }
 
     private static func modified(_ url: URL) -> Date? {
@@ -51,25 +96,35 @@ enum ProjectActivity {
         return Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec))
     }
 
-    /// Newest file (not folder: a folder's date moves when anything is added) up to `depth` levels down.
-    private static func newestFile(in directory: URL, depth: Int, skipping skipped: String) -> Date? {
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return nil }
+    enum Newest {
+        case newest(Date?)
+        case unknown
+    }
+
+    /// Newest file (not folder: a folder's date moves when anything is added) in the project's sources.
+    private static func newestFile(in directory: URL, skipping skipped: String, budget: inout Int) -> Newest {
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return .unknown }
         var newest: Date?
         for name in names where name != skipped && !generated.contains(name) {
+            budget -= 1
+            guard budget > 0 else { return .unknown }
             let url = directory.appendingPathComponent(name)
             var info = stat()
             guard lstat(url.path, &info) == 0 else { continue }
             let type = info.st_mode & S_IFMT
             if type == S_IFDIR {
-                if depth > 1, !name.hasPrefix("."), let inner = newestFile(in: url, depth: depth - 1, skipping: skipped) {
-                    newest = max(newest ?? inner, inner)
+                switch newestFile(in: url, skipping: skipped, budget: &budget) {
+                case .unknown: return .unknown
+                case let .newest(inner): if let inner {
+                        newest = max(newest ?? inner, inner)
+                    }
                 }
             } else if type == S_IFREG {
                 let date = Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec))
                 newest = max(newest ?? date, date)
             }
         }
-        return newest
+        return .newest(newest)
     }
 }
 
@@ -171,7 +226,17 @@ enum ToolchainUsage {
                 return installed.map(\.path) // a virtualenv or alias name: keep everything
             }
         }
-        return keep.map { root.appendingPathComponent($0).standardizedFileURL.path }
+        // A virtualenv (versions/myenv → versions/3.12.8/envs/myenv) also keeps the Python it lives in.
+        var paths = Set(keep.map { root.appendingPathComponent($0).standardizedFileURL.path })
+        let resolvedRoot = root.resolvingSymlinksInPath().standardizedFileURL.path
+        for name in keep {
+            let resolved = root.appendingPathComponent(name).resolvingSymlinksInPath().standardizedFileURL.path
+            guard resolved.hasPrefix(resolvedRoot + "/"),
+                  let owner = resolved.dropFirst(resolvedRoot.count + 1).split(separator: "/").first
+            else { continue }
+            paths.insert(root.appendingPathComponent(String(owner)).standardizedFileURL.path)
+        }
+        return Array(paths)
     }
 
     // MARK: rustup
@@ -217,7 +282,8 @@ enum ProjectPins {
         var rust: [String] = []
     }
 
-    static func find(in roots: [URL], depth: Int = 3) -> Pins {
+    /// As deep as cold-project discovery looks (5), plus one for the pin file itself.
+    static func find(in roots: [URL], depth: Int = 6) -> Pins {
         var pins = Pins()
         for root in roots {
             visit(root, depth: depth, into: &pins)

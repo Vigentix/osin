@@ -2096,6 +2096,16 @@
         }
       }
     },
+    "Downloads kept by uv, Bun, Yarn, pip, Puppeteer and Terraform. Each tool downloads again what it needs.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản tải về của uv, Bun, Yarn, pip, Puppeteer và Terraform. Mỗi công cụ sẽ tự tải lại khi cần."
+          }
+        }
+      }
+    },
     "Downloads was skipped in the background scan. Rescan to include it.": {
       "localizations": {
         "vi": {
@@ -2818,6 +2828,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Máy có thể tự giảm hiệu năng để hạ nhiệt."
+          }
+        }
+      }
+    },
+    "Java libraries downloaded by Maven or Gradle, plus any you installed yourself. Remove only what you can download again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư viện Java do Maven hoặc Gradle tải, cùng các thư viện bạn tự cài. Chỉ xoá những gì tải lại được."
           }
         }
       }
@@ -5500,6 +5520,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Space Lens"
+          }
+        }
+      }
+    },
+    "Space Lens measured this before an update. Rescan, then try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space Lens đo mục này từ trước khi cập nhật. Hãy quét lại rồi thử lại."
           }
         }
       }

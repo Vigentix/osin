@@ -7,15 +7,29 @@ enum ProcessRunner {
         let status: Int32
     }
 
+    /// Output read on another thread; guarded by a lock.
     private final class Collected: @unchecked Sendable {
-        var data = Data()
+        private let lock = NSLock()
+        private var stored = Data()
+
+        var data: Data {
+            lock.lock()
+            defer { lock.unlock() }
+            return stored
+        }
+
+        func set(_ data: Data) {
+            lock.lock()
+            stored = data
+            lock.unlock()
+        }
     }
 
     /// Homebrew folders first, so tools that call helpers (colima calls limactl) find them.
     static let searchPath = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
     /// Runs the tool and returns its output. With a `timeout`, a tool that hangs (a Docker daemon that
-    /// never answers) is stopped and the call fails.
+    /// never answers) gets SIGTERM, then SIGKILL five seconds later, and the call fails.
     static func run(_ executable: String, _ arguments: [String], timeout: TimeInterval? = nil) async throws -> Data {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
@@ -32,14 +46,14 @@ enum ProcessRunner {
             let reading = DispatchGroup()
             reading.enter()
             DispatchQueue.global(qos: .utility).async {
-                collected.data = output.fileHandleForReading.readDataToEndOfFile()
+                collected.set(output.fileHandleForReading.readDataToEndOfFile())
                 reading.leave()
             }
             process.terminationHandler = { finished in
-                reading.wait()
-                let data = collected.data
-                if finished.terminationStatus == 0, finished.terminationReason == .exit {
-                    continuation.resume(returning: data)
+                // A helper the tool started may still hold the pipe open: don't wait for it forever.
+                let drained = reading.wait(timeout: .now() + 5) == .success
+                if drained, finished.terminationStatus == 0, finished.terminationReason == .exit {
+                    continuation.resume(returning: collected.data)
                 } else {
                     continuation.resume(throwing: Failure(status: finished.terminationStatus))
                 }
@@ -53,9 +67,14 @@ enum ProcessRunner {
                 return
             }
             if let timeout {
+                let pid = process.processIdentifier
                 DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { @Sendable in
-                    if process.isRunning {
-                        process.terminate()
+                    guard process.isRunning else { return }
+                    process.terminate()
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 5) { @Sendable in
+                        if process.isRunning {
+                            kill(pid, SIGKILL)
+                        }
                     }
                 }
             }

@@ -80,8 +80,8 @@
   {
     "pattern": ".m2/repository",
     "title": "Maven repository",
-    "detail": "Java libraries downloaded by Maven or Gradle. Downloaded again on the next build.",
-    "advice": "safe"
+    "detail": "Java libraries downloaded by Maven or Gradle, plus any you installed yourself. Remove only what you can download again.",
+    "advice": "review"
   },
   {
     "pattern": ".gradle/caches",

@@ -108,13 +108,7 @@ public struct Scanner: Sendable {
 
     /// Default and user project folders that exist.
     var allProjectRoots: [URL] {
-        let defaults = Self.defaultProjectRoots.map { home.appendingPathComponent($0) }
-        var seen = Set<String>()
-        return (defaults + projectRoots).filter { url in
-            var isDirectory: ObjCBool = false
-            return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
-                && seen.insert(url.path).inserted
-        }
+        ProjectRoots.all(home: home, extra: projectRoots)
     }
 
     public func scan(_ rules: [CleanupRule], progress: @Sendable (ScanProgress) -> Void = { _ in }) async throws -> [RuleScanResult] {
@@ -229,6 +223,7 @@ public struct Scanner: Sendable {
                     }
                     continue
                 }
+                // A symlinked folder on the way is caught below: its matches' real paths differ.
                 for entry in entries where Self.matches(component, entry.lastPathComponent) {
                     next.append(entry)
                 }
@@ -238,7 +233,10 @@ public struct Scanner: Sendable {
         for url in level {
             guard let values = try? url.resourceValues(forKeys: Set(Self.keys)), values.isSymbolicLink != true else { continue }
             let resolved = url.resolvingSymlinksInPath().standardizedFileURL
-            guard resolved.path.hasPrefix(resolvedRoot.path + "/"), !protected.denies(resolved) else { continue }
+            // The path as matched must be the real path: no link anywhere below the root.
+            guard resolved.path == url.standardizedFileURL.path, resolved.path.hasPrefix(resolvedRoot.path + "/"),
+                  !protected.denies(resolved)
+            else { continue }
             collector.add(resolved, modified: values.contentModificationDate)
         }
     }
@@ -336,16 +334,6 @@ enum DiskUsage {
         var isComplete = true
     }
 
-    /// Collects enumeration errors from FileManager's callback.
-    private final class ErrorFlag {
-        var failed = false
-    }
-
-    private static let keys: Set<URLResourceKey> = [
-        .totalFileAllocatedSizeKey, .fileAllocatedSizeKey, .isDirectoryKey, .isSymbolicLinkKey,
-        .contentModificationDateKey, .linkCountKey
-    ]
-
     /// Allocated size on disk. Symlinks inside folders are counted as links, never followed.
     static func allocatedSize(of url: URL) throws -> UInt64 {
         try measure(url).bytes
@@ -355,61 +343,69 @@ enum DiskUsage {
     ///
     /// A hard-linked file only counts when all of its links are inside `url`: removing one link of a
     /// file that is still linked elsewhere (a pnpm store shared with projects) frees nothing.
+    /// Walks with `fts` (physical: symlinks are counted as links, never followed), which is several
+    /// times faster than FileManager's enumerator on caches with many small files.
     static func measure(_ scannedURL: URL) throws -> Usage {
-        // A fresh URL, so no resource values cached when the item was listed are reused.
-        let url = URL(fileURLWithPath: scannedURL.path)
         var usage = Usage()
         var linked: [FileIdentity: (seen: Int, links: Int, bytes: UInt64)] = [:]
 
-        func add(_ child: URL, _ values: URLResourceValues) {
-            if let date = values.contentModificationDate, date > (usage.newestModification ?? .distantPast) {
+        func add(_ info: stat, countBytes: Bool) {
+            let date = Date(timeIntervalSince1970: TimeInterval(info.st_mtimespec.tv_sec) + TimeInterval(info.st_mtimespec.tv_nsec) / 1e9)
+            if date > (usage.newestModification ?? .distantPast) {
                 usage.newestModification = date
             }
-            guard values.isDirectory != true || values.isSymbolicLink == true else { return }
-            let bytes = UInt64(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
-            let links = values.linkCount ?? 1
-            if links > 1, values.isSymbolicLink != true, let identity = FileIdentity(path: child.path) {
-                let entry = linked[identity] ?? (0, links, bytes)
+            guard countBytes else { return }
+            let bytes = UInt64(max(0, info.st_blocks)) * 512
+            if info.st_mode & S_IFMT == S_IFREG, info.st_nlink > 1 {
+                let identity = FileIdentity(device: Int64(info.st_dev), inode: UInt64(info.st_ino))
+                let entry = linked[identity] ?? (0, Int(info.st_nlink), bytes)
                 linked[identity] = (entry.seen + 1, entry.links, entry.bytes)
             } else {
                 usage.bytes += bytes
             }
         }
 
-        guard let values = try? url.resourceValues(forKeys: keys) else {
+        let path = scannedURL.path
+        var root = stat()
+        guard lstat(path, &root) == 0 else {
             usage.isComplete = false
             return usage
         }
-        add(url, values)
-        let errors = ErrorFlag()
-        if values.isDirectory == true, values.isSymbolicLink != true,
-           let enumerator = FileManager.default.enumerator(
-               at: url,
-               includingPropertiesForKeys: Array(keys),
-               errorHandler: { _, _ in
-                   errors.failed = true
-                   return true
-               }
-           )
-        {
-            var counter = 0
-            for case let child as URL in enumerator {
-                counter += 1
-                if counter % 2000 == 0 {
-                    try Task.checkCancellation()
-                }
-                guard let childValues = try? child.resourceValues(forKeys: keys) else {
-                    usage.isComplete = false
-                    continue
-                }
-                if childValues.isSymbolicLink == true {
-                    enumerator.skipDescendants()
-                }
-                add(child, childValues)
-            }
+        guard root.st_mode & S_IFMT == S_IFDIR else {
+            add(root, countBytes: true)
+            return usage
         }
-        if errors.failed {
+        guard let cPath = strdup(path) else { throw CocoaError(.fileReadUnknown) }
+        defer { free(cPath) }
+        var paths: [UnsafeMutablePointer<CChar>?] = [cPath, nil]
+        guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_NOCHDIR, nil) else {
             usage.isComplete = false
+            return usage
+        }
+        defer { fts_close(fts) }
+        var counter = 0
+        while let entry = fts_read(fts) {
+            counter += 1
+            if counter % 4096 == 0 {
+                try Task.checkCancellation()
+            }
+            let kind = Int32(entry.pointee.fts_info)
+            let info = entry.pointee.fts_statp?.pointee
+            switch kind {
+            case FTS_D:
+                // Folders count for age, not size (as before: only files and links are summed).
+                if let info {
+                    add(info, countBytes: false)
+                }
+            case FTS_F, FTS_SL, FTS_SLNONE, FTS_DEFAULT:
+                if let info {
+                    add(info, countBytes: true)
+                }
+            case FTS_DNR, FTS_ERR, FTS_NS:
+                usage.isComplete = false
+            default:
+                break // FTS_DP (folder done), FTS_DC (cycle)
+            }
         }
         for entry in linked.values where entry.seen >= entry.links {
             usage.bytes += entry.bytes

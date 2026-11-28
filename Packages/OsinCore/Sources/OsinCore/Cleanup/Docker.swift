@@ -34,8 +34,11 @@ public enum DockerInventory {
         public let danglingImages: [Image]
         /// Volumes no container (running or stopped) refers to.
         public let unusedVolumes: [Volume]
+        /// The local daemon these were read from; cleaning talks to the same one, never another context.
+        public let host: String
 
-        public init(buildCacheBytes: UInt64, danglingImages: [Image], unusedVolumes: [Volume]) {
+        public init(buildCacheBytes: UInt64, danglingImages: [Image], unusedVolumes: [Volume], host: String = "") {
+            self.host = host
             self.buildCacheBytes = buildCacheBytes
             self.danglingImages = danglingImages
             self.unusedVolumes = unusedVolumes
@@ -81,31 +84,53 @@ public enum DockerInventory {
         return Usage(buildCacheBytes: cache, danglingImages: images, unusedVolumes: volumes)
     }
 
-    /// `nil` when Docker is not installed or its daemon is not running.
-    public static func measure() async -> Usage? {
-        guard let docker = executable(), let data = try? await ProcessRunner.run(
-            docker,
-            ["system", "df", "-v", "--format", "{{json .}}"],
-            timeout: 30
-        ) else {
-            return nil
+    /// The current context's daemon, if it runs on this Mac (a `unix://` socket). Remote daemons (ssh,
+    /// tcp) are never cleaned from here.
+    static func localHost(fromContextInspect data: Data) -> String? {
+        guard let contexts = try? JSONDecoder().decode([DockerContext].self, from: data),
+              let host = contexts.first?.endpoints.docker.host, host.hasPrefix("unix://")
+        else { return nil }
+        return host
+    }
+
+    static func currentLocalHost(docker: String) async -> String? {
+        if let host = ProcessInfo.processInfo.environment["DOCKER_HOST"] {
+            return host.hasPrefix("unix://") ? host : nil
         }
-        return try? parse(systemDF: data)
+        guard let data = try? await ProcessRunner.run(docker, ["context", "inspect"], timeout: 15) else { return nil }
+        return localHost(fromContextInspect: data)
     }
 
-    public static func pruneBuildCache() async throws {
-        guard let docker = executable() else { throw ProcessRunner.Failure(status: -1) }
-        _ = try await ProcessRunner.run(docker, ["builder", "prune", "--force"], timeout: 600)
+    /// `nil` when Docker is not installed, its daemon is not running, or it is not on this Mac.
+    public static func measure() async -> Usage? {
+        guard let docker = executable(), let host = await currentLocalHost(docker: docker),
+              let data = try? await ProcessRunner.run(docker, ["-H", host, "system", "df", "-v", "--format", "{{json .}}"], timeout: 30),
+              let usage = try? parse(systemDF: data)
+        else { return nil }
+        return Usage(
+            buildCacheBytes: usage.buildCacheBytes, danglingImages: usage.danglingImages, unusedVolumes: usage.unusedVolumes, host: host
+        )
     }
 
-    public static func removeImages(_ ids: [String]) async throws {
-        guard let docker = executable(), !ids.isEmpty else { return }
-        _ = try await ProcessRunner.run(docker, ["image", "rm"] + ids, timeout: 600)
+    /// Every cleaning command names the daemon that was measured, so a context switch in between
+    /// cannot point it at another (possibly remote) Docker.
+    private static func run(_ arguments: [String], host: String) async throws {
+        guard let docker = executable(), host.hasPrefix("unix://") else { throw ProcessRunner.Failure(status: -1) }
+        _ = try await ProcessRunner.run(docker, ["-H", host] + arguments, timeout: 600)
     }
 
-    public static func removeVolumes(_ names: [String]) async throws {
-        guard let docker = executable(), !names.isEmpty else { return }
-        _ = try await ProcessRunner.run(docker, ["volume", "rm"] + names, timeout: 600)
+    public static func pruneBuildCache(host: String) async throws {
+        try await run(["builder", "prune", "--force"], host: host)
+    }
+
+    public static func removeImages(_ ids: [String], host: String) async throws {
+        guard !ids.isEmpty else { return }
+        try await run(["image", "rm"] + ids, host: host)
+    }
+
+    public static func removeVolumes(_ names: [String], host: String) async throws {
+        guard !names.isEmpty else { return }
+        try await run(["volume", "rm"] + names, host: host)
     }
 }
 
@@ -181,5 +206,26 @@ private struct DockerSystemDF: Decodable {
 
     enum CodingKeys: String, CodingKey {
         case images = "Images", volumes = "Volumes", buildCache = "BuildCache"
+    }
+}
+
+/// `docker context inspect` output: the endpoint of the current context.
+private struct DockerContext: Decodable {
+    struct Endpoint: Decodable {
+        let host: String
+
+        enum CodingKeys: String, CodingKey {
+            case host = "Host"
+        }
+    }
+
+    struct Endpoints: Decodable {
+        let docker: Endpoint
+    }
+
+    let endpoints: Endpoints
+
+    enum CodingKeys: String, CodingKey {
+        case endpoints = "Endpoints"
     }
 }

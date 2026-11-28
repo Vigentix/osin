@@ -8,11 +8,11 @@ extension ScanCoordinator {
             case rule(RuleScanResult)
             case simulators(count: Int)
             case emptyTrash
-            /// Docker build cache, cleaned with `docker builder prune`.
-            case dockerBuildCache
-            case dockerImages([DockerInventory.Image])
+            /// Docker build cache, cleaned with `docker builder prune` on the daemon at `host`.
+            case dockerBuildCache(host: String)
+            case dockerImages(host: String, [DockerInventory.Image])
             /// Each volume can be left out on its own (they may hold databases).
-            case dockerVolumes([DockerInventory.Volume])
+            case dockerVolumes(host: String, [DockerInventory.Volume])
         }
 
         let id: String
@@ -89,7 +89,7 @@ extension ScanCoordinator {
                 detail: String(
                     localized: "Layers kept from earlier image builds. Docker rebuilds them when needed; the next build may be slower."
                 ),
-                tier: .safe, bytes: usage.buildCacheBytes, kind: .dockerBuildCache, needsAccess: false
+                tier: .safe, bytes: usage.buildCacheBytes, kind: .dockerBuildCache(host: usage.host), needsAccess: false
             ))
         }
         let imageBytes = usage.danglingImages.reduce(UInt64(0)) { $0 + $1.bytes }
@@ -99,7 +99,7 @@ extension ScanCoordinator {
                 detail: String(
                     localized: "\(usage.danglingImages.count) untagged images no container uses, usually left over from rebuilds."
                 ),
-                tier: .review, bytes: imageBytes, kind: .dockerImages(usage.danglingImages), needsAccess: false
+                tier: .review, bytes: imageBytes, kind: .dockerImages(host: usage.host, usage.danglingImages), needsAccess: false
             ))
         }
         let volumeBytes = usage.unusedVolumes.reduce(UInt64(0)) { $0 + $1.bytes }
@@ -107,7 +107,7 @@ extension ScanCoordinator {
             groups.append(Group(
                 id: dockerVolumesID, name: String(localized: "Unused Docker volumes"),
                 detail: String(localized: "Volumes no container uses. They can hold databases or uploads: untick any you still need."),
-                tier: .review, bytes: volumeBytes, kind: .dockerVolumes(usage.unusedVolumes), needsAccess: false
+                tier: .review, bytes: volumeBytes, kind: .dockerVolumes(host: usage.host, usage.unusedVolumes), needsAccess: false
             ))
         }
         return groups
@@ -117,17 +117,17 @@ extension ScanCoordinator {
     func cleanDocker(_ group: Group, excluded: Set<String>, cleaner: Cleaner) async -> (freed: UInt64, failures: [CleanupFailure]) {
         do {
             switch group.kind {
-            case .dockerBuildCache:
-                try await DockerInventory.pruneBuildCache()
+            case let .dockerBuildCache(host):
+                try await DockerInventory.pruneBuildCache(host: host)
                 await cleaner.record(builtin: "docker-build-cache", bytes: group.bytes)
                 return (group.bytes, [])
-            case let .dockerImages(images):
-                try await DockerInventory.removeImages(images.map(\.id))
+            case let .dockerImages(host, images):
+                try await DockerInventory.removeImages(images.map(\.id), host: host)
                 await cleaner.record(builtin: "docker-images", bytes: group.bytes)
                 return (group.bytes, [])
-            case let .dockerVolumes(volumes):
+            case let .dockerVolumes(host, volumes):
                 let chosen = volumes.filter { !excluded.contains(Self.volumeItemID($0.name)) }
-                try await DockerInventory.removeVolumes(chosen.map(\.name))
+                try await DockerInventory.removeVolumes(chosen.map(\.name), host: host)
                 let bytes = chosen.reduce(UInt64(0)) { $0 + $1.bytes }
                 await cleaner.record(builtin: "docker-volumes", bytes: bytes)
                 return (bytes, [])

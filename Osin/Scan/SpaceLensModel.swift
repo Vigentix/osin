@@ -20,6 +20,10 @@ final class SpaceLensModel {
     /// Called after something was moved to the Trash (History and storage refresh).
     @ObservationIgnored var onTrashed: (() -> Void)?
     @ObservationIgnored private var task: Task<Void, Never>?
+    /// The walk itself (detached); cancelled with the scan.
+    @ObservationIgnored private var worker: Task<SpaceNode, Error>?
+    /// Bumped for every scan, so a cancelled one never publishes progress or a result.
+    @ObservationIgnored private var generation = 0
     @ObservationIgnored private let cacheURL = (try? CleanupLog.defaultURL())?.deletingLastPathComponent()
         .appendingPathComponent("space-lens.json")
     @ObservationIgnored private lazy var cleaner: Cleaner? = (try? CleanupLog.defaultURL()).map { Cleaner(log: CleanupLog(url: $0)) }
@@ -27,7 +31,7 @@ final class SpaceLensModel {
     /// A rule only Space Lens uses: Trash, never delete; the cleaner still refuses protected places.
     static let rule = CleanupRule(
         id: "space-lens", name: "Space Lens", detail: "Moved to the Trash from Space Lens.",
-        tier: .review, action: .trash, regenerable: false, paths: ["~/*"]
+        tier: .review, action: .trash, regenerable: false, paths: ["~/*"], special: .userSelected
     )
 
     private struct Cache: Codable {
@@ -88,15 +92,24 @@ final class SpaceLensModel {
         isScanning = true
         seen = 0
         trashError = nil
+        generation += 1
+        let current = generation
         let includePrivate = FullDiskAccess.isGranted()
         let cacheURL = cacheURL
-        task = Task {
-            let scanner = SpaceScanner(includePrivateAreas: includePrivate)
-            let result = try? await Task.detached(priority: .utility) {
-                try await scanner.scan { count in
-                    Task { @MainActor in self.seen = count }
+        let scanner = SpaceScanner(includePrivateAreas: includePrivate)
+        let worker = Task.detached(priority: .utility) {
+            try await scanner.scan { count in
+                Task { @MainActor in
+                    if self.generation == current {
+                        self.seen = count
+                    }
                 }
-            }.value
+            }
+        }
+        self.worker = worker
+        task = Task {
+            let result = try? await worker.value
+            guard generation == current else { return }
             isScanning = false
             guard let result else { return }
             tree = result
@@ -111,6 +124,9 @@ final class SpaceLensModel {
     }
 
     func cancel() {
+        generation += 1
+        worker?.cancel()
+        worker = nil
         task?.cancel()
         task = nil
         isScanning = false
@@ -118,9 +134,14 @@ final class SpaceLensModel {
 
     /// Moves a file or folder to the Trash. It must still be the item Space Lens measured.
     func trash(_ node: SpaceNode) async {
+        // The identity recorded when it was measured: anything that replaced it since is refused.
         guard node.canTrash, let cleaner else { return }
+        guard let identity = node.identity else {
+            trashError = String(localized: "Space Lens measured this before an update. Rescan, then try again.")
+            return
+        }
         let url = URL(fileURLWithPath: node.path)
-        let item = ScanItem(url: url, bytes: node.bytes, modified: nil, identity: FileIdentity(path: node.path))
+        let item = ScanItem(url: url, bytes: node.bytes, modified: nil, identity: identity)
         let outcome = await cleaner.clean([CleanupSelection(rule: Self.rule, items: [item])])
         if let failure = outcome.failures.first {
             trashError = failure.localizedReason
@@ -153,7 +174,7 @@ final class SpaceLensModel {
         return SpaceNode(
             name: node.name, path: node.path, bytes: node.bytes - min(node.bytes, bytes), isDirectory: node.isDirectory,
             children: children, otherCount: node.otherCount, otherBytes: node.otherBytes, isSkipped: node.isSkipped,
-            canTrash: node.canTrash
+            canTrash: node.canTrash, identity: node.identity
         )
     }
 }

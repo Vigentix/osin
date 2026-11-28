@@ -70,14 +70,13 @@
   {
     "id": "dev.tool-caches",
     "name": "Developer tool caches",
-    "detail": "Downloads kept by uv, Bun, Maven, Yarn, pip, Puppeteer and Terraform. Each tool downloads again what it needs.",
+    "detail": "Downloads kept by uv, Bun, Yarn, pip, Puppeteer and Terraform. Each tool downloads again what it needs.",
     "tier": "safe",
     "action": "delete",
     "regenerable": true,
     "paths": [
       "~/.cache/uv/*",
       "~/.bun/install/cache/*",
-      "~/.m2/repository/*",
       "~/.yarn/berry/cache/*",
       "~/.cache/pip/*",
       "~/.cache/puppeteer/*",

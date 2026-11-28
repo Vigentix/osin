@@ -19,11 +19,14 @@ public struct SpaceNode: Codable, Sendable, Identifiable, Equatable {
     public let isSkipped: Bool
     /// Whether Space Lens offers Move to Trash (never for protected locations or system folders).
     public let canTrash: Bool
+    /// What the path referred to when it was measured; Move to Trash refuses anything else.
+    public let identity: FileIdentity?
 
     public init(
         name: String, path: String, bytes: UInt64, isDirectory: Bool, children: [SpaceNode] = [],
-        otherCount: Int = 0, otherBytes: UInt64 = 0, isSkipped: Bool = false, canTrash: Bool = true
+        otherCount: Int = 0, otherBytes: UInt64 = 0, isSkipped: Bool = false, canTrash: Bool = true, identity: FileIdentity? = nil
     ) {
+        self.identity = identity
         self.name = name
         self.path = path
         self.bytes = bytes
@@ -146,7 +149,8 @@ public struct SpaceScanner: Sendable {
                 return .skip
             }
             let own = info.fts_statp.map { UInt64(max(0, $0.pointee.st_blocks)) * 512 } ?? 0
-            stack.append(Frame(url: url, rawPath: path, depth: depth, bytes: own))
+            let identity = info.fts_statp.map { FileIdentity(device: Int64($0.pointee.st_dev), inode: UInt64($0.pointee.st_ino)) }
+            stack.append(Frame(url: url, rawPath: path, depth: depth, identity: identity, bytes: own))
             return .next
         }
 
@@ -183,7 +187,11 @@ public struct SpaceScanner: Sendable {
             }
             let bytes = UInt64(max(0, stat.st_blocks)) * 512
             if bytes >= scanner.minNodeBytes, depth <= SpaceScanner.maxDepth {
-                stack[parent].add(scanner.node(URL(fileURLWithPath: path), bytes: bytes, isDirectory: false), keep: true)
+                let identity = FileIdentity(device: Int64(stat.st_dev), inode: UInt64(stat.st_ino))
+                stack[parent].add(
+                    scanner.node(URL(fileURLWithPath: path), bytes: bytes, isDirectory: false, identity: identity),
+                    keep: true
+                )
             } else {
                 stack[parent].bytes += bytes
                 stack[parent].entries += 1
@@ -197,6 +205,7 @@ public struct SpaceScanner: Sendable {
         /// The path exactly as fts reports it (URL may normalise it), to pair pre- and post-order visits.
         let rawPath: String
         let depth: Int
+        let identity: FileIdentity?
         var bytes: UInt64
         var entries = 0
         var kept: [SpaceNode] = []
@@ -223,15 +232,16 @@ public struct SpaceScanner: Sendable {
                 name: url.lastPathComponent, path: url.path, bytes: bytes, isDirectory: true,
                 children: depth >= SpaceScanner.maxDepth ? [] : shown,
                 otherCount: max(0, entries - shown.count), otherBytes: bytes > shownBytes ? bytes - shownBytes : 0,
-                isSkipped: false, canTrash: scanner.canTrash(url, relativePath: relativePath)
+                isSkipped: false, canTrash: scanner.canTrash(url, relativePath: relativePath), identity: identity
             )
         }
     }
 
-    fileprivate func node(_ url: URL, bytes: UInt64, isDirectory: Bool, skipped: Bool = false) -> SpaceNode {
+    fileprivate func node(_ url: URL, bytes: UInt64, isDirectory: Bool, skipped: Bool = false, identity: FileIdentity? = nil) -> SpaceNode {
         SpaceNode(
             name: url.lastPathComponent, path: url.path, bytes: bytes, isDirectory: isDirectory, children: [],
-            otherCount: 0, otherBytes: 0, isSkipped: skipped, canTrash: !skipped && canTrash(url, relativePath: relative(url))
+            otherCount: 0, otherBytes: 0, isSkipped: skipped, canTrash: !skipped && canTrash(url, relativePath: relative(url)),
+            identity: identity
         )
     }
 
@@ -243,15 +253,21 @@ public struct SpaceScanner: Sendable {
         Self.cloudAreas.contains(relativePath) || (!includePrivateAreas && Self.privateAreas.contains(relativePath))
     }
 
-    /// Offered for the Trash: inside home, not protected, not home's Library or its top level, and not a
-    /// folder the guide says to keep.
-    fileprivate func canTrash(_ url: URL, relativePath: String) -> Bool {
-        guard !relativePath.isEmpty, url.path.hasPrefix(home.path + "/"), !protected.denies(url) else { return false }
+    fileprivate func canTrash(_ url: URL, relativePath _: String) -> Bool {
+        Self.canTrash(url, home: home, guide: guide)
+    }
+
+    /// Offered for the Trash: inside home, not protected, not home's Library or its top level, and not in a
+    /// folder the guide says to keep. The cleaner checks this again for items picked in Space Lens.
+    public static func canTrash(_ url: URL, home: URL, guide: FolderGuide = .bundled) -> Bool {
+        let path = url.standardizedFileURL.path
+        guard path.hasPrefix(home.path + "/"), !ProtectedPaths(home: home).denies(url) else { return false }
+        let relativePath = String(path.dropFirst(home.path.count + 1))
         let components = relativePath.split(separator: "/")
         if components.first == "Library", components.count <= 2 {
             return false
         }
-        return guide.describe(relativePath: relativePath)?.advice != .keep
+        return !guide.isKept(relativePath: relativePath)
     }
 }
 
@@ -288,6 +304,19 @@ public struct FolderGuide: Sendable {
         else { return FolderGuide(entries: []) }
         return FolderGuide(entries: entries)
     }()
+
+    /// Whether the folder, or the nearest described folder above it, is one to keep. A more specific
+    /// entry wins: `.claude` is kept, `.claude/projects` (old sessions) is not.
+    public func isKept(relativePath: String) -> Bool {
+        var components = relativePath.split(separator: "/").map(String.init)
+        while !components.isEmpty {
+            if let entry = describe(relativePath: components.joined(separator: "/")) {
+                return entry.advice == .keep
+            }
+            components.removeLast()
+        }
+        return false
+    }
 
     public func describe(relativePath: String) -> Entry? {
         let components = relativePath.split(separator: "/").map(String.init)

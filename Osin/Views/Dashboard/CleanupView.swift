@@ -433,7 +433,7 @@ private struct GroupDetail: View {
                     if !group.blockingApps.isEmpty {
                         BlockedAppsNotice(group: group)
                     }
-                    if case let .dockerVolumes(volumes) = group.kind {
+                    if case let .dockerVolumes(_, volumes) = group.kind {
                         DockerVolumeList(volumes: volumes)
                     }
                     if !group.items.isEmpty {

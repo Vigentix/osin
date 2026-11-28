@@ -398,3 +398,177 @@ extension URL {
         try Data(text.utf8).write(to: self)
     }
 }
+
+// MARK: - Review fixes (round 1)
+
+struct DeepCleanSafetyTests {
+    @Test func globsNeverFollowASymlinkedFolderInTheMiddle() async throws {
+        let fixture = try FixtureHome()
+        // Code Cache replaced by a link to the profile's site data.
+        try fixture.file("Library/Application Support/Google/Chrome/Default/Local Storage/leveldb/000003.log")
+        try FileManager.default.createSymbolicLink(
+            at: fixture.home.appendingPathComponent("Library/Application Support/Google/Chrome/Default/Code Cache"),
+            withDestinationURL: fixture.home.appendingPathComponent("Library/Application Support/Google/Chrome/Default/Local Storage")
+        )
+        let rule = CleanupRule(
+            id: "browser", name: "b", detail: "", tier: .safe, action: .delete, regenerable: true,
+            paths: ["~/Library/Application Support/Google/Chrome/*/Code Cache/*"]
+        )
+        let result = try #require(try await Scanner(home: fixture.home, runningApps: { [] }).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func mavenIsNotCleanedAutomatically() throws {
+        let rules = try CleanupRule.bundled()
+        #expect(!rules.contains { $0.tier == .safe && $0.paths.contains { $0.hasPrefix("~/.m2") } })
+    }
+
+    @Test func keepProtectionCoversEverythingInsideExceptNamedExceptions() {
+        let guide = FolderGuide.bundled
+        #expect(guide.isKept(relativePath: ".config"))
+        #expect(guide.isKept(relativePath: ".config/some-app/settings.json"))
+        #expect(guide.isKept(relativePath: ".claude/plugins"))
+        #expect(!guide.isKept(relativePath: ".claude/projects/-Users-me-app"))
+        #expect(!guide.isKept(relativePath: "Projects/app"))
+    }
+
+    @Test func userSelectedTrashRefusesKeptAndSystemFolders() async throws {
+        let fixture = try FixtureHome()
+        let settings = try fixture.file(".config/tool/config.toml")
+        let library = try fixture.directory("Library/Preferences")
+        let junk = try fixture.file("stuff/old.zip")
+        let rule = CleanupRule(
+            id: "space-lens", name: "Space Lens", detail: "", tier: .review, action: .trash, regenerable: false,
+            paths: ["~/*"], special: .userSelected
+        )
+        let cleaner = Cleaner(
+            home: fixture.home, trash: FixtureTrash(directory: fixture.root.appendingPathComponent("trash")),
+            log: CleanupLog(url: fixture.root.appendingPathComponent("log.jsonl"))
+        )
+        let items = [settings, library, junk].map { url in
+            ScanItem(
+                url: url.resolvingSymlinksInPath(),
+                bytes: 1,
+                modified: nil,
+                identity: FileIdentity(path: url.resolvingSymlinksInPath().path)
+            )
+        }
+        let outcome = await cleaner.clean([CleanupSelection(rule: rule, items: items)])
+        #expect(outcome.failures.count == 2)
+        #expect(outcome.trashed.map(\.originalURL.lastPathComponent) == ["old.zip"])
+    }
+
+    @Test func spaceLensRecordsWhatEachEntryWasWhenMeasured() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("folder/file.bin", bytes: 4000)
+        let tree = try await SpaceScanner(home: fixture.home, minNodeBytes: 0).scan()
+        let folder = try #require(tree.children.first { $0.name == "folder" })
+        #expect(folder.identity == FileIdentity(path: folder.path))
+    }
+}
+
+struct ColdProjectSafetyTests {
+    private let rule = CleanupRule(
+        id: "dev.cold-projects", name: "Cold projects", detail: "", tier: .review, action: .trash, regenerable: true, paths: [],
+        find: CleanupRule.Find(roots: ["~/Projects"], targets: [CleanupRule.Find.Target(name: "node_modules")], maxDepth: 4, coldDays: 30)
+    )
+
+    @Test func aDeeplyNestedEditKeepsTheProjectWarm() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Projects/app/package.json", age: 60)
+        try fixture.file("Projects/app/.git/logs/HEAD", age: 60)
+        try fixture.file("Projects/app/src/components/forms/Button.tsx", age: 0)
+        try fixture.file("Projects/app/node_modules/x.js", age: 60)
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func worktreeActivityIsFoundThroughTheGitFile() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Projects/main/.git/worktrees/feature/logs/HEAD", age: 0)
+        try fixture.file("Projects/feature/package.json", age: 60)
+        try fixture.file("Projects/feature/node_modules/x.js", age: 60)
+        let gitdir = fixture.home.appendingPathComponent("Projects/main/.git/worktrees/feature").resolvingSymlinksInPath().path
+        try fixture.file("Projects/feature/.git", age: 60).write("gitdir: \(gitdir)\n")
+        try fixture.age(fixture.home.appendingPathComponent("Projects/feature/.git"), days: 60)
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func anUnresolvableGitFileKeepsTheProject() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Projects/odd/package.json", age: 60)
+        try fixture.file("Projects/odd/node_modules/x.js", age: 60)
+        try fixture.file("Projects/odd/.git", age: 60).write("gitdir: /nowhere/at/all\n")
+        try fixture.age(fixture.home.appendingPathComponent("Projects/odd/.git"), days: 60)
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func aProjectRootLinkedIntoAProtectedFolderIsIgnored() throws {
+        let fixture = try FixtureHome()
+        try fixture.directory("Documents/Projects")
+        try FileManager.default.createSymbolicLink(
+            at: fixture.home.appendingPathComponent("Projects"),
+            withDestinationURL: fixture.home.appendingPathComponent("Documents/Projects")
+        )
+        #expect(ProjectRoots.all(home: fixture.home.resolvingSymlinksInPath(), extra: []).isEmpty)
+    }
+}
+
+struct ToolchainSafetyTests {
+    private let rule = CleanupRule(
+        id: "dev.toolchains", name: "Unused toolchains", detail: "", tier: .review, action: .trash, regenerable: true,
+        paths: ["~/.nvm/versions/node/*", "~/.pyenv/versions/*", "~/.rustup/toolchains/*"], special: .unusedToolchains
+    )
+
+    @Test func aVirtualenvProtectsThePythonItBelongsTo() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".pyenv/versions/3.11.2/bin/python")
+        try fixture.file(".pyenv/versions/3.12.8/envs/myenv/bin/python")
+        try FileManager.default.createSymbolicLink(
+            at: fixture.home.appendingPathComponent(".pyenv/versions/myenv"),
+            withDestinationURL: fixture.home.appendingPathComponent(".pyenv/versions/3.12.8/envs/myenv")
+        )
+        try fixture.file(".pyenv/version").write("myenv\n")
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.map(\.url.lastPathComponent) == ["3.11.2"])
+    }
+
+    @Test func pinsDeepInsideProjectsCount() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".nvm/versions/node/v20.1.0/bin/node")
+        try fixture.file(".nvm/versions/node/v22.1.0/bin/node")
+        try fixture.file(".nvm/alias/default").write("22\n")
+        try fixture.file("Projects/client/product/apps/web/.nvmrc").write("20\n")
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func theCleanerChecksAgainThatNothingUsesTheVersion() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".nvm/versions/node/v20.1.0/bin/node")
+        try fixture.file(".nvm/versions/node/v22.1.0/bin/node")
+        try fixture.file(".nvm/alias/default").write("22\n")
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.count == 1)
+        // A project starts pinning Node 20 before the clean.
+        try fixture.file("Projects/new/.nvmrc").write("20\n")
+        let cleaner = Cleaner(
+            home: fixture.home, trash: FixtureTrash(directory: fixture.root.appendingPathComponent("trash")),
+            log: CleanupLog(url: fixture.root.appendingPathComponent("log.jsonl"))
+        )
+        let outcome = await cleaner.clean([CleanupSelection(rule: rule, items: result.items)])
+        #expect(outcome.failures.map(\.kind) == [.usedRecently])
+    }
+}
+
+struct DockerSafetyTests {
+    @Test func onlyLocalDaemonsAreCleaned() {
+        let local = #"[{"Name":"colima","Endpoints":{"docker":{"Host":"unix:///Users/me/.colima/default/docker.sock"}}}]"#
+        let remote = #"[{"Name":"prod","Endpoints":{"docker":{"Host":"ssh://deploy@server"}}}]"#
+        #expect(DockerInventory.localHost(fromContextInspect: Data(local.utf8)) == "unix:///Users/me/.colima/default/docker.sock")
+        #expect(DockerInventory.localHost(fromContextInspect: Data(remote.utf8)) == nil)
+        #expect(DockerInventory.localHost(fromContextInspect: Data("garbage".utf8)) == nil)
+    }
+}

@@ -130,6 +130,8 @@ public struct CleanupRule: Codable, Sendable, Identifiable, Equatable {
     public enum Special: String, Codable, Sendable {
         /// Keep toolchain versions that a default or a project still uses (nvm, pyenv, rustup).
         case unusedToolchains
+        /// Items the user picked one by one (Space Lens): system folders and folders to keep are refused.
+        case userSelected
     }
 
     public let id: String

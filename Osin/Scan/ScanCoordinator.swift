@@ -67,7 +67,7 @@ final class ScanCoordinator {
     /// stops instead of writing into the newer scan's state.
     @ObservationIgnored private var scanGeneration = 0
     @ObservationIgnored let log: CleanupLog? = (try? CleanupLog.defaultURL()).map { CleanupLog(url: $0) }
-    @ObservationIgnored lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0) }
+    @ObservationIgnored lazy var cleaner: Cleaner? = log.map { Cleaner(log: $0, projectRoots: { Preferences.projectRoots }) }
 
     // MARK: Derived
 
@@ -97,7 +97,7 @@ final class ScanCoordinator {
         switch group.kind {
         case .rule:
             group.items.filter { !excludedItems.contains($0.id) && $0.blockedBy == nil }.reduce(0) { $0 + $1.bytes }
-        case let .dockerVolumes(volumes):
+        case let .dockerVolumes(_, volumes):
             volumes.filter { !excludedItems.contains(Self.volumeItemID($0.name)) }.reduce(0) { $0 + $1.bytes }
         default:
             group.bytes
@@ -325,7 +325,8 @@ final class ScanCoordinator {
         currentStepIndex = 0
         scanGeneration += 1
         let generation = scanGeneration
-        task = Task {
+        // The quiet launch scan yields to whatever the user is doing.
+        task = Task(priority: silent ? .utility : nil) {
             await scan(silent: silent, filter: filter, generation: generation)
             if generation == scanGeneration {
                 isScanningInBackground = false

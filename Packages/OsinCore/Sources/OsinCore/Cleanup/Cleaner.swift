@@ -131,13 +131,16 @@ public actor Cleaner {
     private let trash: TrashMover
     private let log: CleanupLog
     private let runningApps: @Sendable () -> Set<String>
+    private let projectRoots: @Sendable () -> [URL]
 
     public init(
         home: URL = FileManager.default.homeDirectoryForCurrentUser,
         trash: TrashMover = SystemTrash(),
         log: CleanupLog,
-        runningApps: @escaping @Sendable () -> Set<String> = AppActivity.runningAppNames
+        runningApps: @escaping @Sendable () -> Set<String> = AppActivity.runningAppNames,
+        projectRoots: @escaping @Sendable () -> [URL] = { [] }
     ) {
+        self.projectRoots = projectRoots
         let resolved = home.resolvingSymlinksInPath().standardizedFileURL
         self.home = resolved
         protected = ProtectedPaths(home: resolved)
@@ -154,12 +157,14 @@ public actor Cleaner {
             outcome.failures = selections.flatMap { $0.items.map { CleanupFailure(url: $0.url, kind: .logUnavailable) } }
             return outcome
         }
-        // Read once, and only when a rule has apps that must be closed.
-        let running = selections.contains { !$0.rule.closedApps.isEmpty } ? runningApps() : []
+        var apps = RunningApps(read: runningApps)
         for selection in selections {
             let rule = selection.rule
             let cutoff = rule.minAgeDays.map { Date().addingTimeInterval(-Double($0) * 86400) }
             let coldCutoff = rule.find?.coldDays.map { Date().addingTimeInterval(-Double($0) * 86400) }
+            // Toolchain usage is worked out again: a default or pin may have changed since the scan.
+            let inUse = rule.special == .unusedToolchains
+                ? ToolchainUsage.keptPaths(home: home, projectRoots: ProjectRoots.all(home: home, extra: projectRoots())) : []
             for item in selection.items {
                 if rule.action == .delete, rule.tier != .safe || !rule.regenerable {
                     outcome.failures.append(CleanupFailure(url: item.url, kind: .deleteNotAllowed))
@@ -174,15 +179,13 @@ public actor Cleaner {
                 case .ok:
                     break
                 }
-                if let app = rule.closedApp(for: item.url, home: home), running.contains(app.app) {
-                    outcome.failures.append(CleanupFailure(url: item.url, kind: .appRunning(app.displayName)))
+                if let kind = ruleRefusal(item, rule: rule, inUse: inUse, coldCutoff: coldCutoff) {
+                    outcome.failures.append(CleanupFailure(url: item.url, kind: kind))
                     continue
                 }
-                // A cold project that was opened again since the scan is left alone.
-                if let coldCutoff, ProjectActivity.isActive(
-                    project: item.url.deletingLastPathComponent(), target: item.url, within: home, since: coldCutoff
-                ) {
-                    outcome.failures.append(CleanupFailure(url: item.url, kind: .usedRecently))
+                // Last, right before removal, with a fresh process list (an app may have just opened).
+                if let app = rule.closedApp(for: item.url, home: home), apps.isRunning(app.app) {
+                    outcome.failures.append(CleanupFailure(url: item.url, kind: .appRunning(app.displayName)))
                     continue
                 }
                 guard proceed() else {
@@ -324,6 +327,23 @@ public actor Cleaner {
         case refused(CleanupFailure.Kind)
     }
 
+    /// Rule-specific reasons to keep an item, checked at the moment of cleaning.
+    private func ruleRefusal(_ item: ScanItem, rule: CleanupRule, inUse: Set<String>, coldCutoff: Date?) -> CleanupFailure.Kind? {
+        if rule.special == .userSelected, !SpaceScanner.canTrash(item.url, home: home) {
+            return .protectedLocation
+        }
+        if inUse.contains(item.url.standardizedFileURL.path) {
+            return .usedRecently
+        }
+        // A cold project that was opened again since the scan is left alone.
+        if let coldCutoff, ProjectActivity.isActive(
+            project: item.url.deletingLastPathComponent(), target: item.url, within: home, since: coldCutoff
+        ) {
+            return .usedRecently
+        }
+        return nil
+    }
+
     private func check(_ item: ScanItem, cutoff: Date?) -> Check {
         let url = item.url
         let path = url.standardizedFileURL.path
@@ -353,5 +373,24 @@ public actor Cleaner {
             }
         }
         return .ok
+    }
+}
+
+/// The running apps, read again when more than a second old.
+private struct RunningApps {
+    let read: @Sendable () -> Set<String>
+    private var names: Set<String> = []
+    private var readAt = Date.distantPast
+
+    init(read: @escaping @Sendable () -> Set<String>) {
+        self.read = read
+    }
+
+    mutating func isRunning(_ app: String) -> Bool {
+        if Date().timeIntervalSince(readAt) > 1 {
+            names = read()
+            readAt = Date()
+        }
+        return names.contains(app)
     }
 }
