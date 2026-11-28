@@ -107,11 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             }
         }
         scan.onFreed = { [housekeeper] bytes in housekeeper.recordFreed(bytes) }
-        spaceLens.onTrashed = { [weak self] in
-            guard let self else { return }
-            scan.historyRevision += 1
-            monitor.refreshNow()
-        }
+        spaceLens.trasher = { [scan] item in await scan.trashSelected(item) }
         scan.onScanFinished = { [weak self] in
             guard let self else { return }
             monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)

@@ -157,7 +157,7 @@ public actor Cleaner {
             outcome.failures = selections.flatMap { $0.items.map { CleanupFailure(url: $0.url, kind: .logUnavailable) } }
             return outcome
         }
-        var apps = RunningApps(read: runningApps)
+        let apps = RunningApps(read: runningApps)
         for selection in selections {
             let rule = selection.rule
             let cutoff = rule.minAgeDays.map { Date().addingTimeInterval(-Double($0) * 86400) }
@@ -335,6 +335,12 @@ public actor Cleaner {
         if inUse.contains(item.url.standardizedFileURL.path) {
             return .usedRecently
         }
+        // A found folder must still be what the rule looks for (`.venv` still holding `pyvenv.cfg`).
+        if let find = rule.find, let target = find.targets.first(where: { $0.name == item.url.lastPathComponent }),
+           !Scanner.hasMarker(target, at: item.url)
+        {
+            return .changedSinceScan
+        }
         // A cold project that was opened again since the scan is left alone.
         if let coldCutoff, ProjectActivity.isActive(
             project: item.url.deletingLastPathComponent(), target: item.url, within: home, since: coldCutoff
@@ -376,21 +382,11 @@ public actor Cleaner {
     }
 }
 
-/// The running apps, read again when more than a second old.
+/// The running apps, read fresh for every item that belongs to one.
 private struct RunningApps {
     let read: @Sendable () -> Set<String>
-    private var names: Set<String> = []
-    private var readAt = Date.distantPast
 
-    init(read: @escaping @Sendable () -> Set<String>) {
-        self.read = read
-    }
-
-    mutating func isRunning(_ app: String) -> Bool {
-        if Date().timeIntervalSince(readAt) > 1 {
-            names = read()
-            readAt = Date()
-        }
-        return names.contains(app)
+    func isRunning(_ app: String) -> Bool {
+        read().contains(app)
     }
 }

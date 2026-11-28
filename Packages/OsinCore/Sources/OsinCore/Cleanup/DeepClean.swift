@@ -134,6 +134,13 @@ enum ToolchainUsage {
     static func keptPaths(home: URL, projectRoots: [URL]) -> Set<String> {
         let pins = ProjectPins.find(in: projectRoots)
         var kept = Set<String>()
+        // A project or pin file that could not be read might pin anything: keep every version.
+        if pins.incomplete {
+            for folder in [".nvm/versions/node", ".pyenv/versions", ".rustup/toolchains"] {
+                kept.formUnion(directories(home.appendingPathComponent(folder)).map(\.path))
+            }
+            return kept
+        }
         kept.formUnion(node(home: home, pins: pins.node))
         kept.formUnion(python(home: home, pins: pins.python))
         kept.formUnion(rust(home: home, pins: pins.rust))
@@ -212,19 +219,21 @@ enum ToolchainUsage {
         let names = installed.map(\.lastPathComponent)
         guard let global = read(home.appendingPathComponent(".pyenv/version")) else { return installed.map(\.path) }
         var keep: [String] = []
-        for spec in global.split(whereSeparator: \.isNewline).map(String.init) + pins {
-            let spec = spec.trimmingCharacters(in: .whitespaces)
-            guard !spec.isEmpty, spec != "system" else { continue }
-            if names.contains(spec) {
-                keep.append(spec)
-            } else if let prefix = components(spec) {
-                // A version that is not installed protects nothing.
-                if let match = highest(matching: prefix, in: names) {
-                    keep.append(match)
-                }
-            } else {
-                return installed.map(\.path) // a virtualenv or alias name: keep everything
+        // The default must resolve to something installed; otherwise nothing is offered.
+        for spec in global.split(whereSeparator: \.isNewline).map({ $0.trimmingCharacters(in: .whitespaces) }) where !spec.isEmpty {
+            if spec == "system" {
+                continue
             }
+            guard let match = resolvePython(spec, names: names) else { return installed.map(\.path) }
+            keep.append(match)
+        }
+        for spec in pins where !spec.isEmpty && spec != "system" {
+            if let match = resolvePython(spec, names: names) {
+                keep.append(match)
+            } else if components(spec) == nil {
+                return installed.map(\.path) // a virtualenv or alias name we don't have: keep everything
+            }
+            // A plain version that is not installed protects nothing.
         }
         // A virtualenv (versions/myenv → versions/3.12.8/envs/myenv) also keeps the Python it lives in.
         var paths = Set(keep.map { root.appendingPathComponent($0).standardizedFileURL.path })
@@ -237,6 +246,13 @@ enum ToolchainUsage {
             paths.insert(root.appendingPathComponent(String(owner)).standardizedFileURL.path)
         }
         return Array(paths)
+    }
+
+    private static func resolvePython(_ spec: String, names: [String]) -> String? {
+        if names.contains(spec) {
+            return spec
+        }
+        return components(spec).flatMap { highest(matching: $0, in: names) }
     }
 
     // MARK: rustup
@@ -258,11 +274,15 @@ enum ToolchainUsage {
                 wanted.append(value)
             }
         }
-        guard !wanted.isEmpty else { return installed.map(\.path) }
+        func matches(_ url: URL, _ name: String) -> Bool {
+            url.lastPathComponent == name || url.lastPathComponent.hasPrefix(name + "-")
+        }
+        // Every configured toolchain must be installed, or we can't tell what is used: keep everything.
+        guard !wanted.isEmpty, wanted.allSatisfy({ name in installed.contains { matches($0, name) } }) else {
+            return installed.map(\.path)
+        }
         wanted += pins
-        return installed.filter { url in
-            wanted.contains { url.lastPathComponent == $0 || url.lastPathComponent.hasPrefix($0 + "-") }
-        }.map(\.path)
+        return installed.filter { url in wanted.contains { matches(url, $0) } }.map(\.path)
     }
 
     /// The quoted value of a `key = "value"` line.
@@ -280,6 +300,8 @@ enum ProjectPins {
         var node: [String] = []
         var python: [String] = []
         var rust: [String] = []
+        /// A folder or pin file could not be read.
+        var incomplete = false
     }
 
     /// As deep as cold-project discovery looks (5), plus one for the pin file itself.
@@ -292,7 +314,10 @@ enum ProjectPins {
     }
 
     private static func visit(_ directory: URL, depth: Int, into pins: inout Pins) {
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return }
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else {
+            pins.incomplete = true
+            return
+        }
         for name in names {
             let url = directory.appendingPathComponent(name)
             if record(name, at: url, into: &pins) {
@@ -309,29 +334,33 @@ enum ProjectPins {
 
     /// Reads `url` if `name` is a version file. Returns whether it was one.
     private static func record(_ name: String, at url: URL, into pins: inout Pins) -> Bool {
+        guard [".nvmrc", ".node-version", ".python-version", "rust-toolchain.toml", "rust-toolchain"].contains(name) else { return false }
+        guard let lines = lines(url) else {
+            pins.incomplete = true
+            return true
+        }
         switch name {
         case ".nvmrc", ".node-version":
-            pins.node += firstLine(url).map { [$0] } ?? []
+            pins.node += lines.prefix(1)
         case ".python-version":
-            pins.python += lines(url)
-        case "rust-toolchain.toml":
-            pins.rust += lines(url).filter { $0.hasPrefix("channel") }.compactMap(ToolchainUsage.tomlString)
-        case "rust-toolchain":
-            pins.rust += firstLine(url).map { [$0] } ?? []
+            pins.python += lines
         default:
-            return false
+            // rust-toolchain may be TOML too (`[toolchain]` then `channel = "…"`), or just the channel.
+            let channels = lines.filter { $0.hasPrefix("channel") }.compactMap(ToolchainUsage.tomlString)
+            if !channels.isEmpty {
+                pins.rust += channels
+            } else if name == "rust-toolchain", let first = lines.first, !first.hasPrefix("[") {
+                pins.rust.append(first)
+            } else {
+                pins.incomplete = true // a file we don't understand
+            }
         }
         return true
     }
 
-    private static func lines(_ url: URL) -> [String] {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
-        return text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
-    }
-
-    private static func firstLine(_ url: URL) -> String? {
+    /// Non-empty trimmed lines, or `nil` if the file can't be read.
+    private static func lines(_ url: URL) -> [String]? {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return nil }
-        let line = text.split(whereSeparator: \.isNewline).first.map { $0.trimmingCharacters(in: .whitespaces) }
-        return line?.isEmpty == false ? line : nil
+        return text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
     }
 }

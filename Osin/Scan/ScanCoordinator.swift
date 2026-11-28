@@ -32,9 +32,12 @@ final class ScanCoordinator {
     /// The quiet launch scan is running (it leaves `phase` alone, so `isBusy` does not show it).
     private(set) var isScanningInBackground = false
 
-    /// Undoing or running a chore: scans, cleans and undos wait.
+    /// Space Lens is moving something to the Trash (see `trashSelected`).
+    var isTrashingSelection = false
+
+    /// Undoing, running a chore or trashing from Space Lens: scans, cleans and undos wait.
     var isOccupied: Bool {
-        isUndoing || isRunningChore
+        isUndoing || isRunningChore || isTrashingSelection
     }
 
     /// Items Undo could not put back yet; Undo retries exactly these.

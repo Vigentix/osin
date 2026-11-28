@@ -17,8 +17,6 @@ final class SpaceLensModel {
     /// Why the last Move to Trash failed, if it did.
     private(set) var trashError: String?
 
-    /// Called after something was moved to the Trash (History and storage refresh).
-    @ObservationIgnored var onTrashed: (() -> Void)?
     @ObservationIgnored private var task: Task<Void, Never>?
     /// The walk itself (detached); cancelled with the scan.
     @ObservationIgnored private var worker: Task<SpaceNode, Error>?
@@ -26,7 +24,8 @@ final class SpaceLensModel {
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private let cacheURL = (try? CleanupLog.defaultURL())?.deletingLastPathComponent()
         .appendingPathComponent("space-lens.json")
-    @ObservationIgnored private lazy var cleaner: Cleaner? = (try? CleanupLog.defaultURL()).map { Cleaner(log: CleanupLog(url: $0)) }
+    /// Does the actual Move to Trash, through Smart Scan's coordinator so cleanups never overlap.
+    @ObservationIgnored var trasher: ((ScanItem) async -> CleanupFailure?)?
 
     /// A rule only Space Lens uses: Trash, never delete; the cleaner still refuses protected places.
     static let rule = CleanupRule(
@@ -135,15 +134,14 @@ final class SpaceLensModel {
     /// Moves a file or folder to the Trash. It must still be the item Space Lens measured.
     func trash(_ node: SpaceNode) async {
         // The identity recorded when it was measured: anything that replaced it since is refused.
-        guard node.canTrash, let cleaner else { return }
+        guard node.canTrash, let trasher else { return }
         guard let identity = node.identity else {
             trashError = String(localized: "Space Lens measured this before an update. Rescan, then try again.")
             return
         }
         let url = URL(fileURLWithPath: node.path)
         let item = ScanItem(url: url, bytes: node.bytes, modified: nil, identity: identity)
-        let outcome = await cleaner.clean([CleanupSelection(rule: Self.rule, items: [item])])
-        if let failure = outcome.failures.first {
+        if let failure = await trasher(item) {
             trashError = failure.localizedReason
             return
         }
@@ -151,7 +149,6 @@ final class SpaceLensModel {
         if let tree {
             self.tree = Self.removing(node.path, bytes: node.bytes, from: tree)
         }
-        onTrashed?()
     }
 
     private static func find(_ path: String, in node: SpaceNode) -> SpaceNode? {

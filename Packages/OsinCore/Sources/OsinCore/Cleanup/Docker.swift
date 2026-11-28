@@ -101,15 +101,33 @@ public enum DockerInventory {
         return localHost(fromContextInspect: data)
     }
 
+    /// Whether two image IDs name the same image, whatever length and prefix Docker printed them with.
+    static func sameImage(_ first: String, _ second: String) -> Bool {
+        let shortFirst = first.replacingOccurrences(of: "sha256:", with: "")
+        let shortSecond = second.replacingOccurrences(of: "sha256:", with: "")
+        let length = min(shortFirst.count, shortSecond.count, 64)
+        return length >= 12 && shortFirst.prefix(length) == shortSecond.prefix(length)
+    }
+
+    /// Images Docker itself calls dangling (untagged and unreferenced); `system df` alone can't tell
+    /// a digest-only image from one.
+    static func danglingIDs(docker: String, host: String) async -> [String]? {
+        guard let data = try? await ProcessRunner.run(
+            docker, ["-H", host, "image", "ls", "--filter", "dangling=true", "--no-trunc", "--format", "{{.ID}}"], timeout: 30
+        ) else { return nil }
+        guard let text = String(bytes: data, encoding: .utf8) else { return nil }
+        return text.split(whereSeparator: \.isNewline).map(String.init)
+    }
+
     /// `nil` when Docker is not installed, its daemon is not running, or it is not on this Mac.
     public static func measure() async -> Usage? {
         guard let docker = executable(), let host = await currentLocalHost(docker: docker),
               let data = try? await ProcessRunner.run(docker, ["-H", host, "system", "df", "-v", "--format", "{{json .}}"], timeout: 30),
               let usage = try? parse(systemDF: data)
         else { return nil }
-        return Usage(
-            buildCacheBytes: usage.buildCacheBytes, danglingImages: usage.danglingImages, unusedVolumes: usage.unusedVolumes, host: host
-        )
+        let dangling = await danglingIDs(docker: docker, host: host) ?? []
+        let images = usage.danglingImages.filter { image in dangling.contains { sameImage($0, image.id) } }
+        return Usage(buildCacheBytes: usage.buildCacheBytes, danglingImages: images, unusedVolumes: usage.unusedVolumes, host: host)
     }
 
     /// Every cleaning command names the daemon that was measured, so a context switch in between
@@ -123,9 +141,14 @@ public enum DockerInventory {
         try await run(["builder", "prune", "--force"], host: host)
     }
 
+    /// Removes only images that are still dangling now.
     public static func removeImages(_ ids: [String], host: String) async throws {
-        guard !ids.isEmpty else { return }
-        try await run(["image", "rm"] + ids, host: host)
+        guard let docker = executable(), let dangling = await danglingIDs(docker: docker, host: host) else {
+            throw ProcessRunner.Failure(status: -1)
+        }
+        let still = ids.filter { id in dangling.contains { sameImage($0, id) } }
+        guard !still.isEmpty else { return }
+        try await run(["image", "rm"] + still, host: host)
     }
 
     public static func removeVolumes(_ names: [String], host: String) async throws {

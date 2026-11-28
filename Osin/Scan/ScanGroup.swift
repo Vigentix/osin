@@ -158,3 +158,19 @@ extension ScanCoordinator {
         }
     }
 }
+
+extension ScanCoordinator {
+    /// Moves an item picked in Space Lens to the Trash, one cleanup at a time with everything else (an
+    /// Empty Trash running meanwhile would otherwise remove it for good).
+    func trashSelected(_ item: ScanItem) async -> CleanupFailure? {
+        guard !isBusy, !isScanningInBackground, let cleaner else {
+            return CleanupFailure(url: item.url, reason: String(localized: "Osin is busy cleaning. Try again in a moment."))
+        }
+        isTrashingSelection = true
+        defer { isTrashingSelection = false }
+        let outcome = await cleaner.clean([CleanupSelection(rule: SpaceLensModel.rule, items: [item])])
+        historyRevision += 1
+        onCleaned?()
+        return outcome.failures.first
+    }
+}

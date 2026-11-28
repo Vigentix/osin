@@ -572,3 +572,91 @@ struct DockerSafetyTests {
         #expect(DockerInventory.localHost(fromContextInspect: Data("garbage".utf8)) == nil)
     }
 }
+
+// MARK: - Review fixes (round 2)
+
+struct DeepCleanSafetyRoundTwoTests {
+    @Test func aSymlinkInTheFixedPartOfAPatternIsNotFollowed() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Library/Application Support/Slack/Local Storage/leveldb/000003.log")
+        try FileManager.default.createSymbolicLink(
+            at: fixture.home.appendingPathComponent("Library/Application Support/Slack/Cache"),
+            withDestinationURL: fixture.home.appendingPathComponent("Library/Application Support/Slack/Local Storage")
+        )
+        let rule = CleanupRule(
+            id: "browser", name: "b", detail: "", tier: .safe, action: .delete, regenerable: true,
+            paths: ["~/Library/Application Support/Slack/Cache/*"]
+        )
+        let result = try #require(try await Scanner(home: fixture.home, runningApps: { [] }).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func aRepurposedVenvIsKeptAtCleanTime() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Projects/py/main.py", age: 60)
+        try fixture.file("Projects/py/.venv/pyvenv.cfg", age: 60)
+        let rule = CleanupRule(
+            id: "dev.cold-projects", name: "c", detail: "", tier: .review, action: .trash, regenerable: true, paths: [],
+            find: CleanupRule.Find(
+                roots: ["~/Projects"],
+                targets: [CleanupRule.Find.Target(name: ".venv", inside: "pyvenv.cfg")],
+                maxDepth: 4,
+                coldDays: 30
+            )
+        )
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.count == 1)
+        try FileManager.default.removeItem(at: fixture.home.appendingPathComponent("Projects/py/.venv/pyvenv.cfg"))
+        let cleaner = Cleaner(
+            home: fixture.home, trash: FixtureTrash(directory: fixture.root.appendingPathComponent("trash")),
+            log: CleanupLog(url: fixture.root.appendingPathComponent("log.jsonl"))
+        )
+        let outcome = await cleaner.clean([CleanupSelection(rule: rule, items: result.items)])
+        #expect(outcome.failures.map(\.kind) == [.changedSinceScan])
+    }
+
+    @Test func dockerImageIDsMatchWhateverLengthDockerPrints() {
+        #expect(DockerInventory.sameImage("sha256:0123456789abcdef0123", "0123456789ab"))
+        #expect(!DockerInventory.sameImage("sha256:0123456789abcdef", "fedcba987654"))
+    }
+}
+
+struct ToolchainSafetyRoundTwoTests {
+    private let rule = CleanupRule(
+        id: "dev.toolchains", name: "Unused toolchains", detail: "", tier: .review, action: .trash, regenerable: true,
+        paths: ["~/.nvm/versions/node/*", "~/.pyenv/versions/*", "~/.rustup/toolchains/*"], special: .unusedToolchains
+    )
+
+    @Test func aTomlRustToolchainFileIsUnderstood() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".rustup/toolchains/stable-aarch64-apple-darwin/bin/rustc")
+        try fixture.file(".rustup/toolchains/1.75.0-aarch64-apple-darwin/bin/rustc")
+        try fixture.file(".rustup/settings.toml").write("default_toolchain = \"stable-aarch64-apple-darwin\"\n")
+        try fixture.file("Projects/legacy/rust-toolchain").write("[toolchain]\nchannel = \"1.75.0\"\n")
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func aDefaultThatMatchesNothingInstalledKeepsEverything() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".pyenv/versions/3.11.2/bin/python")
+        try fixture.file(".pyenv/versions/3.12.1/bin/python")
+        try fixture.file(".pyenv/version").write("3.13.0\n")
+        try fixture.file(".rustup/toolchains/nightly-aarch64-apple-darwin/bin/rustc")
+        try fixture.file(".rustup/settings.toml").write("default_toolchain = \"stable-aarch64-apple-darwin\"\n")
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func anUnreadablePinKeepsEverything() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".pyenv/versions/3.11.2/bin/python")
+        try fixture.file(".pyenv/versions/3.12.1/bin/python")
+        try fixture.file(".pyenv/version").write("3.12.1\n")
+        let pin = try fixture.file("Projects/ml/.python-version")
+        try pin.write("3.11\n")
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: pin.path)
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+}

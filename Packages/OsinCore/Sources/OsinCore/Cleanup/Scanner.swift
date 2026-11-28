@@ -207,7 +207,9 @@ public struct Scanner: Sendable {
         let fixed = components.prefix { !$0.contains("*") }
         let rootURL = fixed.reduce(home) { $0.appendingPathComponent($1) }
         let resolvedRoot = rootURL.resolvingSymlinksInPath().standardizedFileURL
-        guard resolvedRoot.path.hasPrefix(home.path + "/"), !protected.denies(resolvedRoot),
+        // The fixed part must be real folders too: `Slack/Cache` linked to `Slack/Local Storage` is skipped.
+        guard resolvedRoot.path == rootURL.standardizedFileURL.path,
+              resolvedRoot.path.hasPrefix(home.path + "/"), !protected.denies(resolvedRoot),
               fixed.count < components.count else { return } // validation requires a glob; refuse otherwise
 
         var level = [resolvedRoot]
