@@ -128,7 +128,7 @@ Osin looks where space actually goes on a developer's Mac:
 - **Caches:** Xcode DerivedData and device support files, app caches and logs, package-manager and developer-tool caches (npm, pnpm, Gradle, Cargo, uv, Bun, Maven, Yarn, pip…), and the page and script caches of browsers and desktop apps such as Chrome, Edge, Brave, Arc, Slack and VS Code. Browser and app caches wait until that app is closed.
 - **Docker:** the build cache, untagged images and unused volumes, through the `docker` command itself. Afterwards Osin can trim Colima's virtual disk so macOS gets the space back.
 - **Cold projects:** `node_modules`, `.venv`, `target`, `.next`, `Pods` and similar folders, in projects with no commits or edits for 30 days. Add your own project folders in Settings.
-- **Leftovers:** Node, Python and Rust versions no default or project uses, Claude Code and Codex sessions untouched for 90 days, Chrome's on-device AI model, app updates that were downloaded but not installed, installers and old files in Downloads, unavailable simulators and the Trash.
+- **Leftovers:** Node, Python and Rust versions no default or project uses, Claude Code and Codex sessions untouched for 90 days, Chrome's on-device AI model, websites' offline storage, app updates that were downloaded but not installed, installers and old files in Downloads, unavailable simulators and the Trash.
 
 Results are split into **Safe to clean** (selected for you) and **Needs your review** (never selected unless you choose), with every item listed and sizes measured on disk.
 

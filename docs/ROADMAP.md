@@ -96,13 +96,13 @@ Each milestone ends with a working, demoable build.
 - [x] Live dot pulses with Core Animation; live metrics update in place (dashboard open: ~20% CPU to under 1%)
 
 ## v0.5 — Deeper clean
-- [ ] Safe: developer tool caches (uv, bun, Maven, Terraform plugins, …) and browser / Electron app caches (Chrome, Edge, Brave, Arc, Vivaldi, Slack, Discord, VS Code, Cursor, Claude, …), skipped while the app runs
-- [ ] Review: Chrome's on-device AI model; old AI agent sessions (`~/.claude/projects`, `~/.codex/sessions`, 90 days)
-- [ ] Docker: build cache (safe), dangling images and unused volumes (review) through the official CLI; optional Colima disk trim
-- [ ] Cold projects: `node_modules`, `.venv`, `target`, `.next`, `Pods`, … in projects untouched for 30 days (git and files); project folders in Settings
-- [ ] Unused toolchains: nvm, pyenv and rustup versions that no default or project uses
-- [ ] New Safe groups are not added to scheduled chores until the user turns them on
-- [ ] Space Lens: browse what uses space in your home folder (whole disk with Full Disk Access), known-folder descriptions, Trash only
+- [x] Safe: developer tool caches (uv, bun, Maven, Terraform plugins, …) and browser / Electron app caches (Chrome, Edge, Brave, Arc, Vivaldi, Slack, Discord, VS Code, Cursor, Claude, …), skipped while the app runs
+- [x] Review: Chrome's on-device AI model, websites' offline storage; old AI agent sessions (`~/.claude/projects`, `~/.codex/sessions`, 90 days)
+- [x] Docker: build cache (safe), dangling images and unused volumes (review) through the official CLI; optional Colima disk trim
+- [x] Cold projects: `node_modules`, `.venv`, `target`, `.next`, `Pods`, … in projects untouched for 30 days (git and files); project folders in Settings
+- [x] Unused toolchains: nvm, pyenv and rustup versions that no default or project uses
+- [x] New Safe groups are not added to scheduled chores until the user turns them on
+- [x] Space Lens: browse what uses space in your home folder (whole disk with Full Disk Access), known-folder descriptions, Trash only
 
 ## v0.6 — Clean with AI
 - [ ] Runs the user's own Claude Code or Codex (no Osin login, no tokens) with Osin's MCP tools only: no shell, no file contents
