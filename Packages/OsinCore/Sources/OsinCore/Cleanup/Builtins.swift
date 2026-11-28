@@ -30,13 +30,18 @@ enum ProcessRunner {
 
     /// Runs the tool and returns its output. With a `timeout`, a tool that hangs (a Docker daemon that
     /// never answers) gets SIGTERM, then SIGKILL five seconds later, and the call fails.
-    static func run(_ executable: String, _ arguments: [String], timeout: TimeInterval? = nil) async throws -> Data {
+    static func run(
+        _ executable: String, _ arguments: [String], timeout: TimeInterval? = nil, environment overrides: [String: String?] = [:]
+    ) async throws -> Data {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: executable)
             process.arguments = arguments
             var environment = ProcessInfo.processInfo.environment
             environment["PATH"] = searchPath
+            for (key, value) in overrides {
+                environment[key] = value
+            }
             process.environment = environment
             let output = Pipe()
             process.standardOutput = output

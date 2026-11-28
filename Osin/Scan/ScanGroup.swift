@@ -127,7 +127,7 @@ extension ScanCoordinator {
                 return (group.bytes, [])
             case let .dockerVolumes(host, volumes):
                 let chosen = volumes.filter { !excluded.contains(Self.volumeItemID($0.name)) }
-                try await DockerInventory.removeVolumes(chosen.map(\.name), host: host)
+                try await DockerInventory.removeVolumes(chosen, host: host)
                 let bytes = chosen.reduce(UInt64(0)) { $0 + $1.bytes }
                 await cleaner.record(builtin: "docker-volumes", bytes: bytes)
                 return (bytes, [])

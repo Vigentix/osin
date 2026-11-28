@@ -43,6 +43,10 @@ enum ProjectActivity {
         "build", "dist", ".cache", ".git", "DerivedData", ".build", "__pycache__", ".pytest_cache"
     ]
 
+    /// Big dependency folders the activity walk skips (the target itself is skipped too). Build output
+    /// is not skipped: building a project is activity.
+    static let dependencies: Set<String> = ["node_modules", ".venv", "venv", "Pods", ".git", ".gradle", "target", "DerivedData", ".build"]
+
     /// Git files that change when someone commits, checks out or stages (not on a background fetch).
     private static let gitMarkers = ["logs/HEAD", "index", "HEAD", "ORIG_HEAD"]
     /// Files looked at per project before giving up (and keeping it).
@@ -116,7 +120,7 @@ enum ProjectActivity {
     private static func newestFile(in directory: URL, skipping skipped: String, budget: inout Int) -> Newest {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return .unknown }
         var newest: Date?
-        for name in names where name != skipped && !generated.contains(name) {
+        for name in names where name != skipped {
             budget -= 1
             guard budget > 0 else { return .unknown }
             let url = directory.appendingPathComponent(name)
@@ -124,6 +128,10 @@ enum ProjectActivity {
             guard lstat(url.path, &info) == 0 else { return .unknown } // can't see it: can't call the project cold
             let type = info.st_mode & S_IFMT
             if type == S_IFDIR {
+                // Only folders are skipped by name: a source file called `build` still counts.
+                if dependencies.contains(name) {
+                    continue
+                }
                 switch newestFile(in: url, skipping: skipped, budget: &budget) {
                 case .unknown: return .unknown
                 case let .newest(inner): if let inner {
@@ -148,7 +156,7 @@ enum ToolchainUsage {
         // A project or pin file that could not be read might pin anything: keep every version.
         if pins.incomplete {
             for folder in [".nvm/versions/node", ".pyenv/versions", ".rustup/toolchains"] {
-                kept.formUnion(directories(home.appendingPathComponent(folder)).map(\.path))
+                kept.formUnion(directories(home.appendingPathComponent(folder), home: home).map(\.path))
             }
             return kept
         }
@@ -158,13 +166,25 @@ enum ToolchainUsage {
         return kept
     }
 
-    private static func directories(_ url: URL) -> [URL] {
+    /// Whether `url` is a real path (no links on the way) inside home and not protected, so reading it
+    /// can't wander into a folder macOS guards with a privacy prompt.
+    private static func isSafeToRead(_ url: URL, home: URL) -> Bool {
+        let path = url.standardizedFileURL.path
+        return path.hasPrefix(home.path + "/") && url.resolvingSymlinksInPath().standardizedFileURL.path == path
+            && !ProtectedPaths(home: home).denies(url)
+    }
+
+    private static func directories(_ url: URL, home: URL) -> [URL] {
+        guard isSafeToRead(url, home: home) else { return [] }
         let names = (try? FileManager.default.contentsOfDirectory(atPath: url.path)) ?? []
         return names.filter { !$0.hasPrefix(".") }.map { url.appendingPathComponent($0).standardizedFileURL }
     }
 
-    private static func read(_ url: URL) -> String? {
-        (try? String(contentsOf: url, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// A configuration file's text, only if it is a regular file reached without links.
+    private static func read(_ url: URL, home: URL) -> String? {
+        var info = stat()
+        guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG, isSafeToRead(url, home: home) else { return nil }
+        return (try? String(contentsOf: url, encoding: .utf8))?.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Numeric version components ("v22.3.1" → [22, 3, 1]); nil if not a plain version.
@@ -187,11 +207,11 @@ enum ToolchainUsage {
 
     private static func node(home: URL, pins: [String]) -> [String] {
         let root = home.appendingPathComponent(".nvm/versions/node")
-        let installed = directories(root)
+        let installed = directories(root, home: home)
         guard !installed.isEmpty else { return [] }
         let names = installed.map(\.lastPathComponent)
         var keep: [String] = []
-        guard let defaultSpec = read(home.appendingPathComponent(".nvm/alias/default")),
+        guard let defaultSpec = read(home.appendingPathComponent(".nvm/alias/default"), home: home),
               let defaultVersion = resolveNode(defaultSpec, home: home, names: names, depth: 0)
         else { return installed.map(\.path) }
         keep.append(defaultVersion)
@@ -216,7 +236,7 @@ enum ToolchainUsage {
         }
         // Another alias (lts/* needs the network: unresolved).
         guard depth < 2, !spec.contains("/"), !spec.contains("*"),
-              let next = read(home.appendingPathComponent(".nvm/alias").appendingPathComponent(spec))
+              let next = read(home.appendingPathComponent(".nvm/alias").appendingPathComponent(spec), home: home)
         else { return nil }
         return resolveNode(next, home: home, names: names, depth: depth + 1)
     }
@@ -225,10 +245,10 @@ enum ToolchainUsage {
 
     private static func python(home: URL, pins: [String]) -> [String] {
         let root = home.appendingPathComponent(".pyenv/versions")
-        let installed = directories(root)
+        let installed = directories(root, home: home)
         guard !installed.isEmpty else { return [] }
         let names = installed.map(\.lastPathComponent)
-        guard let global = read(home.appendingPathComponent(".pyenv/version")) else { return installed.map(\.path) }
+        guard let global = read(home.appendingPathComponent(".pyenv/version"), home: home) else { return installed.map(\.path) }
         var keep: [String] = []
         // The default must resolve to something installed; otherwise nothing is offered.
         for spec in global.split(whereSeparator: \.isNewline).map({ $0.trimmingCharacters(in: .whitespaces) }) where !spec.isEmpty {
@@ -270,9 +290,9 @@ enum ToolchainUsage {
 
     private static func rust(home: URL, pins: [String]) -> [String] {
         let root = home.appendingPathComponent(".rustup/toolchains")
-        let installed = directories(root)
+        let installed = directories(root, home: home)
         guard !installed.isEmpty else { return [] }
-        guard let settings = read(home.appendingPathComponent(".rustup/settings.toml")) else { return installed.map(\.path) }
+        guard let settings = read(home.appendingPathComponent(".rustup/settings.toml"), home: home) else { return installed.map(\.path) }
         var wanted: [String] = []
         var inOverrides = false
         for line in settings.split(whereSeparator: \.isNewline).map({ $0.trimmingCharacters(in: .whitespaces) }) {

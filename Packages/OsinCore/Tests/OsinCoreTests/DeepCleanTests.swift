@@ -751,3 +751,46 @@ struct DeepCleanSafetyRoundFourTests {
         #expect(entry?.advice == .review)
     }
 }
+
+struct DeepCleanSafetyRoundFiveTests {
+    @Test func volumeCreationDatesAreParsed() {
+        let dates = DockerInventory.parseCreationDates("db\t2026-11-01T10:00:00Z\ncache\t2026-11-20T08:00:00Z\nbroken\n")
+        #expect(dates == ["db": "2026-11-01T10:00:00Z", "cache": "2026-11-20T08:00:00Z"])
+    }
+
+    @Test func aRecentlyEditedSourceFileNamedBuildCounts() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Projects/tool/main.c", age: 60)
+        try fixture.file("Projects/tool/build", age: 0)
+        try fixture.file("Projects/tool/node_modules/x.js", age: 60)
+        let rule = CleanupRule(
+            id: "c", name: "c", detail: "", tier: .review, action: .trash, regenerable: true, paths: [],
+            find: CleanupRule.Find(
+                roots: ["~/Projects"],
+                targets: [CleanupRule.Find.Target(name: "node_modules")],
+                maxDepth: 4,
+                coldDays: 30
+            )
+        )
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty)
+    }
+
+    @Test func aLinkedToolchainDefaultIsNotRead() async throws {
+        let fixture = try FixtureHome()
+        try fixture.file(".nvm/versions/node/v20.1.0/bin/node")
+        try fixture.file(".nvm/versions/node/v22.1.0/bin/node")
+        try fixture.file("Documents/default").write("22\n")
+        try fixture.directory(".nvm/alias")
+        try FileManager.default.createSymbolicLink(
+            at: fixture.home.appendingPathComponent(".nvm/alias/default"),
+            withDestinationURL: fixture.home.appendingPathComponent("Documents/default")
+        )
+        let rule = CleanupRule(
+            id: "t", name: "t", detail: "", tier: .review, action: .trash, regenerable: true,
+            paths: ["~/.nvm/versions/node/*"], special: .unusedToolchains
+        )
+        let result = try #require(try await Scanner(home: fixture.home).scan([rule]).first)
+        #expect(result.items.isEmpty) // can't read the default safely: keep everything
+    }
+}

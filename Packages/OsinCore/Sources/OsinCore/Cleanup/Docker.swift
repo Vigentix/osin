@@ -20,10 +20,13 @@ public enum DockerInventory {
 
         public let name: String
         public let bytes: UInt64
+        /// When Docker created it; a volume recreated under the same name since the scan is not removed.
+        public let createdAt: String?
 
-        public init(name: String, bytes: UInt64) {
+        public init(name: String, bytes: UInt64, createdAt: String? = nil) {
             self.name = name
             self.bytes = bytes
+            self.createdAt = createdAt
         }
     }
 
@@ -126,7 +129,28 @@ public enum DockerInventory {
         else { return nil }
         let dangling = await danglingIDs(docker: docker, host: host) ?? []
         let images = usage.danglingImages.filter { image in dangling.contains { sameImage($0, image.id) } }
-        return Usage(buildCacheBytes: usage.buildCacheBytes, danglingImages: images, unusedVolumes: usage.unusedVolumes, host: host)
+        let created = await creationDates(usage.unusedVolumes.map(\.name), docker: docker, host: host)
+        let volumes = usage.unusedVolumes.compactMap { volume in
+            created[volume.name].map { Volume(name: volume.name, bytes: volume.bytes, createdAt: $0) }
+        }
+        return Usage(buildCacheBytes: usage.buildCacheBytes, danglingImages: images, unusedVolumes: volumes, host: host)
+    }
+
+    /// `docker volume inspect` creation dates by name (volumes that can't be inspected are left out).
+    static func creationDates(_ names: [String], docker: String, host: String) async -> [String: String] {
+        guard !names.isEmpty, let data = try? await ProcessRunner.run(
+            docker, ["-H", host, "volume", "inspect", "--format", "{{.Name}}\t{{.CreatedAt}}"] + names, timeout: 30
+        ), let text = String(bytes: data, encoding: .utf8) else { return [:] }
+        return parseCreationDates(text)
+    }
+
+    static func parseCreationDates(_ text: String) -> [String: String] {
+        text.split(whereSeparator: \.isNewline).reduce(into: [:]) { dates, line in
+            let parts = line.split(separator: "\t", maxSplits: 1).map(String.init)
+            if parts.count == 2, !parts[1].isEmpty {
+                dates[parts[0]] = parts[1]
+            }
+        }
     }
 
     /// Every cleaning command names the daemon that was measured, so a context switch in between
@@ -136,8 +160,14 @@ public enum DockerInventory {
         _ = try await ProcessRunner.run(docker, ["-H", host] + arguments, timeout: 600)
     }
 
+    /// Prunes the measured daemon's own build cache: its default builder, picked explicitly, so a
+    /// remote builder chosen elsewhere (BUILDX_BUILDER, `docker buildx use`) is never touched.
     public static func pruneBuildCache(host: String) async throws {
-        try await run(["builder", "prune", "--force"], host: host)
+        guard let docker = executable(), host.hasPrefix("unix://") else { throw ProcessRunner.Failure(status: -1) }
+        _ = try await ProcessRunner.run(
+            docker, ["buildx", "prune", "--builder", "default", "--force"], timeout: 600,
+            environment: ["DOCKER_HOST": host, "DOCKER_CONTEXT": nil, "BUILDX_BUILDER": nil]
+        )
     }
 
     /// Removes only images that are still dangling now.
@@ -150,9 +180,14 @@ public enum DockerInventory {
         try await run(["image", "rm"] + still, host: host)
     }
 
-    public static func removeVolumes(_ names: [String], host: String) async throws {
-        guard !names.isEmpty else { return }
-        try await run(["volume", "rm"] + names, host: host)
+    /// Removes only volumes that are still the ones scanned (same creation date).
+    public static func removeVolumes(_ volumes: [Volume], host: String) async throws {
+        guard !volumes.isEmpty else { return }
+        guard let docker = executable() else { throw ProcessRunner.Failure(status: -1) }
+        let now = await creationDates(volumes.map(\.name), docker: docker, host: host)
+        let unchanged = volumes.filter { volume in volume.createdAt != nil && now[volume.name] == volume.createdAt }
+        guard !unchanged.isEmpty else { return }
+        try await run(["volume", "rm"] + unchanged.map(\.name), host: host)
     }
 }
 

@@ -165,32 +165,13 @@ public actor Cleaner {
             // Toolchain usage is worked out again: a default or pin may have changed since the scan.
             let inUse = rule.special == .unusedToolchains
                 ? ToolchainUsage.keptPaths(home: home, projectRoots: ProjectRoots.all(home: home, extra: projectRoots())) : []
+            let context = Context(rule: rule, cutoff: cutoff, coldCutoff: coldCutoff, inUse: inUse, apps: apps)
             for item in selection.items {
-                if rule.action == .delete, rule.tier != .safe || !rule.regenerable {
-                    outcome.failures.append(CleanupFailure(url: item.url, kind: .deleteNotAllowed))
-                    continue
-                }
-                switch check(item, cutoff: cutoff) {
-                case .missing:
-                    continue
+                switch verdict(item, context) {
+                case .ok: break
+                case .missing: continue
                 case let .refused(kind):
                     outcome.failures.append(CleanupFailure(url: item.url, kind: kind))
-                    continue
-                case .ok:
-                    break
-                }
-                if let kind = ruleRefusal(item, rule: rule, inUse: inUse, coldCutoff: coldCutoff) {
-                    outcome.failures.append(CleanupFailure(url: item.url, kind: kind))
-                    continue
-                }
-                // Last, right before removal, with a fresh process list (an app may have just opened).
-                if let app = rule.closedApp(for: item.url, home: home), apps.isRunning(app.app) {
-                    outcome.failures.append(CleanupFailure(url: item.url, kind: .appRunning(app.displayName)))
-                    continue
-                }
-                // The checks above can take a while: make sure it is still the very item that was scanned.
-                guard let identity = item.identity, FileIdentity(path: item.url.standardizedFileURL.path) == identity else {
-                    outcome.failures.append(CleanupFailure(url: item.url, kind: .changedSinceScan))
                     continue
                 }
                 guard proceed() else {
@@ -330,6 +311,39 @@ public actor Cleaner {
         case ok
         case missing
         case refused(CleanupFailure.Kind)
+    }
+
+    /// What one selection's checks need.
+    private struct Context {
+        let rule: CleanupRule
+        let cutoff: Date?
+        let coldCutoff: Date?
+        let inUse: Set<String>
+        let apps: RunningApps
+    }
+
+    /// Every check an item must pass, cheapest first and the path checks last of all, just before removal.
+    private func verdict(_ item: ScanItem, _ context: Context) -> Check {
+        let rule = context.rule
+        if rule.action == .delete, rule.tier != .safe || !rule.regenerable {
+            return .refused(.deleteNotAllowed)
+        }
+        let first = check(item, cutoff: context.cutoff)
+        guard case .ok = first else { return first }
+        if let kind = ruleRefusal(item, rule: rule, inUse: context.inUse, coldCutoff: context.coldCutoff) {
+            return .refused(kind)
+        }
+        // The checks above can take minutes: the app still closed, and the path checks again.
+        return finalCheck(item, rule: rule, apps: context.apps)
+    }
+
+    /// The last checks before removing: the owning app is closed (fresh process list), and the path
+    /// is still the scanned item with no links, inside home and not protected.
+    private func finalCheck(_ item: ScanItem, rule: CleanupRule, apps: RunningApps) -> Check {
+        if let app = rule.closedApp(for: item.url, home: home), apps.isRunning(app.app) {
+            return .refused(.appRunning(app.displayName))
+        }
+        return check(item, cutoff: nil)
     }
 
     /// Rule-specific reasons to keep an item, checked at the moment of cleaning.
