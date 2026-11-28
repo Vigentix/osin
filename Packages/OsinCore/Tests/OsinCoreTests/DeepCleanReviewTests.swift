@@ -507,3 +507,17 @@ struct SizeCacheTests {
         #expect(try reloaded.lookup(path, identity: #require(FileIdentity(path: path)), maxAge: 86400) != nil)
     }
 }
+
+struct SizeCacheExpiryTests {
+    @Test func entriesUnusedForAWeekAreDropped() throws {
+        let fixture = try FixtureHome()
+        let item = try fixture.file("Library/Caches/app/blob").deletingLastPathComponent().resolvingSymlinksInPath()
+        let url = fixture.root.appendingPathComponent("sizes.json")
+        let cache = SizeCache(url: url)
+        let identity = try #require(FileIdentity(path: item.path))
+        let long = Date().addingTimeInterval(-8 * 86400)
+        cache.store(item.path, identity: identity, usage: DiskUsage.Usage(bytes: 1, newestModification: nil, isComplete: true), now: long)
+        cache.save()
+        #expect(SizeCache(url: url).lookup(item.path, identity: identity, maxAge: 30 * 86400) == nil)
+    }
+}

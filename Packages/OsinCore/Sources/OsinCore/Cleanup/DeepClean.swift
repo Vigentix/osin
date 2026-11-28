@@ -114,12 +114,20 @@ enum ProjectActivity {
         defer { fts_close(fts) }
         let cutoffSeconds = Int(cutoff.timeIntervalSince1970)
         var budget = fileBudget
+        var rootDevice: dev_t?
         while let entry = fts_read(fts) {
             budget -= 1
             guard budget > 0 else { return true }
             let info = entry.pointee
             switch Int32(info.fts_info) {
             case FTS_D:
+                // A folder on another disk (mounted inside the project) isn't searched: can't call it cold.
+                let device = info.fts_statp?.pointee.st_dev
+                if rootDevice == nil {
+                    rootDevice = device
+                } else if device != rootDevice {
+                    return true
+                }
                 guard info.fts_level > 0 else { continue }
                 let url = URL(fileURLWithPath: String(cString: info.fts_path))
                 // Only folders are skipped by name (and only when their marker confirms it).

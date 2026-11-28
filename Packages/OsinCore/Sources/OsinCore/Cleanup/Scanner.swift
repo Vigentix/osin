@@ -122,8 +122,6 @@ public struct Scanner: Sendable {
         var claimed = ClaimedPaths()
         var results: [RuleScanResult] = []
         let running = rules.contains { !$0.closedApps.isEmpty } ? runningApps() : []
-        // Several targets in one project (node_modules and .venv) share one activity check.
-        var activity: [String: Bool] = [:]
         for (index, rule) in rules.enumerated() {
             try Task.checkCancellation()
             progress(ScanProgress(ruleID: rule.id, index: index, count: rules.count, completed: nil))
@@ -146,14 +144,11 @@ public struct Scanner: Sendable {
                 if rule.special == .unusedToolchains, kept.contains(path) {
                     continue
                 }
-                if let coldCutoff, let project = candidate.project {
-                    let active = activity[project.path] ?? ProjectActivity.isActive(
-                        project: project, target: candidate.url, within: candidate.searchRoot ?? project, since: coldCutoff
-                    )
-                    activity[project.path] = active
-                    if active {
-                        continue
-                    }
+                // Each target on its own: the check skips that target, so results differ per target.
+                if let coldCutoff, let project = candidate.project, ProjectActivity.isActive(
+                    project: project, target: candidate.url, within: candidate.searchRoot ?? project, since: coldCutoff
+                ) {
+                    continue
                 }
                 if let cutoff, let modified = candidate.modified, modified > cutoff {
                     continue

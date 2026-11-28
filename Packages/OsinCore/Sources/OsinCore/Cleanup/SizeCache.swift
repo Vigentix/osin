@@ -10,12 +10,13 @@ public final class SizeCache: @unchecked Sendable {
         let bytes: UInt64
         let newest: Date?
         let measuredAt: Date
+        /// Last looked up or stored; entries unused for a week are dropped.
+        var lastUsed: Date
     }
 
     public let url: URL?
     private let lock = NSLock()
     private var entries: [String: Entry] = [:]
-    private var touched: Set<String> = []
 
     /// Entries are dropped after this long without being used.
     static let keep: TimeInterval = 7 * 86400
@@ -37,7 +38,7 @@ public final class SizeCache: @unchecked Sendable {
         guard maxAge > 0, let entry = entries[path], entry.identity == identity, now.timeIntervalSince(entry.measuredAt) <= maxAge else {
             return nil
         }
-        touched.insert(path)
+        entries[path]?.lastUsed = now
         return DiskUsage.Usage(bytes: entry.bytes, newestModification: entry.newest, isComplete: true)
     }
 
@@ -45,15 +46,14 @@ public final class SizeCache: @unchecked Sendable {
     func store(_ path: String, identity: FileIdentity, usage: DiskUsage.Usage, now: Date = Date()) {
         guard usage.isComplete else { return }
         lock.lock()
-        entries[path] = Entry(identity: identity, bytes: usage.bytes, newest: usage.newestModification, measuredAt: now)
-        touched.insert(path)
+        entries[path] = Entry(identity: identity, bytes: usage.bytes, newest: usage.newestModification, measuredAt: now, lastUsed: now)
         lock.unlock()
     }
 
     public func save(now: Date = Date()) {
         guard let url else { return }
         lock.lock()
-        entries = entries.filter { touched.contains($0.key) || now.timeIntervalSince($0.value.measuredAt) < Self.keep }
+        entries = entries.filter { now.timeIntervalSince($0.value.lastUsed) < Self.keep }
         let data = try? JSONEncoder().encode(entries)
         lock.unlock()
         try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
