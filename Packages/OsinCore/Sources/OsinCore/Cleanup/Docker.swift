@@ -6,6 +6,11 @@ public enum DockerInventory {
     public struct Image: Sendable, Hashable, Identifiable {
         public let id: String
         public let bytes: UInt64
+
+        public init(id: String, bytes: UInt64) {
+            self.id = id
+            self.bytes = bytes
+        }
     }
 
     public struct Volume: Sendable, Hashable, Identifiable {
@@ -15,6 +20,11 @@ public enum DockerInventory {
 
         public let name: String
         public let bytes: UInt64
+
+        public init(name: String, bytes: UInt64) {
+            self.name = name
+            self.bytes = bytes
+        }
     }
 
     public struct Usage: Sendable, Equatable {
@@ -24,6 +34,12 @@ public enum DockerInventory {
         public let danglingImages: [Image]
         /// Volumes no container (running or stopped) refers to.
         public let unusedVolumes: [Volume]
+
+        public init(buildCacheBytes: UInt64, danglingImages: [Image], unusedVolumes: [Volume]) {
+            self.buildCacheBytes = buildCacheBytes
+            self.danglingImages = danglingImages
+            self.unusedVolumes = unusedVolumes
+        }
     }
 
     /// Known install locations (Homebrew, Docker Desktop, OrbStack). PATH is not consulted: apps

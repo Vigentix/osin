@@ -149,6 +149,7 @@ private struct AdvancedSettings: View {
             } header: {
                 Text("Memory")
             }
+            ProjectFoldersSection()
             Section {
                 HStack(spacing: 8) {
                     Button("Show welcome screens again") {

@@ -15,6 +15,7 @@
             let view: AnyView?
             /// Scroll the page this far before capturing (checks pinned and condensing headers).
             var scrollY: CGFloat = 0
+            var cleanupTab: CleanupTab = .smartScan
         }
 
         static var outputDirectory: URL? {
@@ -23,8 +24,10 @@
             return URL(fileURLWithPath: arguments[index + 1], isDirectory: true)
         }
 
+        // swiftlint:disable:next function_parameter_count
         static func run(
-            monitor: SystemMonitor, scan: ScanCoordinator, keepAwake: KeepAwakeController, housekeeper: Housekeeper, into directory: URL
+            monitor: SystemMonitor, scan: ScanCoordinator, keepAwake: KeepAwakeController, housekeeper: Housekeeper,
+            spaceLens: SpaceLensModel, into directory: URL
         ) async {
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             if DemoData.isActive {
@@ -33,6 +36,7 @@
                 keepAwake.loadDemo(KeepAwakeOptions(mode: .awake, keepDisplayOn: true, duration: .minutes(120)), startedMinutesAgo: 18)
                 monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
                 housekeeper.loadDemo(DemoData.weeklySummaries())
+                spaceLens.loadDemo(DemoData.spaceTree())
             } else {
                 monitor.setVisible(.dashboard, true)
                 // Smart Scan is read-only; skip Downloads to avoid a permission prompt.
@@ -49,6 +53,7 @@
             let screens = [
                 Screen(name: "overview", section: .overview, size: CGSize(width: 1200, height: 1200), view: nil),
                 Screen(name: "cleanup", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil),
+                Screen(name: "space-lens", section: .cleanup, size: CGSize(width: 1200, height: 780), view: nil, cleanupTab: .spaceLens),
                 Screen(name: "activity", section: .activity, size: CGSize(width: 1200, height: 780), view: nil),
                 Screen(name: "system", section: .system, size: CGSize(width: 1200, height: 940), view: nil),
                 Screen(name: "system-scrolled", section: .system, size: CGSize(width: 1200, height: 700), view: nil, scrollY: 320),
@@ -81,6 +86,7 @@
                     if let section = screen.section {
                         navigator.section = section
                     }
+                    navigator.cleanupTab = screen.cleanupTab
                     let root = screen.view ?? AnyView(DashboardView())
                     let content = root
                         .environment(monitor)
@@ -88,6 +94,7 @@
                         .environment(navigator)
                         .environment(keepAwake)
                         .environment(housekeeper)
+                        .environment(spaceLens)
                         .environment(Updater())
                         .environment(\.colorScheme, scheme)
                         .frame(width: screen.size.width, height: screen.size.height)

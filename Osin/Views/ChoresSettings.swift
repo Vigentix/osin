@@ -8,6 +8,7 @@ struct ChoresSettings: View {
     @AppStorage(Preferences.Key.weeklyReportEnabled) private var weeklyReport = true
     @State private var schedule = Preferences.choreSchedule
     @State private var excluded = Preferences.choreExcludedRules
+    @State private var known = Preferences.choreKnownRules
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     private let rules = ScanCoordinator.choreRules()
 
@@ -75,7 +76,12 @@ struct ChoresSettings: View {
                 ForEach(rules, id: \.id) { rule in
                     Toggle(isOn: included(rule.id)) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(String(localized: String.LocalizationValue(rule.name)))
+                            HStack(spacing: 6) {
+                                Text(String(localized: String.LocalizationValue(rule.name)))
+                                if !known.contains(rule.id) {
+                                    Badge(text: "NEW", color: Theme.accentText)
+                                }
+                            }
                             Text(String(localized: String.LocalizationValue(rule.detail)))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -85,9 +91,14 @@ struct ChoresSettings: View {
             } header: {
                 Text("What to clean")
             } footer: {
-                Text(
-                    "Only caches and logs that apps rebuild. Emptying the Trash, removing simulators and anything in Downloads always wait for you."
-                )
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(
+                        "Only caches and logs that apps rebuild. Emptying the Trash, removing simulators and anything in Downloads always wait for you."
+                    )
+                    if rules.contains(where: { !known.contains($0.id) }) {
+                        Text("New groups are off until you turn them on.")
+                    }
+                }
             }
             .disabled(!enabled)
             if let last = housekeeper.choreRuns.last {
@@ -109,6 +120,7 @@ struct ChoresSettings: View {
             housekeeper.armChores()
         }
         .onChange(of: excluded) { _, newValue in Preferences.choreExcludedRules = newValue }
+        .onChange(of: known) { _, newValue in Preferences.choreKnownRules = newValue }
     }
 
     private var time: Binding<Date> {
@@ -123,8 +135,10 @@ struct ChoresSettings: View {
 
     private func included(_ id: String) -> Binding<Bool> {
         Binding {
-            !excluded.contains(id)
+            !excluded.contains(id) && known.contains(id)
         } set: { isOn in
+            // Touching a new group means the user has decided about it.
+            known.insert(id)
             if isOn {
                 excluded.remove(id)
             } else {

@@ -24,6 +24,16 @@
         }
       }
     },
+    "%@ cannot be undone.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ không hoàn tác được."
+          }
+        }
+      }
+    },
     "%@ finished after %@. Your Mac can sleep again.": {
       "localizations": {
         "vi": {
@@ -94,6 +104,36 @@
         }
       }
     },
+    "%@ is open": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đang mở"
+          }
+        }
+      }
+    },
+    "%@ is open, so %@ is left out. Quit it, then check again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ đang mở nên %2$@ chưa được tính. Hãy thoát app rồi kiểm tra lại."
+          }
+        }
+      }
+    },
+    "%@ is open. Quit it and clean again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đang mở. Hãy thoát app rồi dọn lại."
+          }
+        }
+      }
+    },
     "%@ is using %@": {
       "localizations": {
         "vi": {
@@ -120,6 +160,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "%@ đang chờ cài và macOS đang bật tự cài cập nhật, nên máy có thể tự khởi động lại trong đêm."
+          }
+        }
+      }
+    },
+    "%@ items": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ mục"
+          }
+        }
+      }
+    },
+    "%@ items so far": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xem %@ mục"
           }
         }
       }
@@ -287,6 +347,16 @@
         }
       }
     },
+    "%@. You can put it back from the Trash or from History.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@. Bạn có thể lấy lại từ Thùng rác hoặc từ Lịch sử."
+          }
+        }
+      }
+    },
     "%@/s": {
       "localizations": {
         "vi": {
@@ -440,12 +510,32 @@
         }
       }
     },
+    "%lld smaller items": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld mục nhỏ hơn"
+          }
+        }
+      }
+    },
     "%lld suggestions inside.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Có %lld gợi ý."
+          }
+        }
+      }
+    },
+    "%lld untagged images no container uses, usually left over from rebuilds.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld image không có tag và không container nào dùng, thường còn sót lại sau khi build lại."
           }
         }
       }
@@ -546,12 +636,42 @@
         }
       }
     },
+    "Accounts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản"
+          }
+        }
+      }
+    },
     "Activity": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Hoạt động"
+          }
+        }
+      }
+    },
+    "Add": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm"
+          }
+        }
+      }
+    },
+    "Add Folder…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm thư mục…"
           }
         }
       }
@@ -656,6 +776,16 @@
         }
       }
     },
+    "App cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache của app"
+          }
+        }
+      }
+    },
     "App caches": {
       "localizations": {
         "vi": {
@@ -672,6 +802,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bộ nhớ ứng dụng"
+          }
+        }
+      }
+    },
+    "App settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt app"
           }
         }
       }
@@ -886,6 +1026,26 @@
         }
       }
     },
+    "Browser and app caches": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache trình duyệt và app"
+          }
+        }
+      }
+    },
+    "Browsers downloaded for automated testing. Downloaded again when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trình duyệt tải về để chạy test tự động. Tải lại khi cần."
+          }
+        }
+      }
+    },
     "Build intermediates and indexes. Xcode rebuilds them on the next build.": {
       "localizations": {
         "vi": {
@@ -896,12 +1056,42 @@
         }
       }
     },
+    "Build intermediates and indexes. Xcode rebuilds them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "File trung gian và chỉ mục khi build. Xcode tạo lại."
+          }
+        }
+      }
+    },
+    "Builds you archived for distribution. Keep the ones you may need to symbolicate crashes.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản build đã archive để phát hành. Giữ bản nào có thể cần để đọc log crash."
+          }
+        }
+      }
+    },
     "Built-in cleanup": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Dọn dẹp tích hợp"
+          }
+        }
+      }
+    },
+    "Bun cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Bun"
           }
         }
       }
@@ -996,6 +1186,16 @@
         }
       }
     },
+    "Caches of the iOS Simulator. Rebuilt when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache của iOS Simulator. Tạo lại khi cần."
+          }
+        }
+      }
+    },
     "Can't undo": {
       "localizations": {
         "vi": {
@@ -1022,6 +1222,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã huỷ hoặc thất bại."
+          }
+        }
+      }
+    },
+    "Cargo registry": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho Cargo"
           }
         }
       }
@@ -1062,6 +1272,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xem Hoạt động để biết ứng dụng nào đang dùng."
+          }
+        }
+      }
+    },
+    "Check Again": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiểm tra lại"
           }
         }
       }
@@ -1132,6 +1352,76 @@
           "stringUnit": {
             "state": "translated",
             "value": "Việc nhà chỉ chạy khi Osin đang mở. Hãy mở Osin khi đăng nhập để việc vẫn chạy sau khi khởi động lại."
+          }
+        }
+      }
+    },
+    "Chrome profiles": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồ sơ Chrome"
+          }
+        }
+      }
+    },
+    "Chrome site storage": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu trang web của Chrome"
+          }
+        }
+      }
+    },
+    "Chrome's on-device AI model": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model AI trên máy của Chrome"
+          }
+        }
+      }
+    },
+    "Claude Code": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code"
+          }
+        }
+      }
+    },
+    "Claude Code and Codex conversation logs not touched for 90 days. Settings, skills and plugins are kept.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lịch sử hội thoại của Claude Code và Codex không đụng tới trong 90 ngày. Cấu hình, skill và plugin được giữ nguyên."
+          }
+        }
+      }
+    },
+    "Claude Code sessions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên Claude Code"
+          }
+        }
+      }
+    },
+    "Claude Code settings, skills and plugins. Old sessions inside can be cleaned.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt, skill và plugin của Claude Code. Các phiên cũ bên trong có thể dọn."
           }
         }
       }
@@ -1216,6 +1506,76 @@
         }
       }
     },
+    "Codex": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Codex"
+          }
+        }
+      }
+    },
+    "Codex sessions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên Codex"
+          }
+        }
+      }
+    },
+    "Codex settings. Old sessions inside can be cleaned.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt của Codex. Các phiên cũ bên trong có thể dọn."
+          }
+        }
+      }
+    },
+    "Cold projects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án nguội"
+          }
+        }
+      }
+    },
+    "Colima": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colima"
+          }
+        }
+      }
+    },
+    "Colima did not answer. Start it with colima start and try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colima không phản hồi. Hãy chạy colima start rồi thử lại."
+          }
+        }
+      }
+    },
+    "Colima's virtual disk keeps its size after a cleanup. Trimming hands the freed space back. Colima must be running.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ ảo của Colima không tự co lại sau khi dọn. Thu nhỏ để trả lại phần dung lượng đã giải phóng. Colima cần đang chạy."
+          }
+        }
+      }
+    },
     "Collecting data…": {
       "localizations": {
         "vi": {
@@ -1252,6 +1612,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tiếp tục"
+          }
+        }
+      }
+    },
+    "Conversation logs per project. Smart Scan lists those not touched for 90 days.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lịch sử hội thoại theo dự án. Smart Scan liệt kê phiên không đụng tới trong 90 ngày."
+          }
+        }
+      }
+    },
+    "Conversation logs. Smart Scan lists those not touched for 90 days.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lịch sử hội thoại. Smart Scan liệt kê phiên không đụng tới trong 90 ngày."
           }
         }
       }
@@ -1316,6 +1696,16 @@
         }
       }
     },
+    "Debug symbols copied from devices. Xcode copies them again when a device is connected.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ký hiệu debug chép từ thiết bị. Xcode chép lại khi bạn cắm thiết bị."
+          }
+        }
+      }
+    },
     "Deleted": {
       "localizations": {
         "vi": {
@@ -1332,6 +1722,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xoá"
+          }
+        }
+      }
+    },
+    "Dependencies and build output (node_modules, .venv, target, .next, Pods…) of projects with no commits or edits for 30 days. Reinstall with your package manager when you return.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư viện và sản phẩm build (node_modules, .venv, target, .next, Pods…) của các dự án 30 ngày không commit hay sửa file. Cài lại bằng trình quản lý gói khi bạn quay lại."
           }
         }
       }
@@ -1366,6 +1766,16 @@
         }
       }
     },
+    "Developer tool caches": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache công cụ dev"
+          }
+        }
+      }
+    },
     "Device backups not updated for 180 days. Make sure you no longer need them.": {
       "localizations": {
         "vi": {
@@ -1382,6 +1792,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nhật ký chẩn đoán cũ hơn 7 ngày."
+          }
+        }
+      }
+    },
+    "Diagnostic logs. Smart Scan removes those older than a week.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Log chẩn đoán. Smart Scan xoá log cũ hơn một tuần."
           }
         }
       }
@@ -1516,6 +1936,76 @@
         }
       }
     },
+    "Docker Desktop": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker Desktop"
+          }
+        }
+      }
+    },
+    "Docker Desktop's disk image with your images and volumes. Clean Docker in Smart Scan.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ đĩa ảo của Docker Desktop chứa image và volume. Dọn Docker trong Smart Scan."
+          }
+        }
+      }
+    },
+    "Docker build cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Build cache của Docker"
+          }
+        }
+      }
+    },
+    "Docker did not finish the cleanup. Check that Docker is running and try again.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Docker chưa dọn xong. Hãy kiểm tra Docker đang chạy rồi thử lại."
+          }
+        }
+      }
+    },
+    "Docker settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt Docker"
+          }
+        }
+      }
+    },
+    "Docker's configuration and contexts.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cấu hình và context của Docker."
+          }
+        }
+      }
+    },
+    "Docker's virtual disk": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ổ ảo của Docker"
+          }
+        }
+      }
+    },
     "Done": {
       "localizations": {
         "vi": {
@@ -1536,12 +2026,32 @@
         }
       }
     },
+    "Done. Free space updates in a moment.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xong. Dung lượng trống sẽ cập nhật trong giây lát."
+          }
+        }
+      }
+    },
     "Download": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tải xuống"
+          }
+        }
+      }
+    },
+    "Downloaded AI models and datasets. Downloaded again when needed, which can take a while.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model AI và dataset đã tải. Tải lại khi cần, có thể mất khá lâu."
           }
         }
       }
@@ -1572,6 +2082,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thư mục Downloads"
+          }
+        }
+      }
+    },
+    "Downloads kept by uv, Bun, Maven, Yarn, pip, Puppeteer and Terraform. Each tool downloads again what it needs.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản tải về của uv, Bun, Maven, Yarn, pip, Puppeteer và Terraform. Mỗi công cụ sẽ tự tải lại khi cần."
           }
         }
       }
@@ -1705,6 +2225,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tìm dung lượng có thể giải phóng"
+          }
+        }
+      }
+    },
+    "Fonts": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phông chữ"
+          }
+        }
+      }
+    },
+    "Fonts you installed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phông chữ bạn đã cài."
           }
         }
       }
@@ -1882,12 +2422,32 @@
         }
       }
     },
+    "GPG keys": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoá GPG"
+          }
+        }
+      }
+    },
     "General": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Chung"
+          }
+        }
+      }
+    },
+    "Give Docker's space back to macOS": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trả dung lượng của Docker cho macOS"
           }
         }
       }
@@ -1948,6 +2508,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đã hiểu"
+          }
+        }
+      }
+    },
+    "Gradle caches": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Gradle"
+          }
+        }
+      }
+    },
+    "Gradle's downloads and build caches. Rebuilt on the next build.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản tải và cache build của Gradle. Tạo lại ở lần build tới."
           }
         }
       }
@@ -2072,6 +2652,16 @@
         }
       }
     },
+    "Helpers your apps start when you log in. Manage them in System Settings.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tiến trình phụ app tự chạy khi bạn đăng nhập. Quản lý trong Cài đặt hệ thống."
+          }
+        }
+      }
+    },
     "Hide items": {
       "localizations": {
         "vi": {
@@ -2102,12 +2692,42 @@
         }
       }
     },
+    "Holds Docker images and volumes. Clean Docker in Smart Scan, then trim the disk to give the space back.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chứa image và volume của Docker. Dọn Docker trong Smart Scan rồi thu nhỏ ổ để lấy lại dung lượng."
+          }
+        }
+      }
+    },
+    "Home": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư mục nhà"
+          }
+        }
+      }
+    },
     "Honest about memory": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Trung thực về bộ nhớ"
+          }
+        }
+      }
+    },
+    "Hugging Face cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache Hugging Face"
           }
         }
       }
@@ -2132,12 +2752,32 @@
         }
       }
     },
+    "Installed extensions. Old versions may linger after updates.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các extension đã cài. Bản cũ có thể còn sót sau khi cập nhật."
+          }
+        }
+      }
+    },
     "Installers": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Bộ cài"
+          }
+        }
+      }
+    },
+    "Internet accounts set up in System Settings.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tài khoản Internet thiết lập trong Cài đặt hệ thống."
           }
         }
       }
@@ -2178,6 +2818,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Máy có thể tự giảm hiệu năng để hạ nhiệt."
+          }
+        }
+      }
+    },
+    "Java libraries downloaded by Maven or Gradle. Downloaded again on the next build.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư viện Java do Maven hoặc Gradle tải. Tải lại ở lần build tới."
           }
         }
       }
@@ -2272,6 +2922,46 @@
         }
       }
     },
+    "Keychains": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chuỗi khoá"
+          }
+        }
+      }
+    },
+    "Keys that log you in to servers. Losing them can lock you out.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoá để đăng nhập máy chủ. Mất khoá có thể khiến bạn không vào được."
+          }
+        }
+      }
+    },
+    "Keys used to sign and encrypt.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoá dùng để ký và mã hoá."
+          }
+        }
+      }
+    },
+    "LM Studio models": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model LM Studio"
+          }
+        }
+      }
+    },
     "Large files": {
       "localizations": {
         "vi": {
@@ -2322,6 +3012,16 @@
         }
       }
     },
+    "Layers kept from earlier image builds. Docker rebuilds them when needed; the next build may be slower.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các layer giữ lại từ những lần build image trước. Docker tạo lại khi cần; lần build tới có thể chậm hơn."
+          }
+        }
+      }
+    },
     "Let Osin see more of your disk": {
       "localizations": {
         "vi": {
@@ -2348,6 +3048,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Tải %@"
+          }
+        }
+      }
+    },
+    "Local AI models downloaded in LM Studio.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model AI tải trong LM Studio."
+          }
+        }
+      }
+    },
+    "Local AI models. Pull them again with ollama when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model AI chạy trên máy. Tải lại bằng ollama khi cần."
+          }
+        }
+      }
+    },
+    "Local device backups. Make sure you have another backup before removing one.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản sao lưu thiết bị trên máy. Chắc chắn bạn còn bản sao lưu khác trước khi xoá."
           }
         }
       }
@@ -2382,12 +3112,22 @@
         }
       }
     },
+    "Login items": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mục khởi động"
+          }
+        }
+      }
+    },
     "Logs": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nhật ký"
+            "value": "Log"
           }
         }
       }
@@ -2462,6 +3202,26 @@
         }
       }
     },
+    "Maven repository": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kho Maven"
+          }
+        }
+      }
+    },
+    "Measured %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đo %@"
+          }
+        }
+      }
+    },
     "Measured %@ · protected folders count as Other": {
       "localizations": {
         "vi": {
@@ -2488,6 +3248,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Đang đo dung lượng…"
+          }
+        }
+      }
+    },
+    "Measuring your home folder…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang đo thư mục nhà…"
           }
         }
       }
@@ -2662,6 +3432,36 @@
         }
       }
     },
+    "Move %@ to the Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đưa %@ vào Thùng rác"
+          }
+        }
+      }
+    },
+    "Move to Trash": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đưa vào Thùng rác"
+          }
+        }
+      }
+    },
+    "Move “%@” to the Trash?": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đưa “%@” vào Thùng rác?"
+          }
+        }
+      }
+    },
     "Moved to Trash": {
       "localizations": {
         "vi": {
@@ -2712,12 +3512,32 @@
         }
       }
     },
+    "NEW": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MỚI"
+          }
+        }
+      }
+    },
     "Name": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tên"
+          }
+        }
+      }
+    },
+    "Needs Full Disk Access to measure": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần Full Disk Access để đo"
           }
         }
       }
@@ -2748,6 +3568,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Mạng"
+          }
+        }
+      }
+    },
+    "New groups are off until you turn them on.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhóm mới để tắt cho tới khi bạn bật."
           }
         }
       }
@@ -2838,6 +3668,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Không thu thập dữ liệu. Không gì rời khỏi máy bạn."
+          }
+        }
+      }
+    },
+    "Node versions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản Node"
+          }
+        }
+      }
+    },
+    "Node, Python and Rust versions installed with nvm, pyenv or rustup that neither your default nor any project uses.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các phiên bản Node, Python, Rust cài bằng nvm, pyenv hoặc rustup mà bản mặc định và các dự án đều không dùng."
+          }
+        }
+      }
+    },
+    "Node.js versions installed with nvm. Smart Scan lists the ones nothing uses.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản Node.js cài bằng nvm. Smart Scan liệt kê bản không ai dùng."
           }
         }
       }
@@ -2982,6 +3842,26 @@
         }
       }
     },
+    "Offline caches of websites. Smart Scan cleans the cache part while Chrome is closed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache ngoại tuyến của các trang web. Smart Scan dọn phần cache khi Chrome đóng."
+          }
+        }
+      }
+    },
+    "Old AI agent sessions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phiên AI agent cũ"
+          }
+        }
+      }
+    },
     "Old Xcode archives": {
       "localizations": {
         "vi": {
@@ -3038,6 +3918,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "node_modules cũ"
+          }
+        }
+      }
+    },
+    "Ollama models": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model Ollama"
           }
         }
       }
@@ -3468,6 +4358,36 @@
         }
       }
     },
+    "Packages downloaded by Bun. Bun downloads them again when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gói Bun đã tải. Bun tải lại khi cần."
+          }
+        }
+      }
+    },
+    "Packages downloaded by npm. npm downloads them again when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gói npm đã tải. npm tải lại khi cần."
+          }
+        }
+      }
+    },
+    "Page, script and graphics caches of browsers and desktop apps such as Chrome, Edge, Slack and VS Code. Cookies, history, passwords and messages are not touched. Skipped while the app is open.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache trang, script và đồ hoạ của trình duyệt và app như Chrome, Edge, Slack, VS Code. Không đụng cookie, lịch sử, mật khẩu hay tin nhắn. Bỏ qua khi app đang mở."
+          }
+        }
+      }
+    },
     "Part of the item could not be read, so Osin could not confirm it is old. It was kept.": {
       "localizations": {
         "vi": {
@@ -3528,6 +4448,16 @@
         }
       }
     },
+    "Powers Chrome's built-in AI features. Chrome downloads it again if you use them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng cho tính năng AI tích hợp của Chrome. Chrome tải lại nếu bạn dùng chúng."
+          }
+        }
+      }
+    },
     "Pressure is normal. Quitting is optional.": {
       "localizations": {
         "vi": {
@@ -3578,6 +4508,36 @@
         }
       }
     },
+    "Project folders": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thư mục dự án"
+          }
+        }
+      }
+    },
+    "Projects": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dự án"
+          }
+        }
+      }
+    },
+    "Puppeteer browsers": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trình duyệt của Puppeteer"
+          }
+        }
+      }
+    },
     "Purge disk cache": {
       "localizations": {
         "vi": {
@@ -3594,6 +4554,46 @@
           "stringUnit": {
             "state": "translated",
             "value": "Purge…"
+          }
+        }
+      }
+    },
+    "Python packages downloaded by pip.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gói Python pip đã tải."
+          }
+        }
+      }
+    },
+    "Python packages downloaded by uv. uv downloads them again when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gói Python uv đã tải. uv tải lại khi cần."
+          }
+        }
+      }
+    },
+    "Python versions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản Python"
+          }
+        }
+      }
+    },
+    "Python versions installed with pyenv. Smart Scan lists the ones nothing uses.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản Python cài bằng pyenv. Smart Scan liệt kê bản không ai dùng."
           }
         }
       }
@@ -3624,6 +4624,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thoát %@"
+          }
+        }
+      }
+    },
+    "Quit %@ to include %@": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thoát %1$@ để dọn thêm %2$@"
           }
         }
       }
@@ -3754,6 +4764,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Có thể tạo lại. Ứng dụng và công cụ sẽ tự tạo lại khi cần."
+          }
+        }
+      }
+    },
+    "Remove": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoá"
           }
         }
       }
@@ -3918,12 +4938,52 @@
         }
       }
     },
+    "Rust crates downloaded by Cargo. Downloaded again when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crate Rust do Cargo tải. Tải lại khi cần."
+          }
+        }
+      }
+    },
+    "Rust toolchains": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toolchain Rust"
+          }
+        }
+      }
+    },
+    "Rust versions installed with rustup. Smart Scan lists the ones nothing uses.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản Rust cài bằng rustup. Smart Scan liệt kê bản không ai dùng."
+          }
+        }
+      }
+    },
     "SAFE TO CLEAN": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "DỌN AN TOÀN"
+          }
+        }
+      }
+    },
+    "SSH keys": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khoá SSH"
           }
         }
       }
@@ -3944,6 +5004,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "An toàn"
+          }
+        }
+      }
+    },
+    "Scan Home Folder": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quét thư mục nhà"
           }
         }
       }
@@ -4108,6 +5178,16 @@
         }
       }
     },
+    "See what takes up space": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xem cái gì chiếm dung lượng"
+          }
+        }
+      }
+    },
     "Selected to clean": {
       "localizations": {
         "vi": {
@@ -4147,6 +5227,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Phần cài đặt sẽ có ở M5."
+          }
+        }
+      }
+    },
+    "Settings of command-line tools.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt của các công cụ dòng lệnh."
+          }
+        }
+      }
+    },
+    "Settings of macOS and your apps.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt của macOS và các app."
           }
         }
       }
@@ -4241,6 +5341,26 @@
         }
       }
     },
+    "Simulator caches": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache simulator"
+          }
+        }
+      }
+    },
+    "Simulator devices and their apps and data.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiết bị simulator cùng app và dữ liệu của chúng."
+          }
+        }
+      }
+    },
     "Simulators": {
       "localizations": {
         "vi": {
@@ -4253,6 +5373,26 @@
     },
     "Size": {
       "shouldTranslate": false
+    },
+    "Slack data": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu Slack"
+          }
+        }
+      }
+    },
+    "Slack's workspaces and caches. Smart Scan cleans only the caches.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Workspace và cache của Slack. Smart Scan chỉ dọn cache."
+          }
+        }
+      }
     },
     "Smart Scan": {
       "localizations": {
@@ -4280,6 +5420,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Smart Scan kiểm tra cache và dữ liệu thừa trong khoảng một phút. Không xoá gì khi bạn chưa xem lại."
+          }
+        }
+      }
+    },
+    "Smart Scan looks for cold projects in %@ and similar folders. Add others here. Folders outside your home folder or in protected places are ignored.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smart Scan tìm dự án nguội trong %@ và các thư mục tương tự. Thêm thư mục khác ở đây. Thư mục ngoài thư mục nhà hoặc ở vùng được bảo vệ sẽ bị bỏ qua."
           }
         }
       }
@@ -4340,6 +5490,26 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vị trí ban đầu đã có một mục khác."
+          }
+        }
+      }
+    },
+    "Space Lens": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space Lens"
+          }
+        }
+      }
+    },
+    "Space Lens measures your home folder, which takes about a minute. Folders macOS protects are skipped unless Osin has Full Disk Access.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Space Lens đo thư mục nhà, mất khoảng một phút. Thư mục macOS bảo vệ sẽ bị bỏ qua nếu Osin chưa có Full Disk Access."
           }
         }
       }
@@ -4594,6 +5764,26 @@
         }
       }
     },
+    "Temporary data apps keep to speed things up. Smart Scan cleans the safe part.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu tạm app giữ để chạy nhanh hơn. Smart Scan dọn phần an toàn."
+          }
+        }
+      }
+    },
+    "Temporary data this app rebuilds when needed.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu tạm app này tự tạo lại khi cần."
+          }
+        }
+      }
+    },
     "The battery is too low to keep your Mac awake. Connect the power adapter.": {
       "localizations": {
         "vi": {
@@ -4674,6 +5864,16 @@
         }
       }
     },
+    "The model behind Chrome's built-in AI features. Chrome downloads it again if you use them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model cho các tính năng AI tích hợp của Chrome. Chrome tải lại nếu bạn dùng chúng."
+          }
+        }
+      }
+    },
     "The path goes through a symbolic link.": {
       "localizations": {
         "vi": {
@@ -4700,6 +5900,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kiểm tra cập nhật là kết nối mạng duy nhất Osin thực hiện."
+          }
+        }
+      }
+    },
+    "The virtual machine that runs Docker for you.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy ảo chạy Docker cho bạn."
           }
         }
       }
@@ -4790,6 +6000,16 @@
         }
       }
     },
+    "Tool settings": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt công cụ"
+          }
+        }
+      }
+    },
     "Tools rebuild them when needed.": {
       "localizations": {
         "vi": {
@@ -4806,6 +6026,36 @@
           "stringUnit": {
             "state": "translated",
             "value": "Thùng rác"
+          }
+        }
+      }
+    },
+    "Treemap": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản đồ dung lượng"
+          }
+        }
+      }
+    },
+    "Trim Disk": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu nhỏ ổ"
+          }
+        }
+      }
+    },
+    "Trimming Colima's disk…": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang thu nhỏ ổ của Colima…"
           }
         }
       }
@@ -4890,6 +6140,36 @@
         }
       }
     },
+    "Unused Docker images": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Image Docker không dùng"
+          }
+        }
+      }
+    },
+    "Unused Docker volumes": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume Docker không dùng"
+          }
+        }
+      }
+    },
+    "Unused toolchains": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Công cụ không dùng"
+          }
+        }
+      }
+    },
     "Update": {
       "localizations": {
         "vi": {
@@ -4940,6 +6220,36 @@
         }
       }
     },
+    "VS Code data": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu VS Code"
+          }
+        }
+      }
+    },
+    "VS Code extensions": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Extension VS Code"
+          }
+        }
+      }
+    },
+    "VS Code's settings, extensions state and caches. Smart Scan cleans only the caches.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt, trạng thái extension và cache của VS Code. Smart Scan chỉ dọn cache."
+          }
+        }
+      }
+    },
     "Value": {
       "shouldTranslate": false
     },
@@ -4969,6 +6279,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Xem trong Lịch sử"
+          }
+        }
+      }
+    },
+    "Volumes no container uses. They can hold databases or uploads: untick any you still need.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volume không container nào dùng. Chúng có thể chứa cơ sở dữ liệu hoặc file tải lên: bỏ chọn cái bạn còn cần."
           }
         }
       }
@@ -5123,12 +6443,32 @@
         }
       }
     },
+    "Xcode archives": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản archive Xcode"
+          }
+        }
+      }
+    },
     "You can change these any time in Settings.": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Bạn có thể đổi bất cứ lúc nào trong Cài đặt."
+          }
+        }
+      }
+    },
+    "Your Chrome profiles: history, bookmarks, logins and caches. Smart Scan cleans only the caches.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hồ sơ Chrome của bạn: lịch sử, dấu trang, đăng nhập và cache. Smart Scan chỉ dọn cache."
           }
         }
       }
@@ -5263,6 +6603,16 @@
         }
       }
     },
+    "Your code. Smart Scan offers dependencies of projects you have not touched for 30 days.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Code của bạn. Smart Scan đề xuất dọn thư viện của dự án 30 ngày không đụng tới."
+          }
+        }
+      }
+    },
     "Your first report arrives on Monday": {
       "localizations": {
         "vi": {
@@ -5273,12 +6623,42 @@
         }
       }
     },
+    "Your saved passwords and certificates.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mật khẩu và chứng chỉ bạn đã lưu."
+          }
+        }
+      }
+    },
     "Your week on this Mac": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tuần qua trên máy bạn"
+          }
+        }
+      }
+    },
+    "Zalo data": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu Zalo"
+          }
+        }
+      }
+    },
+    "Zalo messages and media. Clear them from Zalo's own settings.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tin nhắn và media của Zalo. Hãy xoá trong cài đặt của Zalo."
           }
         }
       }
@@ -5363,12 +6743,42 @@
         }
       }
     },
+    "iOS device support": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hỗ trợ thiết bị iOS"
+          }
+        }
+      }
+    },
     "iOS device support files": {
       "localizations": {
         "vi": {
           "stringUnit": {
             "state": "translated",
             "value": "Tệp hỗ trợ thiết bị iOS"
+          }
+        }
+      }
+    },
+    "iPhone and iPad backups": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản sao lưu iPhone và iPad"
+          }
+        }
+      }
+    },
+    "keep": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "giữ lại"
           }
         }
       }
@@ -5433,6 +6843,36 @@
         }
       }
     },
+    "npm cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache npm"
+          }
+        }
+      }
+    },
+    "pip cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache pip"
+          }
+        }
+      }
+    },
+    "rebuilt automatically": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "tự tạo lại"
+          }
+        }
+      }
+    },
     "selected": {
       "localizations": {
         "vi": {
@@ -5493,6 +6933,16 @@
         }
       }
     },
+    "uv cache": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cache uv"
+          }
+        }
+      }
+    },
     "your Mac needs %lld things": {
       "localizations": {
         "vi": {
@@ -5509,6 +6959,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "máy cần một việc"
+          }
+        }
+      }
+    },
+    "your call": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "bạn quyết định"
           }
         }
       }

@@ -132,7 +132,7 @@ final class Housekeeper {
         else { return }
         let schedule = Preferences.choreSchedule
         let armedAt = UserDefaults.standard.double(forKey: Key.choresArmedAt)
-        let ruleIDs = Set(ScanCoordinator.choreRules().map(\.id)).subtracting(Preferences.choreExcludedRules)
+        let ruleIDs = Set(ScanCoordinator.choreRules().map(\.id).filter { !Preferences.choreSkips($0) })
         guard !ruleIDs.isEmpty else { return }
         isRunningChore = true
         Task {
@@ -155,7 +155,7 @@ final class Housekeeper {
         UserDefaults.standard.bool(forKey: Preferences.Key.choresEnabled)
             && UserDefaults.standard.double(forKey: Key.choresArmedAt) == armedAt
             && Preferences.choreSchedule == schedule
-            && !Preferences.choreExcludedRules.contains(ruleID)
+            && !Preferences.choreSkips(ruleID)
             && ChoreConditions.met(onACPower: BatteryReader.read()?.isOnACPower ?? true, idleSeconds: IdleTime.seconds())
     }
 

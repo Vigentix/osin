@@ -28,6 +28,8 @@ enum Preferences {
         static let weeklyReportEnabled = "weeklyReportEnabled"
         static let watchEnabled = "watchEnabled"
         static let watchIgnoredApps = "watchIgnoredApps"
+        static let choreKnownRules = "choreKnownRules"
+        static let projectRoots = "projectRoots"
     }
 
     static func registerDefaults() {
@@ -88,6 +90,32 @@ enum Preferences {
     static var choreExcludedRules: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: Key.choreExcludedRules) ?? []) }
         set { UserDefaults.standard.set(newValue.sorted(), forKey: Key.choreExcludedRules) }
+    }
+
+    /// Safe rules that existed before 0.5: chores include them unless unticked.
+    static let originalChoreRules: Set<String> = [
+        "xcode.derived-data",
+        "xcode.device-support",
+        "user.caches",
+        "user.logs",
+        "dev.package-caches"
+    ]
+
+    /// Safe rules the user has seen in Settings › Chores. Newer ones are skipped until turned on.
+    static var choreKnownRules: Set<String> {
+        get { UserDefaults.standard.stringArray(forKey: Key.choreKnownRules).map(Set.init) ?? originalChoreRules }
+        set { UserDefaults.standard.set(newValue.sorted(), forKey: Key.choreKnownRules) }
+    }
+
+    /// Whether chores skip this rule: unticked, or added since the user last looked.
+    static func choreSkips(_ ruleID: String) -> Bool {
+        choreExcludedRules.contains(ruleID) || !choreKnownRules.contains(ruleID)
+    }
+
+    /// Extra project folders for cold projects and toolchain pins (Settings › Advanced).
+    static var projectRoots: [URL] {
+        get { (UserDefaults.standard.stringArray(forKey: Key.projectRoots) ?? []).map { URL(fileURLWithPath: $0, isDirectory: true) } }
+        set { UserDefaults.standard.set(newValue.map(\.path), forKey: Key.projectRoots) }
     }
 
     static var watchIgnoredApps: Set<String> {

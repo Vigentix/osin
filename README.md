@@ -123,11 +123,27 @@ Leave a build, a download, a backup or a long script running without the Mac fal
 
 ### Smart Scan you can read before you click
 
-Osin looks for Xcode DerivedData and device support files, app caches and logs, package-manager caches, app updates that were downloaded but not installed, old `node_modules`, installers in Downloads, unavailable simulators and the Trash. Results are split into **Safe to clean** (selected for you) and **Needs your review** (never selected unless you choose), with every item listed and sizes measured on disk.
+Osin looks where space actually goes on a developer's Mac:
+
+- **Caches:** Xcode DerivedData and device support files, app caches and logs, package-manager and developer-tool caches (npm, pnpm, Gradle, Cargo, uv, Bun, Maven, Yarn, pip…), and the page and script caches of browsers and desktop apps such as Chrome, Edge, Brave, Arc, Slack and VS Code. Browser and app caches wait until that app is closed.
+- **Docker:** the build cache, untagged images and unused volumes, through the `docker` command itself. Afterwards Osin can trim Colima's virtual disk so macOS gets the space back.
+- **Cold projects:** `node_modules`, `.venv`, `target`, `.next`, `Pods` and similar folders, in projects with no commits or edits for 30 days. Add your own project folders in Settings.
+- **Leftovers:** Node, Python and Rust versions no default or project uses, Claude Code and Codex sessions untouched for 90 days, Chrome's on-device AI model, app updates that were downloaded but not installed, installers and old files in Downloads, unavailable simulators and the Trash.
+
+Results are split into **Safe to clean** (selected for you) and **Needs your review** (never selected unless you choose), with every item listed and sizes measured on disk.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/cleanup-dark.png">
-  <img src="docs/images/cleanup-light.png" alt="Smart Scan report: safe groups such as Xcode DerivedData, iOS device support files, app caches, logs and package manager caches are selected; old node_modules, installers, unavailable simulators and Empty Trash wait for review">
+  <img src="docs/images/cleanup-light.png" alt="Smart Scan report: safe groups such as Xcode DerivedData, app caches, developer tool caches, browser caches (part of it waiting for Chrome to close) and Docker's build cache are selected; cold projects, installers, unavailable simulators and Empty Trash wait for review">
+</picture>
+
+### Space Lens: see where the rest went
+
+For everything no rule knows about, Space Lens measures your home folder (about a minute) and shows it as a treemap and a list you can drill into. Well-known folders come with a plain explanation, such as "uv cache: rebuilt automatically" or "Docker's virtual disk: clean Docker in Smart Scan, then trim". Anything that is safe to remove can go to the Trash from there; system folders and protected locations cannot. Folders macOS guards are skipped unless Osin has Full Disk Access.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/space-lens-dark.png">
+  <img src="docs/images/space-lens-light.png" alt="Space Lens: a treemap of the home folder with Developer, Library and .colima as the largest blocks, and a list with sizes and explanations">
 </picture>
 
 ### Activity that groups apps with their helpers
@@ -158,9 +174,10 @@ Osin removes files on your Mac, so these rules are enforced in code and covered 
 2. **Nothing outside the [rules](Packages/OsinCore/Sources/OsinCore/Rules/rules.json) is touched.** Rules are data (paths and patterns, never commands) and are limited to your home folder.
 3. **Protected locations are never cleaned:** Documents, Desktop, Pictures, Movies, Music, Mail, iCloud Drive, Messages, Keychains, Safari data, `.ssh`, system folders, and any folder that contains them.
 4. **Symlinks are never followed**, and every item is checked again right before it is removed.
-5. **Unavailable simulators and Empty Trash cannot be undone.** They are never preselected, and Osin warns you before running them.
+5. **Unavailable simulators, Empty Trash and Docker images or volumes cannot be undone.** They are never preselected, and Osin warns you before running them.
 6. **Every action is logged** in `~/Library/Application Support/Osin/cleanup-log.jsonl`.
-7. **Scheduled chores only run Safe groups you ticked**, never irreversible ones, and only while you are away from the Mac.
+7. **Scheduled chores only run Safe groups you ticked**, never irreversible ones, and only while you are away from the Mac. New groups stay off until you turn them on.
+8. **Apps are never cleaned while open:** browser and app caches wait until the app is closed, and cold projects are checked again right before cleaning.
 
 Osin runs in user space: no privileged helper, no kernel extension. Full Disk Access is optional and only lets the scan reach folders macOS protects, such as old device backups. The one admin action, `purge` in Settings › Advanced, asks for your password every time and explains why its effect is temporary.
 

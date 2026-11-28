@@ -8,52 +8,6 @@ import SwiftUI
 final class ScanCoordinator {
     typealias Phase = ScanPhase
 
-    /// A report row: a rule result or a built-in action.
-    struct Group: Identifiable {
-        enum Kind {
-            case rule(RuleScanResult)
-            case simulators(count: Int)
-            case emptyTrash
-        }
-
-        let id: String
-        let name: String
-        let detail: String
-        let tier: CleanupTier
-        let bytes: UInt64
-        let kind: Kind
-        let needsAccess: Bool
-
-        /// Removed immediately (deleted or built-in) rather than moved to the Trash.
-        var freesImmediately: Bool {
-            if case let .rule(result) = kind {
-                return result.rule.action == .delete
-            }
-            return true
-        }
-
-        /// Built-ins cannot be undone and are not regenerable.
-        var isIrreversible: Bool {
-            if case .rule = kind {
-                return false
-            }
-            return true
-        }
-
-        var items: [ScanItem] {
-            if case let .rule(result) = kind {
-                return result.items
-            }
-            return []
-        }
-    }
-
-    struct Step: Identifiable {
-        let id: Int
-        let name: String
-        var bytes: UInt64?
-    }
-
     static let simulatorsID = "builtin.simulators"
     static let emptyTrashID = "builtin.empty-trash"
 
@@ -71,6 +25,8 @@ final class ScanCoordinator {
     /// Bytes put back from the Trash by Undo for the current outcome.
     private(set) var restoredBytes: UInt64 = 0
     private(set) var isUndoing = false
+    /// The last clean ran Docker commands (the result screen then offers to trim Colima's disk).
+    private(set) var cleanedDocker = false
     /// A scheduled cleanup is running in the background (see `ScanCoordinator+Chores`).
     var isRunningChore = false
     /// The quiet launch scan is running (it leaves `phase` alone, so `isBusy` does not show it).
@@ -125,7 +81,8 @@ final class ScanCoordinator {
 
     /// Safe-tier total from the last scan, `nil` before any scan.
     var safeReclaimableBytes: UInt64? {
-        lastScanDate == nil ? nil : safeGroups.reduce(0) { $0 + $1.bytes }
+        // Not what waits for an app to be closed: Clean could not remove it now.
+        lastScanDate == nil ? nil : safeGroups.reduce(0) { $0 + $1.cleanableBytes }
     }
 
     var reviewBytes: UInt64 {
@@ -137,8 +94,14 @@ final class ScanCoordinator {
     }
 
     func selectedBytes(of group: Group) -> UInt64 {
-        guard case .rule = group.kind else { return group.bytes }
-        return group.items.filter { !excludedItems.contains($0.id) }.reduce(0) { $0 + $1.bytes }
+        switch group.kind {
+        case .rule:
+            group.items.filter { !excludedItems.contains($0.id) && $0.blockedBy == nil }.reduce(0) { $0 + $1.bytes }
+        case let .dockerVolumes(volumes):
+            volumes.filter { !excludedItems.contains(Self.volumeItemID($0.name)) }.reduce(0) { $0 + $1.bytes }
+        default:
+            group.bytes
+        }
     }
 
     var selectedFreedNow: UInt64 {
@@ -240,6 +203,7 @@ final class ScanCoordinator {
         pendingRestore = []
         undoFailures = []
         phase = .cleaning
+        cleanedDocker = chosen.contains { [Self.dockerBuildCacheID, Self.dockerImagesID, Self.dockerVolumesID].contains($0.id) }
         task = Task {
             var result = CleanupOutcome()
             // Empty the Trash first, so items trashed in this run stay restorable.
@@ -257,13 +221,18 @@ final class ScanCoordinator {
                     } catch {
                         result.failures.append(CleanupFailure(url: URL(fileURLWithPath: "simctl"), reason: error.localizedDescription))
                     }
+                case .dockerBuildCache, .dockerImages, .dockerVolumes:
+                    let docker = await cleanDocker(group, excluded: excluded, cleaner: cleaner)
+                    result.freedBytes += docker.freed
+                    result.failures += docker.failures
                 case .rule:
                     continue
                 }
             }
             let selections = chosen.compactMap { group -> CleanupSelection? in
                 guard case let .rule(rule) = group.kind else { return nil }
-                return CleanupSelection(rule: rule.rule, items: rule.items.filter { !excluded.contains($0.id) })
+                // Items whose app is open are left for later (the cleaner would refuse them anyway).
+                return CleanupSelection(rule: rule.rule, items: rule.items.filter { !excluded.contains($0.id) && $0.blockedBy == nil })
             }
             onFreed?(result.freedBytes)
             // One rule at a time, so the weekly total is credited as each finishes (even if Osin quits).
@@ -384,13 +353,13 @@ final class ScanCoordinator {
         do {
             let rules = try CleanupRule.bundled().filter { (try? $0.validate()) != nil && filter($0) }
             let names = rules.map { String(localized: String.LocalizationValue($0.name)) }
-            steps = (names + [String(localized: "Simulators"), String(localized: "Trash")]).enumerated().map { Step(
+            steps = (names + [String(localized: "Simulators"), String(localized: "Trash"), "Docker"]).enumerated().map { Step(
                 id: $0.offset,
                 name: $0.element
             ) }
             let paths = rules.map { $0.paths.first ?? $0.find?.roots.first ?? "" }
 
-            let results = try await Scanner().scan(rules) { event in
+            let results = try await Scanner(projectRoots: Preferences.projectRoots).scan(rules) { event in
                 Task { @MainActor in
                     guard self.scanGeneration == generation else { return }
                     if let result = event.completed {
@@ -406,35 +375,8 @@ final class ScanCoordinator {
             guard isCurrent(generation) else { return }
             var found = results.map(Self.group(for:))
 
-            currentStepIndex = rules.count
-            currentPath = "xcrun simctl"
-            let simulators = await SimulatorInventory.measure()
-            guard isCurrent(generation) else { return }
-            steps[rules.count].bytes = simulators?.bytes ?? 0
-            if let simulators, simulators.bytes > 0 {
-                foundBytes += simulators.bytes
-                found.append(Group(
-                    id: Self.simulatorsID,
-                    name: String(localized: "Unavailable simulators"),
-                    detail: String(localized: "\(simulators.count) simulators whose runtime is no longer installed."),
-                    tier: .review, bytes: simulators.bytes, kind: .simulators(count: simulators.count), needsAccess: false
-                ))
-            }
-
-            currentStepIndex = rules.count + 1
-            currentPath = "~/.Trash"
-            let trashBytes = await (try? EmptyTrash.measure()) ?? 0
-            guard isCurrent(generation) else { return }
-            steps[rules.count + 1].bytes = trashBytes
-            if trashBytes > 0 {
-                foundBytes += trashBytes
-                found.append(Group(
-                    id: Self.emptyTrashID,
-                    name: String(localized: "Empty Trash"),
-                    detail: String(localized: "Permanently removes what is already in your Trash."),
-                    tier: .review, bytes: trashBytes, kind: .emptyTrash, needsAccess: false
-                ))
-            }
+            guard let builtins = await builtinGroups(from: rules.count, generation: generation) else { return }
+            found += builtins
 
             try Task.checkCancellation()
             currentStepIndex = steps.count
@@ -469,6 +411,52 @@ final class ScanCoordinator {
         selectedGroups = selectedGroups.filter { id in !ids.contains(id) || groups.contains { $0.id == id } }
     }
 
+    /// Simulators, Trash and Docker, measured after the rules (steps `index` onward). `nil` if superseded.
+    private func builtinGroups(from index: Int, generation: Int) async -> [Group]? {
+        var found: [Group] = []
+        currentStepIndex = index
+        currentPath = "xcrun simctl"
+        let simulators = await SimulatorInventory.measure()
+        guard isCurrent(generation) else { return nil }
+        steps[index].bytes = simulators?.bytes ?? 0
+        if let simulators, simulators.bytes > 0 {
+            foundBytes += simulators.bytes
+            found.append(Group(
+                id: Self.simulatorsID,
+                name: String(localized: "Unavailable simulators"),
+                detail: String(localized: "\(simulators.count) simulators whose runtime is no longer installed."),
+                tier: .review, bytes: simulators.bytes, kind: .simulators(count: simulators.count), needsAccess: false
+            ))
+        }
+
+        currentStepIndex = index + 1
+        currentPath = "~/.Trash"
+        let trashBytes = await (try? EmptyTrash.measure()) ?? 0
+        guard isCurrent(generation) else { return nil }
+        steps[index + 1].bytes = trashBytes
+        if trashBytes > 0 {
+            foundBytes += trashBytes
+            found.append(Group(
+                id: Self.emptyTrashID,
+                name: String(localized: "Empty Trash"),
+                detail: String(localized: "Permanently removes what is already in your Trash."),
+                tier: .review, bytes: trashBytes, kind: .emptyTrash, needsAccess: false
+            ))
+        }
+
+        currentStepIndex = index + 2
+        currentPath = "docker system df"
+        let docker = await DockerInventory.measure()
+        guard isCurrent(generation) else { return nil }
+        let dockerGroups = docker.map(Self.dockerGroups) ?? []
+        let dockerBytes = dockerGroups.reduce(UInt64(0)) { $0 + $1.bytes }
+        steps[index + 2].bytes = dockerBytes
+        foundBytes += dockerBytes
+        found += dockerGroups
+
+        return found
+    }
+
     private func removeCleaned(_ ids: [String]) {
         let cleaned = Set(ids)
         groups.removeAll { cleaned.contains($0.id) }
@@ -494,6 +482,7 @@ final class ScanCoordinator {
                 detail: String(localized: "Permanently removes what is already in your Trash."),
                 tier: .review, bytes: DemoData.trashBytes, kind: .emptyTrash, needsAccess: false
             ))
+            found += Self.dockerGroups(DemoData.docker)
             groups = found
             selectedGroups = Set(found.filter { $0.tier == .safe }.map(\.id))
             excludedItems = []

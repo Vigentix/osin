@@ -7,6 +7,7 @@ import SwiftUI
 struct CleanupView: View {
     @Environment(Navigator.self) private var navigator
     @Environment(ScanCoordinator.self) private var scan
+    @Environment(SpaceLensModel.self) private var lens
     /// Bumped by the pinned Refresh button to reload Large files.
     @State private var largeFilesReload = 0
     @State private var largeFilesLoading = false
@@ -26,6 +27,7 @@ struct CleanupView: View {
             Group {
                 switch navigator.cleanupTab {
                 case .smartScan: smartScan
+                case .spaceLens: SpaceLensView()
                 case .largeFiles: LargeFilesView(reload: largeFilesReload, loading: $largeFilesLoading)
                 case .history: CleanupHistoryView(totalFreed: $historyTotal)
                 }
@@ -46,6 +48,17 @@ struct CleanupView: View {
                     HStack(spacing: 8) { Text("Rescan"); KeyHint(keys: "⌘R") }
                 }
                 .buttonStyle(SecondaryButtonStyle())
+            }
+        case .spaceLens:
+            if lens.isScanning, lens.tree != nil {
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("\(lens.seen.formatted()) items").font(.system(size: 12)).monospacedDigit().foregroundStyle(Theme.text2)
+                }
+            } else if let date = lens.scannedAt {
+                Text("Measured \(date.formatted(.relative(presentation: .named)))").font(.system(size: 12)).foregroundStyle(Theme.text3)
+                Button("Rescan") { lens.scan() }
+                    .buttonStyle(SecondaryButtonStyle())
             }
         case .largeFiles:
             Button("Refresh") { largeFilesReload += 1 }
@@ -256,7 +269,7 @@ private struct ScanReportView: View {
     @ViewBuilder
     private func groupSection(_ title: LocalizedStringKey, color: Color, groups: [ScanCoordinator.Group]) -> some View {
         if !groups.isEmpty {
-            let total = groups.reduce(UInt64(0)) { $0 + $1.bytes }
+            let total = groups.reduce(UInt64(0)) { $0 + $1.cleanableBytes }
             HStack(spacing: 8) {
                 Circle().fill(color).frame(width: 7, height: 7)
                 Text(title).font(.system(size: 11, weight: .bold)).tracking(0.6).foregroundStyle(Theme.text2)
@@ -322,7 +335,7 @@ private struct ScanReportView: View {
             Button("Clean", role: .destructive) { clean() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Empty Trash and simulator removal cannot be undone.")
+            Text("\(scan.irreversibleSelectionNames) cannot be undone.")
         }
     }
 
@@ -345,7 +358,7 @@ private struct GroupRow: View {
             Toggle(isOn: Binding(get: { selected }, set: { _ in scan.toggleGroup(group.id) })) { EmptyView() }
                 .toggleStyle(.checkbox)
                 .labelsHidden()
-                .disabled(group.bytes == 0)
+                .disabled(group.cleanableBytes == 0)
                 .accessibilityLabel(Text(group.name))
             Button {
                 scan.focusedGroupID = group.id
@@ -359,6 +372,12 @@ private struct GroupRow: View {
                         } else {
                             Text(Format.storage(scan.selectedBytes(of: group))).fontWeight(.semibold).monospacedDigit()
                         }
+                    }
+                    if let apps = ListFormatter.localizedString(byJoining: group.blockingApps).nilIfEmpty {
+                        Label("Quit \(apps) to include \(Format.storage(group.blockedBytes))", systemImage: "lock")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.text3)
+                            .lineLimit(1)
                     }
                     UsageBar(fraction: Double(group.bytes) / Double(largest), color: color.opacity(selected ? 1 : 0.35), height: 4)
                 }
@@ -411,6 +430,12 @@ private struct GroupDetail: View {
                     .background(Theme.surface, in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.border, lineWidth: 1))
 
+                    if !group.blockingApps.isEmpty {
+                        BlockedAppsNotice(group: group)
+                    }
+                    if case let .dockerVolumes(volumes) = group.kind {
+                        DockerVolumeList(volumes: volumes)
+                    }
                     if !group.items.isEmpty {
                         HStack {
                             Text("Largest items").font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.text2)
@@ -481,6 +506,10 @@ private struct ScanResultView: View {
                 .frame(maxWidth: 680)
                 if outcome.trashedBytes > 0 {
                     trashCard(outcome)
+                }
+                if scan.cleanedDocker, ColimaDisk.isInstalled {
+                    ColimaTrimCard()
+                        .frame(maxWidth: 680)
                 }
                 if !scan.undoFailures.isEmpty {
                     DisclosureGroup("\(scan.undoFailures.count) items could not be restored") {
@@ -610,11 +639,14 @@ private struct ItemRow: View {
     @State private var hovering = false
 
     var body: some View {
-        let included = !scan.excludedItems.contains(item.id)
+        let blocked = item.blockedBy != nil
+        let included = !scan.excludedItems.contains(item.id) && !blocked
         HStack(spacing: 12) {
             Toggle(isOn: Binding(get: { included }, set: { _ in scan.toggleItem(item.id) })) { EmptyView() }
                 .toggleStyle(.checkbox)
                 .labelsHidden()
+                .disabled(blocked)
+                .help(item.blockedBy.map { String(localized: "\($0) is open") } ?? "")
             Button(action: focus) {
                 Text(item.url.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
                     .font(.system(size: 12, design: .monospaced))
@@ -638,5 +670,113 @@ private struct ItemRow: View {
         .padding(.horizontal, 14)
         .frame(height: 38)
         .hoverSurface(radius: 0, selected: focused, hovering: $hovering)
+    }
+}
+
+/// "Quit Google Chrome and Slack to include 3.9 GB", with a button to check again after quitting.
+private struct BlockedAppsNotice: View {
+    @Environment(ScanCoordinator.self) private var scan
+    let group: ScanCoordinator.Group
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "lock").foregroundStyle(Theme.fair)
+            Text(
+                "\(ListFormatter.localizedString(byJoining: group.blockingApps)) is open, so \(Format.storage(group.blockedBytes)) is left out. Quit it, then check again."
+            )
+            .fixedSize(horizontal: false, vertical: true)
+            Spacer()
+            Button("Check Again") { scan.rescanGroup(group.id) }
+                .buttonStyle(SecondaryButtonStyle())
+                .disabled(scan.isBusy)
+        }
+        .padding(12)
+        .background(Theme.fair.opacity(0.10), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+/// Unused Docker volumes, each with its own checkbox.
+private struct DockerVolumeList: View {
+    @Environment(ScanCoordinator.self) private var scan
+    let volumes: [DockerInventory.Volume]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(volumes.sorted { $0.bytes > $1.bytes }) { volume in
+                let id = ScanCoordinator.volumeItemID(volume.name)
+                HStack(spacing: 12) {
+                    Toggle(isOn: Binding(get: { !scan.excludedItems.contains(id) }, set: { _ in scan.toggleItem(id) })) { EmptyView() }
+                        .toggleStyle(.checkbox)
+                        .labelsHidden()
+                        .accessibilityLabel(Text(volume.name))
+                    Text(volume.name)
+                        .font(.system(size: 12, design: .monospaced))
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Text(Format.storage(volume.bytes)).monospacedDigit().foregroundStyle(Theme.text2)
+                }
+                .padding(.horizontal, 14)
+                .frame(height: 38)
+            }
+        }
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Theme.border, lineWidth: 1))
+    }
+}
+
+private extension String {
+    var nilIfEmpty: String? {
+        isEmpty ? nil : self
+    }
+}
+
+/// After a Docker cleanup: Colima's virtual disk keeps its size until it is trimmed.
+private struct ColimaTrimCard: View {
+    private enum State {
+        case idle, trimming, done, failed
+    }
+
+    @SwiftUI.State private var state = State.idle
+
+    var body: some View {
+        HStack(spacing: 14) {
+            IconTile(systemName: "externaldrive", tint: Theme.blue)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Give Docker's space back to macOS").fontWeight(.semibold)
+                Text(message).font(.system(size: 12)).foregroundStyle(Theme.text2).fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer()
+            if state == .trimming {
+                ProgressView().controlSize(.small)
+            } else if state != .done {
+                Button("Trim Disk") {
+                    state = .trimming
+                    Task {
+                        do {
+                            try await ColimaDisk.trim()
+                            state = .done
+                        } catch {
+                            state = .failed
+                        }
+                    }
+                }
+                .buttonStyle(SecondaryButtonStyle())
+            }
+        }
+        .padding(16)
+        .background(Theme.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius))
+        .overlay(RoundedRectangle(cornerRadius: Theme.cardRadius).strokeBorder(Theme.border, lineWidth: 1))
+    }
+
+    private var message: String {
+        switch state {
+        case .idle: String(
+                localized: "Colima's virtual disk keeps its size after a cleanup. Trimming hands the freed space back. Colima must be running."
+            )
+        case .trimming: String(localized: "Trimming Colima's disk…")
+        case .done: String(localized: "Done. Free space updates in a moment.")
+        case .failed: String(localized: "Colima did not answer. Start it with colima start and try again.")
+        }
     }
 }

@@ -196,6 +196,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
 
 enum CleanupTab: String, CaseIterable, Identifiable {
     case smartScan
+    case spaceLens
     case largeFiles
     case history
 
@@ -206,6 +207,7 @@ enum CleanupTab: String, CaseIterable, Identifiable {
     var title: LocalizedStringResource {
         switch self {
         case .smartScan: "Smart Scan"
+        case .spaceLens: "Space Lens"
         case .largeFiles: "Large files"
         case .history: "History"
         }

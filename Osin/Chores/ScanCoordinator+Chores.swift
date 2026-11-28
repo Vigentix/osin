@@ -21,7 +21,8 @@ extension ScanCoordinator {
         guard !rules.isEmpty else { return nil }
         isRunningChore = true
         defer { isRunningChore = false }
-        guard let results = try? await Scanner().scan(rules), rules.contains(where: { stillAllowed($0.id) }) else { return nil }
+        guard let results = try? await Scanner(projectRoots: Preferences.projectRoots).scan(rules),
+              rules.contains(where: { stillAllowed($0.id) }) else { return nil }
         var outcome = CleanupOutcome()
         // What Smart Scan should show afterwards: the fresh scan, minus what was removed.
         var remaining = results

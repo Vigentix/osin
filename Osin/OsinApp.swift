@@ -27,6 +27,7 @@ struct OsinApp: App {
                 .environment(appDelegate.navigator)
                 .environment(appDelegate.keepAwake)
                 .environment(appDelegate.housekeeper)
+                .environment(appDelegate.spaceLens)
                 .onWindowVisibilityChange { appDelegate.monitor.setVisible(.dashboard, $0) }
                 .onDisappear { appDelegate.monitor.setVisible(.dashboard, false) }
         }
@@ -70,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     let scan = ScanCoordinator()
     let navigator = Navigator()
     let keepAwake = KeepAwakeController()
+    let spaceLens = SpaceLensModel()
     let updater: Updater
     let housekeeper: Housekeeper
     private let notifier: Notifier
@@ -105,6 +107,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             }
         }
         scan.onFreed = { [housekeeper] bytes in housekeeper.recordFreed(bytes) }
+        spaceLens.onTrashed = { [weak self] in
+            guard let self else { return }
+            scan.historyRevision += 1
+            monitor.refreshNow()
+        }
         scan.onScanFinished = { [weak self] in
             guard let self else { return }
             monitor.refreshStorage(reclaimable: scan.safeReclaimableBytes ?? 0)
@@ -148,6 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                         scan: scan,
                         keepAwake: keepAwake,
                         housekeeper: housekeeper,
+                        spaceLens: spaceLens,
                         into: directory
                     )
                 }

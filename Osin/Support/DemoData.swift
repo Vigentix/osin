@@ -248,19 +248,85 @@
                     (".npm/_cacache", 1130),
                     (".gradle/caches", 742)
                 ], daysOld: 4)),
-                ("dev.node-modules", items([
+                ("dev.tool-caches", items([
+                    (".cache/uv", 3720),
+                    (".m2/repository", 1180),
+                    (".bun/install/cache", 640)
+                ], daysOld: 3)),
+                ("dev.cold-projects", items([
                     ("Developer/weather-web/node_modules", 1260),
-                    ("Developer/portfolio/node_modules", 840),
-                    ("Developer/old-prototype/node_modules", 615)
-                ], daysOld: 95)),
+                    ("Developer/portfolio/.venv", 840),
+                    ("Developer/old-prototype/target", 615)
+                ], daysOld: 45)),
                 ("downloads.installers", items([
                     ("Downloads/Xcode_26.1.xip", 3020),
                     ("Downloads/Blender-4.5-macos-arm64.dmg", 412)
                 ], daysOld: 40))
             ]
+            let browser = [
+                ScanItem(
+                    url: home.appendingPathComponent("Library/Application Support/Slack/Cache/Cache_Data"),
+                    bytes: 610_000_000,
+                    modified: now
+                ),
+                ScanItem(
+                    url: home.appendingPathComponent("Library/Application Support/Code/CachedData"),
+                    bytes: 420_000_000,
+                    modified: now
+                ),
+                ScanItem(
+                    url: home.appendingPathComponent("Library/Application Support/Google/Chrome/Default/Service Worker/CacheStorage"),
+                    bytes: 1_840_000_000, modified: now, blockedBy: "Google Chrome"
+                )
+            ]
             return plan.compactMap { id, items in
                 rules[id].map { RuleScanResult(rule: $0, items: items, needsAccess: false) }
+            } + (rules["browser.caches"].map { [RuleScanResult(rule: $0, items: browser, needsAccess: false)] } ?? [])
+        }
+
+        static let docker = DockerInventory.Usage(
+            buildCacheBytes: 1_547_000_000,
+            danglingImages: [],
+            unusedVolumes: [
+                DockerInventory.Volume(name: "weather_postgres-data", bytes: 1_210_000_000),
+                DockerInventory.Volume(name: "portfolio_node-modules", bytes: 486_000_000)
+            ]
+        )
+
+        /// A home folder for Space Lens screenshots.
+        static func spaceTree() -> SpaceNode {
+            let home = FileManager.default.homeDirectoryForCurrentUser.resolvingSymlinksInPath().path
+            func gigabytes(_ value: Double) -> UInt64 {
+                UInt64(value * 1e9)
             }
+            func folder(_ relative: String, _ size: Double, _ children: [SpaceNode] = [], trash: Bool = true) -> SpaceNode {
+                SpaceNode(
+                    name: (relative as NSString).lastPathComponent, path: home + "/" + relative, bytes: gigabytes(size),
+                    isDirectory: true, children: children, otherCount: children.isEmpty ? 0 : 24,
+                    otherBytes: gigabytes(size * 0.04), canTrash: trash
+                )
+            }
+            let library = folder("Library", 27.3, [
+                folder("Library/Application Support", 14.2, [], trash: false),
+                folder("Library/Developer", 8.9, [], trash: false),
+                folder("Library/Caches", 2.4, [], trash: false)
+            ], trash: false)
+            let children = [
+                folder("Developer", 31.5),
+                library,
+                folder(".colima", 20.4),
+                folder(".cache", 4.4, [folder(".cache/uv", 3.7), folder(".cache/huggingface", 0.6)]),
+                folder(".nvm", 2.4),
+                folder(".vscode", 2.0),
+                folder(".cargo", 1.4),
+                folder(".pyenv", 1.4),
+                SpaceNode(name: "Documents", path: home + "/Documents", bytes: 0, isDirectory: true, isSkipped: true, canTrash: false),
+                SpaceNode(name: "Downloads", path: home + "/Downloads", bytes: 0, isDirectory: true, isSkipped: true, canTrash: false)
+            ]
+            return SpaceNode(
+                name: (home as NSString).lastPathComponent, path: home, bytes: gigabytes(96.8), isDirectory: true,
+                children: children, otherCount: 61, otherBytes: gigabytes(5.2), canTrash: false
+            )
         }
 
         /// Eight weeks of reports, the newest being the week that just ended.

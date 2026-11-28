@@ -19,6 +19,21 @@ public struct SpaceNode: Codable, Sendable, Identifiable, Equatable {
     public let isSkipped: Bool
     /// Whether Space Lens offers Move to Trash (never for protected locations or system folders).
     public let canTrash: Bool
+
+    public init(
+        name: String, path: String, bytes: UInt64, isDirectory: Bool, children: [SpaceNode] = [],
+        otherCount: Int = 0, otherBytes: UInt64 = 0, isSkipped: Bool = false, canTrash: Bool = true
+    ) {
+        self.name = name
+        self.path = path
+        self.bytes = bytes
+        self.isDirectory = isDirectory
+        self.children = children
+        self.otherCount = otherCount
+        self.otherBytes = otherBytes
+        self.isSkipped = isSkipped
+        self.canTrash = canTrash
+    }
 }
 
 /// Measures the home folder for Space Lens. Read-only; never follows symbolic links; skips the folders
