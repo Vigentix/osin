@@ -85,6 +85,7 @@ extension CleanupFailure {
         case .couldNotCheckAge: String(localized: "Part of the item could not be read, so Osin could not confirm it is old. It was kept.")
         case .originalExists: String(localized: "Something already exists at the original location.")
         case .notTheTrashedItem: String(localized: "The item in the Trash is not the one Osin moved there.")
+        case let .appRunning(app): String(localized: "\(app) is open. Quit it and clean again.")
         case let .system(message): message
         }
     }

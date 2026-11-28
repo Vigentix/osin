@@ -92,13 +92,30 @@ Each milestone ends with a working, demoable build.
 - [x] Watch: sustained CPU and memory growth per app, one alert per app per day, Quit / Ignore / Open Activity
 - [x] Record when each app was last seen running (for the uninstaller)
 
-## v0.5 — Clean uninstall (Developer ID recommended first)
+## v0.4.1 — Lighter dashboard
+- [x] Live dot pulses with Core Animation; live metrics update in place (dashboard open: ~20% CPU to under 1%)
+
+## v0.5 — Deeper clean
+- [ ] Safe: developer tool caches (uv, bun, Maven, Terraform plugins, …) and browser / Electron app caches (Chrome, Edge, Brave, Arc, Vivaldi, Slack, Discord, VS Code, Cursor, Claude, …), skipped while the app runs
+- [ ] Review: Chrome's on-device AI model; old AI agent sessions (`~/.claude/projects`, `~/.codex/sessions`, 90 days)
+- [ ] Docker: build cache (safe), dangling images and unused volumes (review) through the official CLI; optional Colima disk trim
+- [ ] Cold projects: `node_modules`, `.venv`, `target`, `.next`, `Pods`, … in projects untouched for 30 days (git and files); project folders in Settings
+- [ ] Unused toolchains: nvm, pyenv and rustup versions that no default or project uses
+- [ ] New Safe groups are not added to scheduled chores until the user turns them on
+- [ ] Space Lens: browse what uses space in your home folder (whole disk with Full Disk Access), known-folder descriptions, Trash only
+
+## v0.6 — Clean with AI
+- [ ] Runs the user's own Claude Code or Codex (no Osin login, no tokens) with Osin's MCP tools only: no shell, no file contents
+- [ ] The AI proposes, the user approves in Osin; everything goes to the Trash and History
+- [ ] Live progress, notes for the AI, "Add Osin to Claude Code / Codex"; off by default with a clear privacy notice
+
+## v0.7 — Clean uninstall (Developer ID recommended first)
 - [ ] Apps page: drag in or pick from a list (size, last seen); app + `~/Library` leftovers to the Trash via Finder; `/Library` leftovers listed
 - [ ] Smart Scan review group: leftovers of apps no longer installed (conservative matching)
 
-## v0.6 — Startup and tidying
+## v0.8 — Startup and tidying
 - [ ] Startup: user LaunchAgents (disable/enable), system agents and daemons (view; admin prompt to disable), approximate Login Items + System Settings link
 - [ ] Tidy Downloads and Desktop: sort or move to the Trash only, preview and Undo
 
 ## v2 backlog
-Docker prune · Time Machine snapshots · weekly nudge · CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · App uninstaller + leftovers · Duplicate finder · Disk treemap · Privileged helper daemon · Remote rule updates
+Time Machine snapshots · weekly nudge · CLI (`osin scan`, `osin clean --safe`) · Widgets · Temperature / fan / GPU · Duplicate finder · Privileged helper daemon · Remote rule updates

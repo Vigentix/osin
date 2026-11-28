@@ -13,12 +13,15 @@ public struct ScanItem: Sendable, Identifiable, Hashable {
     public let modified: Date?
     /// The scanned file or folder itself, checked again before cleaning.
     public let identity: FileIdentity?
+    /// The app (display name) that must be closed before this item can be cleaned; it was running at scan time.
+    public let blockedBy: String?
 
-    public init(url: URL, bytes: UInt64, modified: Date?, identity: FileIdentity? = nil) {
+    public init(url: URL, bytes: UInt64, modified: Date?, identity: FileIdentity? = nil, blockedBy: String? = nil) {
         self.url = url
         self.bytes = bytes
         self.modified = modified
         self.identity = identity
+        self.blockedBy = blockedBy
     }
 }
 
@@ -34,6 +37,20 @@ public struct RuleScanResult: Sendable, Identifiable {
 
     public var totalBytes: UInt64 {
         items.reduce(0) { $0 + $1.bytes }
+    }
+
+    /// Bytes waiting for an app to be closed.
+    public var blockedBytes: UInt64 {
+        items.filter { $0.blockedBy != nil }.reduce(0) { $0 + $1.bytes }
+    }
+
+    /// Apps to close to clean everything, in first-seen order.
+    public var blockingApps: [String] {
+        var seen: [String] = []
+        for case let name? in items.map(\.blockedBy) where !seen.contains(name) {
+            seen.append(name)
+        }
+        return seen
     }
 
     public init(
@@ -64,17 +81,46 @@ public struct ScanProgress: Sendable {
 /// - an item is claimed by at most one rule.
 public struct Scanner: Sendable {
     public let home: URL
+    /// Extra project folders from Settings, searched by rules with `includeProjectRoots`.
+    public let projectRoots: [URL]
     private let protected: ProtectedPaths
+    private let runningApps: @Sendable () -> Set<String>
 
-    public init(home: URL = FileManager.default.homeDirectoryForCurrentUser) {
+    /// Project folders searched by default (cold projects, toolchain pins).
+    public static let defaultProjectRoots = [
+        "Projects", "Developer", "Code", "code", "src", "dev", "workspace", "repos", "git", "GitHub"
+    ]
+
+    public init(
+        home: URL = FileManager.default.homeDirectoryForCurrentUser,
+        projectRoots: [URL] = [],
+        runningApps: @escaping @Sendable () -> Set<String> = AppActivity.runningAppNames
+    ) {
         let resolved = home.resolvingSymlinksInPath().standardizedFileURL
         self.home = resolved
         protected = ProtectedPaths(home: resolved)
+        self.runningApps = runningApps
+        // Only folders inside home that are not protected.
+        self.projectRoots = projectRoots.map { $0.resolvingSymlinksInPath().standardizedFileURL }.filter { root in
+            root.path.hasPrefix(resolved.path + "/") && !ProtectedPaths(home: resolved).denies(root)
+        }
+    }
+
+    /// Default and user project folders that exist.
+    var allProjectRoots: [URL] {
+        let defaults = Self.defaultProjectRoots.map { home.appendingPathComponent($0) }
+        var seen = Set<String>()
+        return (defaults + projectRoots).filter { url in
+            var isDirectory: ObjCBool = false
+            return FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
+                && seen.insert(url.path).inserted
+        }
     }
 
     public func scan(_ rules: [CleanupRule], progress: @Sendable (ScanProgress) -> Void = { _ in }) async throws -> [RuleScanResult] {
         var claimed = ClaimedPaths()
         var results: [RuleScanResult] = []
+        let running = rules.contains { !$0.closedApps.isEmpty } ? runningApps() : []
         for (index, rule) in rules.enumerated() {
             try Task.checkCancellation()
             progress(ScanProgress(ruleID: rule.id, index: index, count: rules.count, completed: nil))
@@ -86,12 +132,27 @@ public struct Scanner: Sendable {
                 try collectPattern(pattern, into: &collector)
             }
             let cutoff = rule.minAgeDays.map { Date().addingTimeInterval(-Double($0) * 86400) }
+            let coldCutoff = rule.find?.coldDays.map { Date().addingTimeInterval(-Double($0) * 86400) }
+            let kept = rule.special == .unusedToolchains ? ToolchainUsage.keptPaths(home: home, projectRoots: allProjectRoots) : []
             var items: [ScanItem] = []
             for candidate in collector.candidates {
                 try Task.checkCancellation()
                 let path = candidate.url.path
                 let name = candidate.url.lastPathComponent
                 guard !rule.excludes.contains(where: { Self.matches($0, name) }), !claimed.overlaps(path) else { continue }
+                if rule.special == .unusedToolchains, kept.contains(path) {
+                    continue
+                }
+                if let coldCutoff, let project = candidate.project,
+                   ProjectActivity.isActive(
+                       project: project,
+                       target: candidate.url,
+                       within: candidate.searchRoot ?? project,
+                       since: coldCutoff
+                   )
+                {
+                    continue
+                }
                 if let cutoff, let modified = candidate.modified, modified > cutoff {
                     continue
                 }
@@ -109,7 +170,8 @@ public struct Scanner: Sendable {
                     }
                     continue
                 }
-                items.append(ScanItem(url: candidate.url, bytes: usage.bytes, modified: newest, identity: identity))
+                let blocker = rule.closedApp(for: candidate.url, home: home).flatMap { running.contains($0.app) ? $0.displayName : nil }
+                items.append(ScanItem(url: candidate.url, bytes: usage.bytes, modified: newest, identity: identity, blockedBy: blocker))
                 claimed.insert(path)
             }
             let result = RuleScanResult(rule: rule, items: items, needsAccess: collector.needsAccess)
@@ -124,6 +186,9 @@ public struct Scanner: Sendable {
     private struct Candidate {
         let url: URL
         let modified: Date?
+        /// For `find` matches: the project folder the directory belongs to, and the root it was found under.
+        var project: URL?
+        var searchRoot: URL?
     }
 
     private struct Collector {
@@ -131,9 +196,9 @@ public struct Scanner: Sendable {
         var seen: Set<String> = []
         var needsAccess = false
 
-        mutating func add(_ url: URL, modified: Date?) {
+        mutating func add(_ url: URL, modified: Date?, project: URL? = nil, searchRoot: URL? = nil) {
             if seen.insert(url.path).inserted {
-                candidates.append(Candidate(url: url, modified: modified))
+                candidates.append(Candidate(url: url, modified: modified, project: project, searchRoot: searchRoot))
             }
         }
     }
@@ -179,12 +244,23 @@ public struct Scanner: Sendable {
     }
 
     private func collectFind(_ find: CleanupRule.Find, into collector: inout Collector) throws {
+        var roots: [URL] = []
         for root in find.roots where root.hasPrefix("~/") {
             let components = root.dropFirst(2).split(separator: "/").map(String.init)
             guard !components.contains(".."), !components.contains(".") else { continue }
-            let rootURL = components.reduce(home) { $0.appendingPathComponent($1) }
+            roots.append(components.reduce(home) { $0.appendingPathComponent($1) })
+        }
+        if find.includeProjectRoots {
+            roots += projectRoots
+        }
+        var walked = Set<String>()
+        for rootURL in roots {
             let resolvedRoot = rootURL.resolvingSymlinksInPath().standardizedFileURL
-            guard resolvedRoot.path.hasPrefix(home.path + "/"), !protected.denies(resolvedRoot) else { continue }
+            guard resolvedRoot.path.hasPrefix(home.path + "/"), !protected.denies(resolvedRoot),
+                  // A user folder inside a default one (or the same folder twice) is walked once.
+                  !walked.contains(where: { resolvedRoot.path == $0 || resolvedRoot.path.hasPrefix($0 + "/") })
+            else { continue }
+            walked.insert(resolvedRoot.path)
             try walk(resolvedRoot, depth: 1, find: find, root: resolvedRoot, into: &collector)
         }
     }
@@ -206,12 +282,27 @@ public struct Scanner: Sendable {
             else { continue }
             let resolved = entry.resolvingSymlinksInPath().standardizedFileURL
             guard resolved.path.hasPrefix(root.path + "/"), !protected.denies(resolved) else { continue }
-            if entry.lastPathComponent == find.directoryName {
-                collector.add(resolved, modified: values.contentModificationDate)
-            } else if depth < find.maxDepth {
+            if let target = find.targets.first(where: { $0.name == entry.lastPathComponent }) {
+                if Self.hasMarker(target, at: resolved) {
+                    collector.add(resolved, modified: values.contentModificationDate, project: directory, searchRoot: root)
+                }
+                // A matching name is never descended into, marker or not (no node_modules inside node_modules).
+            } else if depth < find.maxDepth, !entry.lastPathComponent.hasPrefix(".") {
                 try walk(resolved, depth: depth + 1, find: find, root: root, into: &collector)
             }
         }
+    }
+
+    static func hasMarker(_ target: CleanupRule.Find.Target, at directory: URL) -> Bool {
+        if let inside = target.inside, !FileManager.default.fileExists(atPath: directory.appendingPathComponent(inside).path) {
+            return false
+        }
+        if let sibling = target.sibling {
+            let parent = directory.deletingLastPathComponent()
+            let names = (try? FileManager.default.contentsOfDirectory(atPath: parent.path)) ?? []
+            return names.contains { matches(sibling, $0) }
+        }
+        return true
     }
 
     // MARK: - Helpers

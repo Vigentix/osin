@@ -1,0 +1,284 @@
+[
+  {
+    "pattern": "Library/Keychains",
+    "title": "Keychains",
+    "detail": "Your saved passwords and certificates.",
+    "advice": "keep"
+  },
+  {
+    "pattern": "Library/Preferences",
+    "title": "App settings",
+    "detail": "Settings of macOS and your apps.",
+    "advice": "keep"
+  },
+  {
+    "pattern": "Library/Accounts",
+    "title": "Accounts",
+    "detail": "Internet accounts set up in System Settings.",
+    "advice": "keep"
+  },
+  {
+    "pattern": "Library/LaunchAgents",
+    "title": "Login items",
+    "detail": "Helpers your apps start when you log in. Manage them in System Settings.",
+    "advice": "keep"
+  },
+  {
+    "pattern": "Library/Fonts",
+    "title": "Fonts",
+    "detail": "Fonts you installed.",
+    "advice": "keep"
+  },
+  {
+    "pattern": ".ssh",
+    "title": "SSH keys",
+    "detail": "Keys that log you in to servers. Losing them can lock you out.",
+    "advice": "keep"
+  },
+  {
+    "pattern": ".gnupg",
+    "title": "GPG keys",
+    "detail": "Keys used to sign and encrypt.",
+    "advice": "keep"
+  },
+  {
+    "pattern": ".config",
+    "title": "Tool settings",
+    "detail": "Settings of command-line tools.",
+    "advice": "keep"
+  },
+  {
+    "pattern": ".claude",
+    "title": "Claude Code",
+    "detail": "Claude Code settings, skills and plugins. Old sessions inside can be cleaned.",
+    "advice": "keep"
+  },
+  {
+    "pattern": ".codex",
+    "title": "Codex",
+    "detail": "Codex settings. Old sessions inside can be cleaned.",
+    "advice": "keep"
+  },
+  {
+    "pattern": ".cache/uv",
+    "title": "uv cache",
+    "detail": "Python packages downloaded by uv. uv downloads them again when needed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": ".bun/install/cache",
+    "title": "Bun cache",
+    "detail": "Packages downloaded by Bun. Bun downloads them again when needed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": ".npm/_cacache",
+    "title": "npm cache",
+    "detail": "Packages downloaded by npm. npm downloads them again when needed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": ".m2/repository",
+    "title": "Maven repository",
+    "detail": "Java libraries downloaded by Maven or Gradle. Downloaded again on the next build.",
+    "advice": "safe"
+  },
+  {
+    "pattern": ".gradle/caches",
+    "title": "Gradle caches",
+    "detail": "Gradle's downloads and build caches. Rebuilt on the next build.",
+    "advice": "safe"
+  },
+  {
+    "pattern": ".cargo/registry",
+    "title": "Cargo registry",
+    "detail": "Rust crates downloaded by Cargo. Downloaded again when needed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": ".cache/pip",
+    "title": "pip cache",
+    "detail": "Python packages downloaded by pip.",
+    "advice": "safe"
+  },
+  {
+    "pattern": ".cache/puppeteer",
+    "title": "Puppeteer browsers",
+    "detail": "Browsers downloaded for automated testing. Downloaded again when needed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": "Library/Caches",
+    "title": "Caches",
+    "detail": "Temporary data apps keep to speed things up. Smart Scan cleans the safe part.",
+    "advice": "safe"
+  },
+  {
+    "pattern": "Library/Caches/*",
+    "title": "App cache",
+    "detail": "Temporary data this app rebuilds when needed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": "Library/Logs",
+    "title": "Logs",
+    "detail": "Diagnostic logs. Smart Scan removes those older than a week.",
+    "advice": "safe"
+  },
+  {
+    "pattern": "Library/Developer/Xcode/DerivedData",
+    "title": "Xcode DerivedData",
+    "detail": "Build intermediates and indexes. Xcode rebuilds them.",
+    "advice": "safe"
+  },
+  {
+    "pattern": "Library/Developer/CoreSimulator/Caches",
+    "title": "Simulator caches",
+    "detail": "Caches of the iOS Simulator. Rebuilt when needed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": "Library/Application Support/Google/Chrome/*/Service Worker",
+    "title": "Chrome site storage",
+    "detail": "Offline caches of websites. Smart Scan cleans the cache part while Chrome is closed.",
+    "advice": "safe"
+  },
+  {
+    "pattern": "Library/Application Support/Google/Chrome/OptGuideOnDeviceModel",
+    "title": "Chrome's on-device AI model",
+    "detail": "Powers Chrome's built-in AI features. Chrome downloads it again if you use them.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Application Support/Google/Chrome",
+    "title": "Chrome profiles",
+    "detail": "Your Chrome profiles: history, bookmarks, logins and caches. Smart Scan cleans only the caches.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".colima",
+    "title": "Colima",
+    "detail": "The virtual machine that runs Docker for you.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".colima/_lima/_disks",
+    "title": "Docker's virtual disk",
+    "detail": "Holds Docker images and volumes. Clean Docker in Smart Scan, then trim the disk to give the space back.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".docker",
+    "title": "Docker settings",
+    "detail": "Docker's configuration and contexts.",
+    "advice": "keep"
+  },
+  {
+    "pattern": ".nvm/versions/node",
+    "title": "Node versions",
+    "detail": "Node.js versions installed with nvm. Smart Scan lists the ones nothing uses.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".pyenv/versions",
+    "title": "Python versions",
+    "detail": "Python versions installed with pyenv. Smart Scan lists the ones nothing uses.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".rustup/toolchains",
+    "title": "Rust toolchains",
+    "detail": "Rust versions installed with rustup. Smart Scan lists the ones nothing uses.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".claude/projects",
+    "title": "Claude Code sessions",
+    "detail": "Conversation logs per project. Smart Scan lists those not touched for 90 days.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".codex/sessions",
+    "title": "Codex sessions",
+    "detail": "Conversation logs. Smart Scan lists those not touched for 90 days.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Developer/Xcode/Archives",
+    "title": "Xcode archives",
+    "detail": "Builds you archived for distribution. Keep the ones you may need to symbolicate crashes.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Developer/Xcode/iOS DeviceSupport",
+    "title": "iOS device support",
+    "detail": "Debug symbols copied from devices. Xcode copies them again when a device is connected.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Developer/CoreSimulator/Devices",
+    "title": "Simulators",
+    "detail": "Simulator devices and their apps and data.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Application Support/MobileSync/Backup",
+    "title": "iPhone and iPad backups",
+    "detail": "Local device backups. Make sure you have another backup before removing one.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".ollama/models",
+    "title": "Ollama models",
+    "detail": "Local AI models. Pull them again with ollama when needed.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".cache/huggingface",
+    "title": "Hugging Face cache",
+    "detail": "Downloaded AI models and datasets. Downloaded again when needed, which can take a while.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".lmstudio/models",
+    "title": "LM Studio models",
+    "detail": "Local AI models downloaded in LM Studio.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Application Support/ZaloData",
+    "title": "Zalo data",
+    "detail": "Zalo messages and media. Clear them from Zalo's own settings.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Application Support/Slack",
+    "title": "Slack data",
+    "detail": "Slack's workspaces and caches. Smart Scan cleans only the caches.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Application Support/Code",
+    "title": "VS Code data",
+    "detail": "VS Code's settings, extensions state and caches. Smart Scan cleans only the caches.",
+    "advice": "review"
+  },
+  {
+    "pattern": ".vscode/extensions",
+    "title": "VS Code extensions",
+    "detail": "Installed extensions. Old versions may linger after updates.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Library/Containers/com.docker.docker",
+    "title": "Docker Desktop",
+    "detail": "Docker Desktop's disk image with your images and volumes. Clean Docker in Smart Scan.",
+    "advice": "review"
+  },
+  {
+    "pattern": "Projects",
+    "title": "Projects",
+    "detail": "Your code. Smart Scan offers dependencies of projects you have not touched for 30 days.",
+    "advice": "review"
+  }
+]

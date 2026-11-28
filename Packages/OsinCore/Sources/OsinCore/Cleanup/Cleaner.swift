@@ -65,6 +65,8 @@ public struct CleanupFailure: Sendable, Identifiable {
         case originalExists
         /// Restore: the item in the Trash is not the one Osin put there (or was never recorded).
         case notTheTrashedItem
+        /// The app that owns the item is running (its display name); close it and clean again.
+        case appRunning(String)
         /// An error from the system, with its message.
         case system(String)
     }
@@ -90,6 +92,7 @@ public struct CleanupFailure: Sendable, Identifiable {
         case .logUnavailable: "The cleanup log cannot be written, so nothing was removed."
         case .originalExists: "Something already exists at the original location."
         case .notTheTrashedItem: "The item in the Trash is not the one Osin moved there."
+        case let .appRunning(app): "\(app) is running."
         case let .system(message): message
         }
     }
@@ -127,13 +130,20 @@ public actor Cleaner {
     private let protected: ProtectedPaths
     private let trash: TrashMover
     private let log: CleanupLog
+    private let runningApps: @Sendable () -> Set<String>
 
-    public init(home: URL = FileManager.default.homeDirectoryForCurrentUser, trash: TrashMover = SystemTrash(), log: CleanupLog) {
+    public init(
+        home: URL = FileManager.default.homeDirectoryForCurrentUser,
+        trash: TrashMover = SystemTrash(),
+        log: CleanupLog,
+        runningApps: @escaping @Sendable () -> Set<String> = AppActivity.runningAppNames
+    ) {
         let resolved = home.resolvingSymlinksInPath().standardizedFileURL
         self.home = resolved
         protected = ProtectedPaths(home: resolved)
         self.trash = trash
         self.log = log
+        self.runningApps = runningApps
     }
 
     /// `proceed` is asked right before each removal, after the item's checks (which can take a while
@@ -144,9 +154,12 @@ public actor Cleaner {
             outcome.failures = selections.flatMap { $0.items.map { CleanupFailure(url: $0.url, kind: .logUnavailable) } }
             return outcome
         }
+        // Read once, and only when a rule has apps that must be closed.
+        let running = selections.contains { !$0.rule.closedApps.isEmpty } ? runningApps() : []
         for selection in selections {
             let rule = selection.rule
             let cutoff = rule.minAgeDays.map { Date().addingTimeInterval(-Double($0) * 86400) }
+            let coldCutoff = rule.find?.coldDays.map { Date().addingTimeInterval(-Double($0) * 86400) }
             for item in selection.items {
                 if rule.action == .delete, rule.tier != .safe || !rule.regenerable {
                     outcome.failures.append(CleanupFailure(url: item.url, kind: .deleteNotAllowed))
@@ -160,6 +173,17 @@ public actor Cleaner {
                     continue
                 case .ok:
                     break
+                }
+                if let app = rule.closedApp(for: item.url, home: home), running.contains(app.app) {
+                    outcome.failures.append(CleanupFailure(url: item.url, kind: .appRunning(app.displayName)))
+                    continue
+                }
+                // A cold project that was opened again since the scan is left alone.
+                if let coldCutoff, ProjectActivity.isActive(
+                    project: item.url.deletingLastPathComponent(), target: item.url, within: home, since: coldCutoff
+                ) {
+                    outcome.failures.append(CleanupFailure(url: item.url, kind: .usedRecently))
+                    continue
                 }
                 guard proceed() else {
                     outcome.stopped = true

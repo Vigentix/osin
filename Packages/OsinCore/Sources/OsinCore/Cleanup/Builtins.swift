@@ -7,17 +7,38 @@ enum ProcessRunner {
         let status: Int32
     }
 
-    static func run(_ executable: String, _ arguments: [String]) async throws -> Data {
+    private final class Collected: @unchecked Sendable {
+        var data = Data()
+    }
+
+    /// Homebrew folders first, so tools that call helpers (colima calls limactl) find them.
+    static let searchPath = "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+    /// Runs the tool and returns its output. With a `timeout`, a tool that hangs (a Docker daemon that
+    /// never answers) is stopped and the call fails.
+    static func run(_ executable: String, _ arguments: [String], timeout: TimeInterval? = nil) async throws -> Data {
         try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: executable)
             process.arguments = arguments
+            var environment = ProcessInfo.processInfo.environment
+            environment["PATH"] = searchPath
+            process.environment = environment
             let output = Pipe()
             process.standardOutput = output
             process.standardError = FileHandle.nullDevice
+            // Read while the tool runs: a pipe holds only 64 KB, and a tool writing more would block forever.
+            let collected = Collected()
+            let reading = DispatchGroup()
+            reading.enter()
+            DispatchQueue.global(qos: .utility).async {
+                collected.data = output.fileHandleForReading.readDataToEndOfFile()
+                reading.leave()
+            }
             process.terminationHandler = { finished in
-                let data = output.fileHandleForReading.readDataToEndOfFile()
-                if finished.terminationStatus == 0 {
+                reading.wait()
+                let data = collected.data
+                if finished.terminationStatus == 0, finished.terminationReason == .exit {
                     continuation.resume(returning: data)
                 } else {
                     continuation.resume(throwing: Failure(status: finished.terminationStatus))
@@ -26,7 +47,17 @@ enum ProcessRunner {
             do {
                 try process.run()
             } catch {
+                // Ends the reader: nothing will ever write to the pipe.
+                try? output.fileHandleForWriting.close()
                 continuation.resume(throwing: error)
+                return
+            }
+            if let timeout {
+                DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { @Sendable in
+                    if process.isRunning {
+                        process.terminate()
+                    }
+                }
             }
         }
     }
