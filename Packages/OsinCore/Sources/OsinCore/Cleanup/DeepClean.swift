@@ -358,10 +358,19 @@ enum ProjectPins {
     /// As deep as cold-project discovery looks (5), plus one for the pin file itself.
     static let fileNames = [".nvmrc", ".node-version", ".python-version", "rust-toolchain.toml", "rust-toolchain"]
 
-    static func find(in roots: [URL], home: URL? = nil, depth: Int = 6) -> Pins {
+    /// Folders the pin search will open before giving up (and keeping every version).
+    static let folderBudget = 60000
+    /// Hidden folders that never hold projects (worktrees and the like are searched).
+    private static let hiddenSkipped: Set<String> = [
+        ".git", ".cache", ".next", ".nuxt", ".turbo", ".idea", ".vscode", ".svn", ".hg",
+        "__pycache__", ".pytest_cache", ".mypy_cache", ".dart_tool"
+    ]
+
+    static func find(in roots: [URL], home: URL? = nil, budget: Int = folderBudget) -> Pins {
         var pins = Pins()
+        var remaining = budget
         for root in roots {
-            visit(root, depth: depth, into: &pins)
+            visit(root, budget: &remaining, into: &pins)
             // Tools also look in the folders above a project (pyenv, nvm, rustup), up to home.
             guard let home else { continue }
             var folder = root.deletingLastPathComponent()
@@ -376,25 +385,42 @@ enum ProjectPins {
         return pins
     }
 
-    private static func visit(_ directory: URL, depth: Int, into pins: inout Pins) {
-        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else {
+    /// Searches the whole tree (no depth limit) with fts, skipping dependency folders. Running out of
+    /// budget, or anything unreadable, means some pins may be missed: the result is marked incomplete.
+    private static func visit(_ root: URL, budget: inout Int, into pins: inout Pins) {
+        guard let cPath = strdup(root.path) else {
             pins.incomplete = true
             return
         }
-        for name in names {
-            let url = directory.appendingPathComponent(name)
-            if record(name, at: url, into: &pins) {
-                continue
-            }
-            // Real folders only (no symlinks), not hidden or generated ones.
-            guard depth > 1, !name.hasPrefix("."), !ProjectActivity.isDependencyFolder(name, at: url) else { continue }
-            var info = stat()
-            guard lstat(url.path, &info) == 0 else {
-                pins.incomplete = true // something we can't even look at
-                continue
-            }
-            if info.st_mode & S_IFMT == S_IFDIR {
-                visit(url, depth: depth - 1, into: &pins)
+        defer { free(cPath) }
+        var paths: [UnsafeMutablePointer<CChar>?] = [cPath, nil]
+        guard let fts = fts_open(&paths, FTS_PHYSICAL | FTS_NOCHDIR | FTS_XDEV, nil) else {
+            pins.incomplete = true
+            return
+        }
+        defer { fts_close(fts) }
+        while let entry = fts_read(fts) {
+            let info = entry.pointee
+            let url = URL(fileURLWithPath: String(cString: info.fts_path))
+            let name = url.lastPathComponent
+            switch Int32(info.fts_info) {
+            case FTS_D:
+                budget -= 1
+                guard budget > 0 else {
+                    pins.incomplete = true
+                    return
+                }
+                if info.fts_level > 0, hiddenSkipped.contains(name) || ProjectActivity.isDependencyFolder(name, at: url) {
+                    fts_set(fts, entry, FTS_SKIP)
+                }
+            case FTS_F, FTS_SL, FTS_SLNONE:
+                if fileNames.contains(name) {
+                    _ = record(name, at: url, into: &pins) // a linked pin file is refused (incomplete)
+                }
+            case FTS_DNR, FTS_ERR, FTS_NS:
+                pins.incomplete = true
+            default:
+                break
             }
         }
     }

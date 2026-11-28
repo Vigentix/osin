@@ -5854,6 +5854,16 @@
         }
       }
     },
+    "The background scan skips Downloads and unused toolchains. Rescan to include them.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần quét nền bỏ qua Downloads và công cụ không dùng. Hãy quét lại để tính cả chúng."
+          }
+        }
+      }
+    },
     "The battery is too low to keep your Mac awake. Connect the power adapter.": {
       "localizations": {
         "vi": {

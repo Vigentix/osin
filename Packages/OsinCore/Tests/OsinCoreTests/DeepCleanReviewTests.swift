@@ -446,3 +446,23 @@ struct DeepCleanSafetyRoundSixTests {
         #expect(result.items.isEmpty)
     }
 }
+
+struct DeepCleanSafetyRoundSevenTests {
+    @Test func pinsInWorktreesAndDeepFoldersCount() throws {
+        let fixture = try FixtureHome()
+        try fixture.file("Projects/app/.worktrees/feature/.nvmrc").write("20\n")
+        try fixture.file("Projects/mono/a/b/c/d/e/f/g/h/.nvmrc").write("18\n")
+        let pins = ProjectPins.find(in: [fixture.home.appendingPathComponent("Projects")])
+        #expect(Set(pins.node) == ["20", "18"])
+        #expect(!pins.incomplete)
+    }
+
+    @Test func runningOutOfBudgetMeansIncomplete() throws {
+        let fixture = try FixtureHome()
+        for index in 0 ..< 5 {
+            try fixture.directory("Projects/p\(index)/src")
+        }
+        let pins = ProjectPins.find(in: [fixture.home.appendingPathComponent("Projects")], budget: 3)
+        #expect(pins.incomplete)
+    }
+}

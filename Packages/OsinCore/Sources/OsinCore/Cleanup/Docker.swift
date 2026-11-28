@@ -164,10 +164,21 @@ public enum DockerInventory {
     /// remote builder chosen elsewhere (BUILDX_BUILDER, `docker buildx use`) is never touched.
     public static func pruneBuildCache(host: String) async throws {
         guard let docker = executable(), host.hasPrefix("unix://") else { throw ProcessRunner.Failure(status: -1) }
-        _ = try await ProcessRunner.run(
-            docker, ["buildx", "prune", "--builder", "default", "--force"], timeout: 600,
-            environment: ["DOCKER_HOST": host, "DOCKER_CONTEXT": nil, "BUILDX_BUILDER": nil]
-        )
+        let pinned: [String: String?] = ["DOCKER_HOST": host, "DOCKER_CONTEXT": nil, "BUILDX_BUILDER": nil]
+        do {
+            _ = try await ProcessRunner.run(
+                docker,
+                ["buildx", "prune", "--builder", "default", "--force"],
+                timeout: 600,
+                environment: pinned
+            )
+        } catch {
+            // No buildx plugin (plain Homebrew Docker with Colima): the classic builder prune, which with
+            // DOCKER_BUILDKIT=0 talks to the daemon directly instead of forwarding to buildx.
+            var classic = pinned
+            classic["DOCKER_BUILDKIT"] = "0"
+            _ = try await ProcessRunner.run(docker, ["-H", host, "builder", "prune", "--force"], timeout: 600, environment: classic)
+        }
     }
 
     /// Removes only images that are still dangling now.

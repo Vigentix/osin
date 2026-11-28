@@ -229,7 +229,10 @@ private struct ScanReportView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 4) {
                         if scan.lastScanWasPartial {
-                            notice("Downloads was skipped in the background scan. Rescan to include it.", icon: "info.circle")
+                            notice(
+                                "The background scan skips Downloads and unused toolchains. Rescan to include them.",
+                                icon: "info.circle"
+                            )
                         }
                         if scan.needsFullDiskAccess {
                             notice("Some locations need Full Disk Access to be measured.", icon: "lock")

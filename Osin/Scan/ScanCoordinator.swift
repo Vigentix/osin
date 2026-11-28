@@ -154,7 +154,10 @@ final class ScanCoordinator {
     func backgroundScan() {
         guard phase.canStartBackgroundScan, !isOccupied else { return }
         let filter = ruleFilter
-        runScan(silent: true) { rule in filter(rule) && !rule.paths.contains { $0.hasPrefix("~/Downloads") } }
+        // Also skips unused toolchains: finding version pins reads every project folder (seconds).
+        runScan(silent: true) { rule in
+            filter(rule) && !rule.paths.contains { $0.hasPrefix("~/Downloads") } && rule.special != .unusedToolchains
+        }
     }
 
     func cancel() {
