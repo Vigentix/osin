@@ -43,10 +43,6 @@ enum ProjectActivity {
         "build", "dist", ".cache", ".git", "DerivedData", ".build", "__pycache__", ".pytest_cache"
     ]
 
-    /// Big dependency folders the activity walk skips (the target itself is skipped too). Build output
-    /// is not skipped: building a project is activity.
-    static let dependencies: Set<String> = ["node_modules", ".venv", "venv", "Pods", ".git", ".gradle", "target", "DerivedData", ".build"]
-
     /// Git files that change when someone commits, checks out or stages (not on a background fetch).
     private static let gitMarkers = ["logs/HEAD", "index", "HEAD", "ORIG_HEAD"]
     /// Files looked at per project before giving up (and keeping it).
@@ -54,7 +50,7 @@ enum ProjectActivity {
 
     static func isActive(project: URL, target: URL, within root: URL, since cutoff: Date) -> Bool {
         var budget = fileBudget
-        switch newestFile(in: project, skipping: target.lastPathComponent, budget: &budget) {
+        switch newestFile(in: project, skipping: target.standardizedFileURL.path, budget: &budget) {
         case .unknown: return true
         case let .newest(date): if date.map({ $0 > cutoff }) ?? false {
                 return true
@@ -117,19 +113,37 @@ enum ProjectActivity {
     }
 
     /// Newest file (not folder: a folder's date moves when anything is added) in the project's sources.
+    /// A folder the activity walk and pin search skip: a dependency or build folder confirmed by its
+    /// marker (a `target` only next to `Cargo.toml`), so a source folder that shares the name still counts.
+    static func isDependencyFolder(_ name: String, at url: URL) -> Bool {
+        let parent = url.deletingLastPathComponent()
+        func exists(_ path: String, in folder: URL) -> Bool {
+            FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path)
+        }
+        switch name {
+        case "node_modules", ".git", ".gradle", "DerivedData": return true
+        case ".venv", "venv": return exists("pyvenv.cfg", in: url)
+        case "target": return exists("Cargo.toml", in: parent)
+        case "Pods": return exists("Podfile", in: parent)
+        case ".build": return exists("Package.swift", in: parent)
+        default: return false
+        }
+    }
+
     private static func newestFile(in directory: URL, skipping skipped: String, budget: inout Int) -> Newest {
         guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else { return .unknown }
         var newest: Date?
-        for name in names where name != skipped {
+        for name in names {
             budget -= 1
             guard budget > 0 else { return .unknown }
             let url = directory.appendingPathComponent(name)
+            guard url.standardizedFileURL.path != skipped else { continue }
             var info = stat()
             guard lstat(url.path, &info) == 0 else { return .unknown } // can't see it: can't call the project cold
             let type = info.st_mode & S_IFMT
             if type == S_IFDIR {
                 // Only folders are skipped by name: a source file called `build` still counts.
-                if dependencies.contains(name) {
+                if isDependencyFolder(name, at: url) {
                     continue
                 }
                 switch newestFile(in: url, skipping: skipped, budget: &budget) {
@@ -151,7 +165,7 @@ enum ProjectActivity {
 /// cannot be worked out offline, all of its versions are kept.
 enum ToolchainUsage {
     static func keptPaths(home: URL, projectRoots: [URL]) -> Set<String> {
-        let pins = ProjectPins.find(in: projectRoots)
+        let pins = ProjectPins.find(in: projectRoots, home: home)
         var kept = Set<String>()
         // A project or pin file that could not be read might pin anything: keep every version.
         if pins.incomplete {
@@ -228,17 +242,20 @@ enum ToolchainUsage {
 
     private static func resolveNode(_ spec: String, home: URL, names: [String], depth: Int) -> String? {
         let spec = spec.trimmingCharacters(in: .whitespacesAndNewlines)
-        if ["node", "stable", "latest", "current"].contains(spec) {
-            return highest(matching: [], in: names)
-        }
         if let prefix = components(spec) {
             return highest(matching: prefix, in: names)
         }
-        // Another alias (lts/* needs the network: unresolved).
-        guard depth < 2, !spec.contains("/"), !spec.contains("*"),
-              let next = read(home.appendingPathComponent(".nvm/alias").appendingPathComponent(spec), home: home)
-        else { return nil }
-        return resolveNode(next, home: home, names: names, depth: depth + 1)
+        // An alias file wins over nvm's built-in names, as in nvm itself (lts/* needs the network: unresolved).
+        guard depth < 3, !spec.isEmpty, !spec.contains("/"), !spec.contains("*") else { return nil }
+        let aliasFile = home.appendingPathComponent(".nvm/alias").appendingPathComponent(spec)
+        if FileManager.default.fileExists(atPath: aliasFile.path) {
+            guard let next = read(aliasFile, home: home) else { return nil } // there but unreadable: unknown
+            return resolveNode(next, home: home, names: names, depth: depth + 1)
+        }
+        if ["node", "stable", "latest", "current"].contains(spec) {
+            return highest(matching: [], in: names)
+        }
+        return nil
     }
 
     // MARK: pyenv
@@ -339,10 +356,22 @@ enum ProjectPins {
     }
 
     /// As deep as cold-project discovery looks (5), plus one for the pin file itself.
-    static func find(in roots: [URL], depth: Int = 6) -> Pins {
+    static let fileNames = [".nvmrc", ".node-version", ".python-version", "rust-toolchain.toml", "rust-toolchain"]
+
+    static func find(in roots: [URL], home: URL? = nil, depth: Int = 6) -> Pins {
         var pins = Pins()
         for root in roots {
             visit(root, depth: depth, into: &pins)
+            // Tools also look in the folders above a project (pyenv, nvm, rustup), up to home.
+            guard let home else { continue }
+            var folder = root.deletingLastPathComponent()
+            while folder.path.hasPrefix(home.path + "/") || folder.path == home.path {
+                for name in fileNames where FileManager.default.fileExists(atPath: folder.appendingPathComponent(name).path) {
+                    _ = record(name, at: folder.appendingPathComponent(name), into: &pins)
+                }
+                guard folder.path != home.path else { break }
+                folder.deleteLastPathComponent()
+            }
         }
         return pins
     }
@@ -358,7 +387,7 @@ enum ProjectPins {
                 continue
             }
             // Real folders only (no symlinks), not hidden or generated ones.
-            guard depth > 1, !name.hasPrefix("."), !ProjectActivity.generated.contains(name) else { continue }
+            guard depth > 1, !name.hasPrefix("."), !ProjectActivity.isDependencyFolder(name, at: url) else { continue }
             var info = stat()
             guard lstat(url.path, &info) == 0 else {
                 pins.incomplete = true // something we can't even look at
@@ -372,7 +401,7 @@ enum ProjectPins {
 
     /// Reads `url` if `name` is a version file. Returns whether it was one.
     private static func record(_ name: String, at url: URL, into pins: inout Pins) -> Bool {
-        guard [".nvmrc", ".node-version", ".python-version", "rust-toolchain.toml", "rust-toolchain"].contains(name) else { return false }
+        guard fileNames.contains(name) else { return false }
         // Only a regular file is read: a link could point into a protected folder (privacy prompt).
         var info = stat()
         guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG, let lines = lines(url) else {
