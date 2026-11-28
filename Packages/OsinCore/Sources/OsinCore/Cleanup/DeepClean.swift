@@ -121,7 +121,7 @@ enum ProjectActivity {
             guard budget > 0 else { return .unknown }
             let url = directory.appendingPathComponent(name)
             var info = stat()
-            guard lstat(url.path, &info) == 0 else { continue }
+            guard lstat(url.path, &info) == 0 else { return .unknown } // can't see it: can't call the project cold
             let type = info.st_mode & S_IFMT
             if type == S_IFDIR {
                 switch newestFile(in: url, skipping: skipped, budget: &budget) {
@@ -353,7 +353,9 @@ enum ProjectPins {
     /// Reads `url` if `name` is a version file. Returns whether it was one.
     private static func record(_ name: String, at url: URL, into pins: inout Pins) -> Bool {
         guard [".nvmrc", ".node-version", ".python-version", "rust-toolchain.toml", "rust-toolchain"].contains(name) else { return false }
-        guard let lines = lines(url) else {
+        // Only a regular file is read: a link could point into a protected folder (privacy prompt).
+        var info = stat()
+        guard lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG, let lines = lines(url) else {
             pins.incomplete = true
             return true
         }

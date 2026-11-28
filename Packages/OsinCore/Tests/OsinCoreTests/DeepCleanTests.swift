@@ -730,3 +730,24 @@ struct DeepCleanSafetyRoundThreeTests {
         #expect(result.items.isEmpty)
     }
 }
+
+struct DeepCleanSafetyRoundFourTests {
+    @Test func aLinkedPinFileIsNotRead() {
+        let fixture = try? FixtureHome()
+        guard let fixture else { return }
+        _ = try? fixture.file("Documents/node-version")
+        _ = try? fixture.directory("Projects/app")
+        try? FileManager.default.createSymbolicLink(
+            at: fixture.home.appendingPathComponent("Projects/app/.nvmrc"),
+            withDestinationURL: fixture.home.appendingPathComponent("Documents/node-version")
+        )
+        let pins = ProjectPins.find(in: [fixture.home.appendingPathComponent("Projects")])
+        #expect(pins.node.isEmpty)
+        #expect(pins.incomplete)
+    }
+
+    @Test func websiteStorageIsNotCalledRegenerable() {
+        let entry = FolderGuide.bundled.describe(relativePath: "Library/Application Support/Google/Chrome/Default/Service Worker")
+        #expect(entry?.advice == .review)
+    }
+}

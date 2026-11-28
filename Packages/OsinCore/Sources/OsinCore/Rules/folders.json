@@ -139,9 +139,9 @@
   },
   {
     "pattern": "Library/Application Support/Google/Chrome/*/Service Worker",
-    "title": "Chrome site storage",
-    "detail": "Offline caches of websites. Smart Scan cleans the cache part while Chrome is closed.",
-    "advice": "safe"
+    "title": "Chrome website storage",
+    "detail": "Data websites keep for offline use. Most of it is downloaded again, but some web apps keep things only here.",
+    "advice": "review"
   },
   {
     "pattern": "Library/Application Support/Google/Chrome/OptGuideOnDeviceModel",

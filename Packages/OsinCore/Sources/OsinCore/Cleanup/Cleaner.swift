@@ -188,6 +188,11 @@ public actor Cleaner {
                     outcome.failures.append(CleanupFailure(url: item.url, kind: .appRunning(app.displayName)))
                     continue
                 }
+                // The checks above can take a while: make sure it is still the very item that was scanned.
+                guard let identity = item.identity, FileIdentity(path: item.url.standardizedFileURL.path) == identity else {
+                    outcome.failures.append(CleanupFailure(url: item.url, kind: .changedSinceScan))
+                    continue
+                }
                 guard proceed() else {
                     outcome.stopped = true
                     return outcome

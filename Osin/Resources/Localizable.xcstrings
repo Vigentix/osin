@@ -1376,6 +1376,16 @@
         }
       }
     },
+    "Chrome website storage": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu trang web của Chrome"
+          }
+        }
+      }
+    },
     "Chrome's on-device AI model": {
       "localizations": {
         "vi": {
@@ -1692,6 +1702,16 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dữ liệu trang web và web app giữ để dùng khi không có mạng. Phần lớn sẽ được tải lại, nhưng có web app chỉ lưu dữ liệu ở đây. Được đưa vào Thùng rác, bỏ qua khi app đang mở."
+          }
+        }
+      }
+    },
+    "Data websites keep for offline use. Most of it is downloaded again, but some web apps keep things only here.": {
+      "localizations": {
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dữ liệu trang web giữ để dùng khi không có mạng. Phần lớn sẽ được tải lại, nhưng có web app chỉ lưu dữ liệu ở đây."
           }
         }
       }
