@@ -104,6 +104,9 @@ Each milestone ends with a working, demoable build.
 - [x] New Safe groups are not added to scheduled chores until the user turns them on
 - [x] Space Lens: browse what uses space in your home folder (whole disk with Full Disk Access), known-folder descriptions, Trash only
 
+## v0.5.1 — Lighter launch
+- [x] Launch scan reuses sizes measured in the last 24 h; project activity checks git first and stops at the first recent file (launch: ~17 s CPU to 2–6 s, peak 173 MB to ~50 MB)
+
 ## v0.6 — Clean with AI
 - [ ] Runs the user's own Claude Code or Codex (no Osin login, no tokens) with Osin's MCP tools only: no shell, no file contents
 - [ ] The AI proposes, the user approves in Osin; everything goes to the Trash and History
